@@ -30,20 +30,14 @@ export default function VistaEquipo() {
     <div style={styles.container}>
       <div style={styles.card}>
         <button style={styles.btnVolver} onClick={() => navigate("/dashboard")}>← Volver al panel</button>
-
         <div style={styles.encabezado}>
           <div>
             <p style={styles.idTag}>EQUIPO #{id.slice(0,6).toUpperCase()}</p>
             <h1 style={styles.titulo}>{equipo.marca} — {equipo.modelo}</h1>
             <p style={styles.ubicacion}>📍 {equipo.ubicacion}</p>
           </div>
-          <span style={{
-            ...styles.badge,
-            background: equipo.estado === "Operativo" ? "#e8f5e9" : "#fff3e0",
-            color: equipo.estado === "Operativo" ? "#2e7d32" : "#e65100"
-          }}>{equipo.estado}</span>
+          <span style={{...styles.badge, background: equipo.estado === "Operativo" ? "#e8f5e9" : "#fff3e0", color: equipo.estado === "Operativo" ? "#2e7d32" : "#e65100"}}>{equipo.estado}</span>
         </div>
-
         <div style={styles.seccion}>
           <p style={styles.seccionTitulo}>📋 Ficha del equipo</p>
           <div style={styles.grid2}>
@@ -53,33 +47,17 @@ export default function VistaEquipo() {
             <div style={styles.dato}><span style={styles.datoLabel}>Capacidad</span><span>{equipo.capacidad} BTU</span></div>
           </div>
         </div>
-
         <div style={styles.seccion}>
           <p style={styles.seccionTitulo}>🔧 Último mantenimiento</p>
           <p style={styles.fecha}>{equipo.ultimoMantenimiento || "Sin registro"}</p>
-          <p style={styles.texto}>{equipo.observaciones || "Sin observaciones registradas"}</p>
+          <p style={styles.texto}>{equipo.observaciones || "Sin observaciones"}</p>
         </div>
-
-        {equipo.correctivos && (
-          <div style={styles.seccion}>
-            <p style={styles.seccionTitulo}>⚠️ Correctivos realizados</p>
-            <p style={styles.texto}>{equipo.correctivos}</p>
-          </div>
-        )}
-
-        {equipo.recomendaciones && (
-          <div style={styles.seccion}>
-            <p style={styles.seccionTitulo}>💡 Recomendaciones</p>
-            <p style={styles.texto}>{equipo.recomendaciones}</p>
-          </div>
-        )}
-
+        {equipo.correctivos && <div style={styles.seccion}><p style={styles.seccionTitulo}>⚠️ Correctivos realizados</p><p style={styles.texto}>{equipo.correctivos}</p></div>}
+        {equipo.recomendaciones && <div style={styles.seccion}><p style={styles.seccionTitulo}>💡 Recomendaciones</p><p style={styles.texto}>{equipo.recomendaciones}</p></div>}
         <div style={styles.qrSeccion}>
           <p style={styles.seccionTitulo}>📱 Código QR del equipo</p>
           <p style={styles.qrDesc}>El cliente escanea este QR para ver la información</p>
-          <div style={styles.qrBox}>
-            <QRCodeSVG value={urlEquipo} size={180} />
-          </div>
+          <div style={styles.qrBox}><QRCodeSVG value={urlEquipo} size={180} /></div>
           <p style={styles.qrUrl}>{urlEquipo}</p>
           <button style={styles.btnImprimir} onClick={() => window.print()}>🖨️ Imprimir QR</button>
         </div>
