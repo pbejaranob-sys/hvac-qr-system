@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeSVG } from "react-qr-code";
 
 export default function VistaEquipo() {
   const { id } = useParams();
