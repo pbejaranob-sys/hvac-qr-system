@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
-import { QRCodeSVG } from "react-qr-code";
 
 export default function VistaEquipo() {
   const { id } = useParams();
@@ -25,6 +24,7 @@ export default function VistaEquipo() {
   if (!equipo) return <div style={styles.centro}>Equipo no encontrado</div>;
 
   const urlEquipo = window.location.href;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(urlEquipo)}`;
 
   return (
     <div style={styles.container}>
@@ -36,8 +36,13 @@ export default function VistaEquipo() {
             <h1 style={styles.titulo}>{equipo.marca} — {equipo.modelo}</h1>
             <p style={styles.ubicacion}>📍 {equipo.ubicacion}</p>
           </div>
-          <span style={{...styles.badge, background: equipo.estado === "Operativo" ? "#e8f5e9" : "#fff3e0", color: equipo.estado === "Operativo" ? "#2e7d32" : "#e65100"}}>{equipo.estado}</span>
+          <span style={{
+            ...styles.badge,
+            background: equipo.estado === "Operativo" ? "#e8f5e9" : "#fff3e0",
+            color: equipo.estado === "Operativo" ? "#2e7d32" : "#e65100"
+          }}>{equipo.estado}</span>
         </div>
+
         <div style={styles.seccion}>
           <p style={styles.seccionTitulo}>📋 Ficha del equipo</p>
           <div style={styles.grid2}>
@@ -47,17 +52,33 @@ export default function VistaEquipo() {
             <div style={styles.dato}><span style={styles.datoLabel}>Capacidad</span><span>{equipo.capacidad} BTU</span></div>
           </div>
         </div>
+
         <div style={styles.seccion}>
           <p style={styles.seccionTitulo}>🔧 Último mantenimiento</p>
           <p style={styles.fecha}>{equipo.ultimoMantenimiento || "Sin registro"}</p>
           <p style={styles.texto}>{equipo.observaciones || "Sin observaciones"}</p>
         </div>
-        {equipo.correctivos && <div style={styles.seccion}><p style={styles.seccionTitulo}>⚠️ Correctivos realizados</p><p style={styles.texto}>{equipo.correctivos}</p></div>}
-        {equipo.recomendaciones && <div style={styles.seccion}><p style={styles.seccionTitulo}>💡 Recomendaciones</p><p style={styles.texto}>{equipo.recomendaciones}</p></div>}
+
+        {equipo.correctivos && (
+          <div style={styles.seccion}>
+            <p style={styles.seccionTitulo}>⚠️ Correctivos realizados</p>
+            <p style={styles.texto}>{equipo.correctivos}</p>
+          </div>
+        )}
+
+        {equipo.recomendaciones && (
+          <div style={styles.seccion}>
+            <p style={styles.seccionTitulo}>💡 Recomendaciones</p>
+            <p style={styles.texto}>{equipo.recomendaciones}</p>
+          </div>
+        )}
+
         <div style={styles.qrSeccion}>
           <p style={styles.seccionTitulo}>📱 Código QR del equipo</p>
           <p style={styles.qrDesc}>El cliente escanea este QR para ver la información</p>
-          <div style={styles.qrBox}><QRCodeSVG value={urlEquipo} size={180} /></div>
+          <div style={styles.qrBox}>
+            <img src={qrUrl} alt="Código QR del equipo" style={{width: 200, height: 200}} />
+          </div>
           <p style={styles.qrUrl}>{urlEquipo}</p>
           <button style={styles.btnImprimir} onClick={() => window.print()}>🖨️ Imprimir QR</button>
         </div>
