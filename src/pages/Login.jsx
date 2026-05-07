@@ -9,6 +9,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [verPass, setVerPass] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -38,41 +39,161 @@ export default function Login() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.title}>🌬️ HVAC QR System</h1>
-        <p style={styles.subtitle}>Iniciar sesión</p>
+
+        <div style={styles.logoWrap}>
+          <div style={styles.logoLetras}>
+            <span style={styles.letraAzul}>H</span>
+            <span style={{ ...styles.letraAzul, marginRight: "-10px" }}>V</span>
+            <span style={styles.letraDorada}>A</span>
+            <span style={{ ...styles.letraAzul, marginLeft: "-2px" }}>C</span>
+          </div>
+          <div style={styles.lineaDivisor}></div>
+          <div style={styles.subLogo}>Sistema de Mantenimiento</div>
+        </div>
+
         {error && <p style={styles.error}>{error}</p>}
+
         <form onSubmit={handleLogin}>
-          <input
-            style={styles.input}
-            type="email"
-            placeholder="Correo electrónico"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            style={styles.input}
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div style={styles.inputWrap}>
+            <span style={styles.inputIcon}>✉</span>
+            <input
+              style={styles.input}
+              type="email"
+              placeholder="Correo electrónico"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div style={styles.inputWrap}>
+            <span style={styles.inputIcon}>🔒</span>
+            <input
+              style={styles.input}
+              type={verPass ? "text" : "password"}
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <span
+              style={styles.inputIconRight}
+              onClick={() => setVerPass(!verPass)}
+            >
+              {verPass ? "🙈" : "👁"}
+            </span>
+          </div>
           <button style={styles.button} type="submit" disabled={cargando}>
-            {cargando ? "Ingresando..." : "Ingresar"}
+            {cargando ? "Ingresando..." : "Ingresar al sistema"}
           </button>
         </form>
+
+        <div style={styles.footer}>HVAC &copy; 2025</div>
       </div>
     </div>
   );
 }
 
 const styles = {
-  container: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f0f4f8" },
-  card: { background: "white", padding: "2rem", borderRadius: "12px", width: "100%", maxWidth: "400px", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" },
-  title: { textAlign: "center", color: "#1a73e8", marginBottom: "0.25rem" },
-  subtitle: { textAlign: "center", color: "#666", marginBottom: "1.5rem" },
-  input: { width: "100%", padding: "12px", marginBottom: "1rem", borderRadius: "8px", border: "1px solid #ddd", fontSize: "16px", boxSizing: "border-box" },
-  button: { width: "100%", padding: "12px", background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", fontSize: "16px", cursor: "pointer" },
-  error: { color: "red", textAlign: "center", marginBottom: "1rem" }
+  container: {
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#dce8f5",
+  },
+  card: {
+    background: "white",
+    padding: "2.5rem 2rem",
+    borderRadius: "14px",
+    width: "100%",
+    maxWidth: "380px",
+    border: "0.5px solid #d0dce8",
+  },
+  logoWrap: {
+    textAlign: "center",
+    marginBottom: "1.8rem",
+  },
+  logoLetras: {
+    display: "inline-flex",
+    alignItems: "baseline",
+    fontFamily: "'Arial Black', 'Helvetica Neue', sans-serif",
+    fontWeight: 900,
+    fontSize: "48px",
+    lineHeight: 1,
+    marginBottom: "8px",
+  },
+  letraAzul: {
+    color: "#1a5fa8",
+  },
+  letraDorada: {
+    color: "#f0c040",
+  },
+  lineaDivisor: {
+    width: "100%",
+    height: "1px",
+    background: "#c8d8ea",
+    margin: "6px 0 5px",
+  },
+  subLogo: {
+    fontFamily: "Arial, sans-serif",
+    fontSize: "10px",
+    letterSpacing: "3px",
+    color: "#6b8cae",
+    textTransform: "uppercase",
+  },
+  error: {
+    color: "#c62828",
+    textAlign: "center",
+    marginBottom: "1rem",
+    fontSize: "13px",
+    background: "#ffebee",
+    padding: "8px",
+    borderRadius: "6px",
+  },
+  inputWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    border: "0.5px solid #c5d5e8",
+    borderRadius: "8px",
+    padding: "10px 12px",
+    background: "#f7fafd",
+    marginBottom: "10px",
+  },
+  inputIcon: {
+    fontSize: "15px",
+    color: "#6b8cae",
+  },
+  inputIconRight: {
+    fontSize: "15px",
+    color: "#6b8cae",
+    marginLeft: "auto",
+    cursor: "pointer",
+  },
+  input: {
+    flex: 1,
+    border: "none",
+    background: "transparent",
+    fontSize: "14px",
+    color: "#333",
+    outline: "none",
+  },
+  button: {
+    width: "100%",
+    padding: "12px",
+    background: "#1a5fa8",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: 500,
+    cursor: "pointer",
+    marginTop: "6px",
+  },
+  footer: {
+    textAlign: "center",
+    marginTop: "1.2rem",
+    fontSize: "11px",
+    color: "#a0b4c8",
+  },
 };
