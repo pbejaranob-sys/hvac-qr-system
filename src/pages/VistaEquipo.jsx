@@ -3,7 +3,6 @@ import { db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 const getBadgeStyle = (estado) => {
   if (estado === "Operativo") return { background: "#e8f5e9", color: "#2e7d32" };
@@ -28,33 +27,104 @@ export default function VistaEquipo() {
     setCargando(false);
   };
 
-  const generarPDF = async () => {
-    const elemento = document.getElementById("reporte-equipo");
-    const canvas = await html2canvas(elemento, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true
-    });
-    const imgData = canvas.toDataURL("image/png");
+  const generarPDF = () => {
     const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = pdfWidth;
-    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
+    const margen = 15;
+    const ancho = 180;
+    let y = 20;
 
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pdfHeight;
+    const titulo = (texto) => {
+      nuevaPaginaSiNecesario();
+      pdf.setFontSize(13);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(26, 115, 232);
+      pdf.text(texto, margen, y);
+      y += 7;
+      pdf.setDrawColor(220, 220, 220);
+      pdf.line(margen, y, margen + ancho, y);
+      y += 5;
+    };
 
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
+    const campo = (label, valor) => {
+      if (!valor) return;
+      nuevaPaginaSiNecesario();
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(label + ":", margen, y);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(30, 30, 30);
+      const lines = pdf.splitTextToSize(String(valor), ancho - 40);
+      pdf.text(lines, margen + 40, y);
+      y += lines.length * 6;
+    };
+
+    const salto = () => { y += 4; };
+
+    const nuevaPaginaSiNecesario = () => {
+      if (y > 270) { pdf.addPage(); y = 20; }
+    };
+
+    // Encabezado azul
+    pdf.setFillColor(26, 115, 232);
+    pdf.rect(0, 0, 210, 18, "F");
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(255, 255, 255);
+    pdf.text("REPORTE DE EQUIPO - HVAC QR SYSTEM", margen, 12);
+    y = 28;
+
+    // Estado e ID
+    pdf.setFontSize(11);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(30, 30, 30);
+    pdf.text(`Estado: ${equipo.estado || "Operativo"}`, margen, y);
+    pdf.text(`ID: ${id.slice(0,6).toUpperCase()}`, 140, y);
+    y += 10;
+
+    titulo("DATOS DEL CLIENTE");
+    campo("Cliente", equipo.cliente);
+    campo("Ubicación", equipo.ubicacion);
+    salto();
+
+    titulo("FICHA TÉCNICA");
+    campo("Tipo de equipo", equipo.tipoEquipo);
+    campo("Marca", equipo.marca);
+    campo("Modelo", equipo.modelo);
+    campo("N° Serie", equipo.serie);
+    campo("Capacidad", equipo.capacidad ? equipo.capacidad + " BTU" : "");
+    campo("Refrigerante", equipo.tipoRefrigerante);
+    salto();
+
+    titulo("DATOS ELÉCTRICOS");
+    campo("Voltaje", equipo.voltaje ? equipo.voltaje + " V" : "");
+    campo("Amperaje", equipo.amperaje ? equipo.amperaje + " A" : "");
+    campo("Fases", equipo.fases);
+    salto();
+
+    titulo("MANTENIMIENTO");
+    campo("Último mant.", equipo.ultimoMantenimiento);
+    campo("Observaciones", equipo.observaciones);
+    salto();
+
+    if (equipo.correctivos) {
+      titulo("CORRECTIVOS REALIZADOS");
+      campo("Correctivos", equipo.correctivos);
+      salto();
     }
 
-    pdf.save(`equipo-${id.slice(0,6)}-reporte.pdf`);
+    if (equipo.recomendaciones) {
+      titulo("RECOMENDACIONES");
+      campo("Recomendaciones", equipo.recomendaciones);
+      salto();
+    }
+
+    // Pie de página
+    pdf.setFontSize(9);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text(`Generado el ${new Date().toLocaleDateString("es-PE")} · HVAC QR System`, margen, 290);
+
+    pdf.save(`reporte-equipo-${id.slice(0,6)}.pdf`);
   };
 
   if (cargando) return <div style={styles.centro}>Cargando equipo...</div>;
