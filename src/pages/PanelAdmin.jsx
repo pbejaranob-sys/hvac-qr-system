@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
@@ -13,7 +13,7 @@ const getBadgeStyle = (estado) => {
 };
 
 const ordenarPisos = (a, b) => {
-  const orden = ["sotano", "sótano", "subsuelo", "ss"];
+  const orden = ["sotano", "sÃ³tano", "subsuelo", "ss"];
   const aLow = a.toLowerCase();
   const bLow = b.toLowerCase();
   if (orden.includes(aLow)) return -1;
@@ -56,7 +56,7 @@ const exportarExcel = (cliente, equiposCliente) => {
     td { border: 1px solid #E0E0E0; padding: 4px 6px; }
   </style></head><body>
   <table>
-    <tr><td colspan="13" class="titulo">HVAC QR System — Reporte de equipos</td></tr>
+    <tr><td colspan="13" class="titulo">HVAC QR System â€” Reporte de equipos</td></tr>
     <tr>
       <td colspan="3" class="subtitulo">Cliente: ${cliente}</td>
       <td colspan="3" class="subtitulo">Generado: ${new Date().toLocaleDateString("es-PE")}</td>
@@ -66,13 +66,13 @@ const exportarExcel = (cliente, equiposCliente) => {
     <tr><td colspan="13"></td></tr>
     <tr>
       <td class="header">#</td>
-      <td class="header">Código</td>
+      <td class="header">CÃ³digo</td>
       <td class="header">Piso</td>
       <td class="header">Ambiente</td>
       <td class="header">Tipo equipo</td>
       <td class="header">Marca</td>
       <td class="header">Modelo</td>
-      <td class="header">N° Serie</td>
+      <td class="header">NÂ° Serie</td>
       <td class="header">Capacidad (BTU)</td>
       <td class="header">Refrigerante</td>
       <td class="header">Voltaje</td>
@@ -87,18 +87,18 @@ const exportarExcel = (cliente, equiposCliente) => {
       const filaClass = idx % 2 === 0 ? "fila" : "fila-alt";
       html += `<tr class="${filaClass}">
         <td>${item++}</td>
-        <td class="cod">${e.codigo || "—"}</td>
-        <td>${e.piso || "—"}</td>
-        <td>${e.ambiente || "—"}</td>
-        <td>${e.tipoEquipo || "—"}</td>
-        <td>${e.marca || "—"}</td>
-        <td>${e.modelo || "—"}</td>
-        <td>${e.serie || "—"}</td>
-        <td>${e.capacidad || "—"}</td>
-        <td>${e.tipoRefrigerante || "—"}</td>
-        <td>${e.voltaje ? e.voltaje + "V" : "—"}</td>
+        <td class="cod">${e.codigo || "â€”"}</td>
+        <td>${e.piso || "â€”"}</td>
+        <td>${e.ambiente || "â€”"}</td>
+        <td>${e.tipoEquipo || "â€”"}</td>
+        <td>${e.marca || "â€”"}</td>
+        <td>${e.modelo || "â€”"}</td>
+        <td>${e.serie || "â€”"}</td>
+        <td>${e.capacidad || "â€”"}</td>
+        <td>${e.tipoRefrigerante || "â€”"}</td>
+        <td>${e.voltaje ? e.voltaje + "V" : "â€”"}</td>
         <td class="${estadoClass}">${e.estado || "Operativo"}</td>
-        <td>${e.observaciones || "—"}</td>
+        <td>${e.observaciones || "â€”"}</td>
       </tr>`;
     });
   });
@@ -123,17 +123,17 @@ const exportarPDF = (cliente, equiposCliente) => {
   pdf.setFontSize(13);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(255, 255, 255);
-  pdf.text("HVAC QR System — Reporte de equipos", margen, 13);
+  pdf.text("HVAC QR System â€” Reporte de equipos", margen, 13);
   pdf.setFontSize(10);
   pdf.setFont("helvetica", "normal");
-  pdf.text(`Cliente: ${cliente}   ·   Generado: ${new Date().toLocaleDateString("es-PE")}   ·   Total: ${equiposCliente.length} equipos`, margen, 19);
+  pdf.text(`Cliente: ${cliente}   Â·   Generado: ${new Date().toLocaleDateString("es-PE")}   Â·   Total: ${equiposCliente.length} equipos`, margen, 19);
   y = 28;
 
   const porPiso = agruparPorPiso(equiposCliente);
   const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
   let item = 1;
   const cols = [8, 14, 14, 20, 16, 14, 16, 16, 13, 11, 11, 22, 42];
-  const headers = ["#", "Código", "Piso", "Ambiente", "Tipo equipo", "Marca", "Modelo", "Serie", "Cap.", "Refrig.", "Volt.", "Estado", "Observaciones"];
+  const headers = ["#", "CÃ³digo", "Piso", "Ambiente", "Tipo equipo", "Marca", "Modelo", "Serie", "Cap.", "Refrig.", "Volt.", "Estado", "Observaciones"];
 
   const dibujarEncabezado = () => {
     pdf.setFillColor(21, 101, 192);
@@ -165,11 +165,11 @@ const exportarPDF = (cliente, equiposCliente) => {
         pdf.rect(margen, y - 3, 277, 7, "F");
       }
       const fila = [
-        String(item++), e.codigo || "—", e.piso || "—", e.ambiente || "—",
-        e.tipoEquipo || "—", e.marca || "—", e.modelo || "—", e.serie || "—",
-        e.capacidad ? `${e.capacidad}` : "—",
-        e.tipoRefrigerante || "—", e.voltaje ? `${e.voltaje}V` : "—",
-        e.estado || "Operativo", e.observaciones || "—"
+        String(item++), e.codigo || "â€”", e.piso || "â€”", e.ambiente || "â€”",
+        e.tipoEquipo || "â€”", e.marca || "â€”", e.modelo || "â€”", e.serie || "â€”",
+        e.capacidad ? `${e.capacidad}` : "â€”",
+        e.tipoRefrigerante || "â€”", e.voltaje ? `${e.voltaje}V` : "â€”",
+        e.estado || "Operativo", e.observaciones || "â€”"
       ];
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(7);
@@ -196,10 +196,21 @@ const exportarPDF = (cliente, equiposCliente) => {
 
   pdf.setFontSize(8);
   pdf.setTextColor(150, 150, 150);
-  pdf.text(`HVAC QR System · hvac-qr-system-1odv.vercel.app`, margen, 205);
+  pdf.text(`HVAC QR System Â· hvac-qr-system-1odv.vercel.app`, margen, 205);
   pdf.save(`equipos-${cliente.replace(/\s+/g,"-")}-${new Date().getFullYear()}.pdf`);
 };
 
+const barStyles = {
+  contenedor: { padding: "16px 20px", background: "#f9fafb", borderRadius: "8px", marginBottom: "16px", border: "1px solid #e0e0e0" },
+  titulo: { fontWeight: "bold", fontSize: "13px", color: "#555", marginBottom: "12px" },
+  fila: { display: "flex", alignItems: "center", marginBottom: "8px", gap: "10px" },
+  etiqueta: { width: "180px", fontSize: "13px", color: "#444" },
+  track: { flex: 1, height: "12px", background: "#e0e0e0", borderRadius: "6px", overflow: "hidden" },
+  fill: { height: "100%", borderRadius: "6px", transition: "width 0.5s ease" },
+  pct: { width: "40px", textAlign: "right", fontSize: "13px", fontWeight: "bold" },
+  combinada: { display: "flex", height: "10px", borderRadius: "6px", overflow: "hidden", marginTop: "10px" },
+  leyenda: { display: "flex", gap: "16px", marginTop: "8px", fontSize: "12px", color: "#666" },
+};
 const BarrasEstado = ({ equipos }) => {
   const total = equipos.length;
   if (total === 0) return null;
@@ -212,19 +223,19 @@ const BarrasEstado = ({ equipos }) => {
 
   return (
     <div style={barStyles.contenedor}>
-      <div style={barStyles.titulo}>📊 Estado de equipos</div>
+      <div style={barStyles.titulo}>ðŸ“Š Estado de equipos</div>
       <div style={barStyles.fila}>
-        <span style={barStyles.etiqueta}>✅ Operativo</span>
+        <span style={barStyles.etiqueta}>âœ… Operativo</span>
         <div style={barStyles.track}><div style={{...barStyles.fill, width:`${pOp}%`, background:"#43a047"}}></div></div>
         <span style={{...barStyles.pct, color:"#2e7d32"}}>{pOp}%</span>
       </div>
       <div style={barStyles.fila}>
-        <span style={barStyles.etiqueta}>⚠️ Con observaciones</span>
+        <span style={barStyles.etiqueta}>âš ï¸ Con observaciones</span>
         <div style={barStyles.track}><div style={{...barStyles.fill, width:`${pObs}%`, background:"#ffa726"}}></div></div>
         <span style={{...barStyles.pct, color:"#e65100"}}>{pObs}%</span>
       </div>
       <div style={barStyles.fila}>
-        <span style={barStyles.etiqueta}>🔴 Fuera de servicio</span>
+        <span style={barStyles.etiqueta}>ðŸ”´ Fuera de servicio</span>
         <div style={barStyles.track}><div style={{...barStyles.fill, width:`${pFs}%`, background:"#ef5350"}}></div></div>
         <span style={{...barStyles.pct, color:"#c62828"}}>{pFs}%</span>
       </div>
@@ -292,11 +303,11 @@ export default function PanelAdmin() {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.titulo}>👑 Panel Maestro</h1>
+        <h1 style={styles.titulo}>ðŸ‘‘ Panel Maestro</h1>
         <div style={styles.headerBtns}>
           <button style={styles.btnVerde} onClick={() => navigate("/crear-usuario")}>+ Crear usuario</button>
           <button style={styles.btnAzul} onClick={() => navigate("/registrar")}>+ Nuevo equipo</button>
-          <button style={styles.btnRojo} onClick={handleLogout}>Cerrar sesión</button>
+          <button style={styles.btnRojo} onClick={handleLogout}>Cerrar sesiÃ³n</button>
         </div>
       </div>
 
@@ -328,12 +339,12 @@ export default function PanelAdmin() {
           <div key={cliente} style={styles.clienteBloque}>
             <div style={styles.clienteHeader}>
               <div style={styles.clienteLeft}>
-                <span style={styles.clienteNombre}>👤 {cliente}</span>
+                <span style={styles.clienteNombre}>ðŸ‘¤ {cliente}</span>
                 <span style={styles.clienteCount}>{equiposCliente.length} equipo{equiposCliente.length !== 1 ? "s" : ""}</span>
               </div>
               <div style={styles.exportBtns}>
-                <button style={styles.btnExcel} onClick={() => exportarExcel(cliente, equiposCliente)}>📊 Excel</button>
-                <button style={styles.btnPdfExp} onClick={() => exportarPDF(cliente, equiposCliente)}>📄 PDF</button>
+                <button style={styles.btnExcel} onClick={() => exportarExcel(cliente, equiposCliente)}>ðŸ“Š Excel</button>
+                <button style={styles.btnPdfExp} onClick={() => exportarPDF(cliente, equiposCliente)}>ðŸ“„ PDF</button>
               </div>
             </div>
 
@@ -344,7 +355,7 @@ export default function PanelAdmin() {
                 <thead>
                   <tr style={styles.thead}>
                     <th style={styles.th}>Item</th>
-                    <th style={styles.th}>Código</th>
+                    <th style={styles.th}>CÃ³digo</th>
                     <th style={styles.th}>Piso</th>
                     <th style={styles.th}>Ambiente</th>
                     <th style={styles.th}>Tipo equipo</th>
@@ -353,10 +364,10 @@ export default function PanelAdmin() {
                     <th style={styles.th}>Serie</th>
                     <th style={styles.th}>
                       <select style={styles.thSelect} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
-                        <option value="Todos">Estado ▼</option>
-                        <option value="Operativo">✅ Operativo</option>
-                        <option value="Operativo con observaciones">⚠️ Con observaciones</option>
-                        <option value="Fuera de servicio">🔴 Fuera de servicio</option>
+                        <option value="Todos">Estado â–¼</option>
+                        <option value="Operativo">âœ… Operativo</option>
+                        <option value="Operativo con observaciones">âš ï¸ Con observaciones</option>
+                        <option value="Fuera de servicio">ðŸ”´ Fuera de servicio</option>
                       </select>
                     </th>
                     <th style={styles.th}>Acciones</th>
@@ -367,7 +378,7 @@ export default function PanelAdmin() {
                     <React.Fragment key={piso}>
                       <tr>
                         <td colSpan={10} style={styles.pisoHeader}>
-                          🏢 {piso === "Sin piso" ? "Sin piso asignado" : `Piso ${piso}`}
+                          ðŸ¢ {piso === "Sin piso" ? "Sin piso asignado" : `Piso ${piso}`}
                         </td>
                       </tr>
                       {porPiso[piso].map((equipo) => {
@@ -376,14 +387,14 @@ export default function PanelAdmin() {
                           <tr key={equipo.id} style={styles.tr}>
                             <td style={{...styles.td, textAlign:"center"}}>{item}</td>
                             <td style={{...styles.td, textAlign:"center"}}>
-                              {equipo.codigo ? <span style={styles.codigo}>{equipo.codigo}</span> : "—"}
+                              {equipo.codigo ? <span style={styles.codigo}>{equipo.codigo}</span> : "â€”"}
                             </td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.piso || "—"}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.ambiente || "—"}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.tipoEquipo || "—"}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.marca || "—"}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.modelo || "—"}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.serie || "—"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.piso || "â€”"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.ambiente || "â€”"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.tipoEquipo || "â€”"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.marca || "â€”"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.modelo || "â€”"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.serie || "â€”"}</td>
                             <td style={{...styles.td, textAlign:"center"}}>
                               <span style={{...styles.badge, ...getBadgeStyle(equipo.estado)}}>
                                 {equipo.estado || "Operativo"}
@@ -391,9 +402,9 @@ export default function PanelAdmin() {
                             </td>
                             <td style={styles.td}>
                               <div style={styles.acciones}>
-                                <button style={styles.btnInfo} onClick={() => navigate(`/equipo/${equipo.id}`)}>Información</button>
+                                <button style={styles.btnInfo} onClick={() => navigate(`/equipo/${equipo.id}`)}>InformaciÃ³n</button>
                                 <button style={styles.btnEditar} onClick={() => navigate(`/registrar?id=${equipo.id}`)}>Editar</button>
-                                <button style={styles.btnCotizar} onClick={() => navigate(`/cotizacion/${equipo.id}`)}>Cotización</button>
+                                <button style={styles.btnCotizar} onClick={() => navigate(`/cotizacion/${equipo.id}`)}>CotizaciÃ³n</button>
                               </div>
                             </td>
                           </tr>
