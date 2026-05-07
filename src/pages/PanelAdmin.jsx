@@ -4,7 +4,7 @@ import { db, auth } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 
 const getBadgeStyle = (estado) => {
@@ -38,38 +38,69 @@ const agruparPorPiso = (equipos) => {
 const exportarExcel = (cliente, equiposCliente) => {
   const porPiso = agruparPorPiso(equiposCliente);
   const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
-  const filas = [];
   let item = 1;
 
-  filas.push([`HVAC QR System — Reporte de equipos`]);
-  filas.push([`Cliente: ${cliente}`, "", `Generado: ${new Date().toLocaleDateString("es-PE")}`, "", `Total: ${equiposCliente.length} equipos`]);
-  filas.push([]);
-  filas.push(["#", "Piso", "Ambiente", "Tipo equipo", "Marca", "Modelo", "N° Serie", "Capacidad (BTU)", "Refrigerante", "Voltaje", "Estado", "Observaciones"]);
+  const estiloTitulo = { font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1A73E8" } }, alignment: { horizontal: "left" } };
+  const estiloSubtitulo = { font: { sz: 10, color: { rgb: "555555" } }, fill: { fgColor: { rgb: "F0F4F8" } } };
+  const estiloHeader = { font: { bold: true, sz: 10, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1565C0" } }, alignment: { horizontal: "center", wrapText: true }, border: { bottom: { style: "thin", color: { rgb: "FFFFFF" } } } };
+  const estiloPiso = { font: { bold: true, sz: 10, color: { rgb: "0D47A1" } }, fill: { fgColor: { rgb: "BBDEFB" } } };
+  const estiloFila = { font: { sz: 9 }, alignment: { wrapText: true, vertical: "center" }, border: { bottom: { style: "thin", color: { rgb: "E0E0E0" } } } };
+  const estiloFilaAlt = { font: { sz: 9 }, fill: { fgColor: { rgb: "F8F9FA" } }, alignment: { wrapText: true, vertical: "center" }, border: { bottom: { style: "thin", color: { rgb: "E0E0E0" } } } };
+  const estiloOp = { font: { bold: true, sz: 9, color: { rgb: "1B5E20" } }, fill: { fgColor: { rgb: "C8E6C9" } }, alignment: { horizontal: "center" } };
+  const estiloObs = { font: { bold: true, sz: 9, color: { rgb: "E65100" } }, fill: { fgColor: { rgb: "FFF9C4" } }, alignment: { horizontal: "center" } };
+  const estiloFs = { font: { bold: true, sz: 9, color: { rgb: "B71C1C" } }, fill: { fgColor: { rgb: "FFCDD2" } }, alignment: { horizontal: "center" } };
+
+  const getEstadoStyle = (estado) => {
+    if (estado === "Operativo") return estiloOp;
+    if (estado === "Operativo con observaciones") return estiloObs;
+    return estiloFs;
+  };
+
+  const ws = {};
+  let row = 0;
+
+  const setCell = (r, c, v, s) => {
+    const ref = XLSX.utils.encode_cell({ r, c });
+    ws[ref] = { v, s };
+  };
+
+  setCell(row, 0, "HVAC QR System — Reporte de equipos", estiloTitulo);
+  row++;
+  setCell(row, 0, `Cliente: ${cliente}`, estiloSubtitulo);
+  setCell(row, 2, `Generado: ${new Date().toLocaleDateString("es-PE")}`, estiloSubtitulo);
+  setCell(row, 4, `Total: ${equiposCliente.length} equipos`, estiloSubtitulo);
+  row++;
+  row++;
+
+  const headers = ["#", "Piso", "Ambiente", "Tipo equipo", "Marca", "Modelo", "N° Serie", "Capacidad (BTU)", "Refrigerante", "Voltaje", "Estado", "Observaciones"];
+  headers.forEach((h, c) => setCell(row, c, h, estiloHeader));
+  row++;
 
   pisosOrdenados.forEach(piso => {
-    filas.push([`PISO: ${piso.toUpperCase()}`]);
-    porPiso[piso].forEach(e => {
-      filas.push([
-        item++,
-        e.piso || "—",
-        e.ambiente || "—",
-        e.tipoEquipo || "—",
-        e.marca || "—",
-        e.modelo || "—",
-        e.serie || "—",
-        e.capacidad || "—",
-        e.tipoRefrigerante || "—",
+    setCell(row, 0, `PISO: ${piso.toUpperCase()}`, estiloPiso);
+    for (let c = 1; c < 12; c++) setCell(row, c, "", estiloPiso);
+    row++;
+    porPiso[piso].forEach((e, idx) => {
+      const estilo = idx % 2 === 0 ? estiloFila : estiloFilaAlt;
+      const datos = [
+        item++, e.piso || "—", e.ambiente || "—", e.tipoEquipo || "—",
+        e.marca || "—", e.modelo || "—", e.serie || "—",
+        e.capacidad || "—", e.tipoRefrigerante || "—",
         e.voltaje ? `${e.voltaje}V` : "—",
-        e.estado || "Operativo",
-        e.observaciones || "—"
-      ]);
+        e.estado || "Operativo", e.observaciones || "—"
+      ];
+      datos.forEach((v, c) => {
+        if (c === 10) setCell(row, c, v, getEstadoStyle(String(v)));
+        else setCell(row, c, v, estilo);
+      });
+      row++;
     });
   });
 
-  const ws = XLSX.utils.aoa_to_sheet(filas);
-  ws["!cols"] = [
-    {wch:5},{wch:10},{wch:18},{wch:16},{wch:12},{wch:14},{wch:14},{wch:14},{wch:12},{wch:10},{wch:22},{wch:40}
-  ];
+  ws["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: row, c: 11 } });
+  ws["!cols"] = [{wch:5},{wch:10},{wch:18},{wch:16},{wch:12},{wch:14},{wch:14},{wch:14},{wch:12},{wch:10},{wch:22},{wch:40}];
+  ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 11 } }];
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, cliente.slice(0,31));
   XLSX.writeFile(wb, `equipos-${cliente.replace(/\s+/g,"-")}-${new Date().getFullYear()}.xlsx`);
@@ -94,7 +125,6 @@ const exportarPDF = (cliente, equiposCliente) => {
   const porPiso = agruparPorPiso(equiposCliente);
   const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
   let item = 1;
-
   const cols = [10, 18, 22, 18, 14, 18, 18, 14, 12, 12, 24, 47];
   const headers = ["#", "Piso", "Ambiente", "Tipo equipo", "Marca", "Modelo", "Serie", "Capacidad", "Refrig.", "Voltaje", "Estado", "Observaciones"];
 
@@ -105,10 +135,7 @@ const exportarPDF = (cliente, equiposCliente) => {
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(255, 255, 255);
     let x = margen;
-    headers.forEach((h, i) => {
-      pdf.text(h, x + 1, y + 1);
-      x += cols[i];
-    });
+    headers.forEach((h, i) => { pdf.text(h, x + 1, y + 1); x += cols[i]; });
     y += 7;
   };
 
@@ -124,27 +151,31 @@ const exportarPDF = (cliente, equiposCliente) => {
     pdf.text(`PISO: ${piso.toUpperCase()}`, margen + 2, y + 2);
     y += 7;
 
-    porPiso[piso].forEach(e => {
+    porPiso[piso].forEach((e, idx) => {
       if (y > 185) { pdf.addPage(); y = 15; dibujarEncabezado(); }
+      if (idx % 2 === 0) {
+        pdf.setFillColor(248, 249, 250);
+        pdf.rect(margen, y - 3, 277, 7, "F");
+      }
       const fila = [
-        String(item++),
-        e.piso || "—",
-        e.ambiente || "—",
-        e.tipoEquipo || "—",
-        e.marca || "—",
-        e.modelo || "—",
-        e.serie || "—",
+        String(item++), e.piso || "—", e.ambiente || "—", e.tipoEquipo || "—",
+        e.marca || "—", e.modelo || "—", e.serie || "—",
         e.capacidad ? `${e.capacidad} BTU` : "—",
-        e.tipoRefrigerante || "—",
-        e.voltaje ? `${e.voltaje}V` : "—",
-        e.estado || "Operativo",
-        e.observaciones || "—"
+        e.tipoRefrigerante || "—", e.voltaje ? `${e.voltaje}V` : "—",
+        e.estado || "Operativo", e.observaciones || "—"
       ];
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(50, 50, 50);
       pdf.setFontSize(7.5);
       let x = margen;
       fila.forEach((val, i) => {
+        if (i === 10) {
+          if (val === "Operativo") pdf.setTextColor(27, 94, 32);
+          else if (val === "Operativo con observaciones") pdf.setTextColor(230, 81, 0);
+          else pdf.setTextColor(183, 28, 28);
+        } else {
+          pdf.setTextColor(50, 50, 50);
+        }
         const texto = pdf.splitTextToSize(val, cols[i] - 2);
         pdf.text(texto[0], x + 1, y + 2);
         x += cols[i];
@@ -158,7 +189,6 @@ const exportarPDF = (cliente, equiposCliente) => {
   pdf.setFontSize(8);
   pdf.setTextColor(150, 150, 150);
   pdf.text(`HVAC QR System · hvac-qr-system-1odv.vercel.app`, margen, 205);
-
   pdf.save(`equipos-${cliente.replace(/\s+/g,"-")}-${new Date().getFullYear()}.pdf`);
 };
 
@@ -238,12 +268,8 @@ export default function PanelAdmin() {
                 <span style={styles.clienteCount}>{equiposCliente.length} equipo{equiposCliente.length !== 1 ? "s" : ""}</span>
               </div>
               <div style={styles.exportBtns}>
-                <button style={styles.btnExcel} onClick={() => exportarExcel(cliente, equiposCliente)}>
-                  📊 Excel
-                </button>
-                <button style={styles.btnPdfExp} onClick={() => exportarPDF(cliente, equiposCliente)}>
-                  📄 PDF
-                </button>
+                <button style={styles.btnExcel} onClick={() => exportarExcel(cliente, equiposCliente)}>📊 Excel</button>
+                <button style={styles.btnPdfExp} onClick={() => exportarPDF(cliente, equiposCliente)}>📄 PDF</button>
               </div>
             </div>
             <div style={styles.tablaWrapper}>
