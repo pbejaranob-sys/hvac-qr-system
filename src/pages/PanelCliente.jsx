@@ -10,6 +10,18 @@ const getBadgeStyle = (estado) => {
   return { background: "#ffebee", color: "#c62828" };
 };
 
+const ordenarPisos = (a, b) => {
+  const orden = ["sotano", "sótano", "subsuelo", "ss"];
+  const aLow = a.toLowerCase();
+  const bLow = b.toLowerCase();
+  if (orden.includes(aLow)) return -1;
+  if (orden.includes(bLow)) return 1;
+  const aNum = parseInt(a);
+  const bNum = parseInt(b);
+  if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+  return a.localeCompare(b);
+};
+
 export default function PanelCliente() {
   const [equipos, setEquipos] = useState([]);
   const [usuario, setUsuario] = useState(null);
@@ -43,7 +55,21 @@ export default function PanelCliente() {
     navigate("/");
   };
 
+  const agruparPorPiso = (equipos) => {
+    const porPiso = {};
+    equipos.forEach(e => {
+      const piso = e.piso || "Sin piso";
+      if (!porPiso[piso]) porPiso[piso] = [];
+      porPiso[piso].push(e);
+    });
+    return porPiso;
+  };
+
   if (cargando) return <div style={styles.centro}>Cargando...</div>;
+
+  const porPiso = agruparPorPiso(equipos);
+  const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
+  let itemNum = 1;
 
   return (
     <div style={styles.container}>
@@ -72,27 +98,63 @@ export default function PanelCliente() {
         </div>
       )}
 
-      <div style={styles.grid}>
-        {equipos.map((equipo) => (
-          <div key={equipo.id} style={styles.card}>
-            <div style={styles.cardHeader}>
-              <div>
-                <div style={styles.tipoEquipo}>{equipo.tipoEquipo || "Equipo"}</div>
-                <div style={styles.marca}>{equipo.marca} — {equipo.modelo}</div>
-              </div>
-              <span style={{...styles.badge, ...getBadgeStyle(equipo.estado)}}>{equipo.estado || "Operativo"}</span>
-            </div>
-            <p style={styles.info}>📍 {equipo.ubicacion}</p>
-            <p style={styles.info}>🔧 Últ. mant: {equipo.ultimoMantenimiento || "Sin registro"}</p>
-            <p style={styles.info}>❄️ {equipo.capacidad} BTU · {equipo.tipoRefrigerante || ""}</p>
-            {equipo.voltaje && <p style={styles.info}>⚡ {equipo.voltaje}V · {equipo.amperaje}A · {equipo.fases}</p>}
-            <div style={styles.cardBtns}>
-              <button style={styles.btnAzul} onClick={() => navigate(`/equipo/${equipo.id}`)}>Ver QR / Detalle</button>
-              <button style={styles.btnEditar} onClick={() => navigate(`/registrar?id=${equipo.id}`)}>Editar</button>
-            </div>
+      {equipos.length > 0 && (
+        <div style={styles.clienteBloque}>
+          <div style={styles.tablaWrapper}>
+            <table style={styles.tabla}>
+              <thead>
+                <tr style={styles.thead}>
+                  <th style={styles.th}>Item</th>
+                  <th style={styles.th}>Piso</th>
+                  <th style={styles.th}>Ambiente</th>
+                  <th style={styles.th}>Tipo equipo</th>
+                  <th style={styles.th}>Marca</th>
+                  <th style={styles.th}>Modelo</th>
+                  <th style={styles.th}>Serie</th>
+                  <th style={styles.th}>Estado</th>
+                  <th style={styles.th}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pisosOrdenados.map(piso => (
+                  <>
+                    <tr key={`piso-${piso}`}>
+                      <td colSpan={9} style={styles.pisoHeader}>
+                        🏢 {piso === "Sin piso" ? "Sin piso asignado" : `Piso ${piso}`}
+                      </td>
+                    </tr>
+                    {porPiso[piso].map((equipo) => {
+                      const item = itemNum++;
+                      return (
+                        <tr key={equipo.id} style={styles.tr}>
+                          <td style={styles.td}>{item}</td>
+                          <td style={styles.td}>{equipo.piso || "—"}</td>
+                          <td style={styles.td}>{equipo.ambiente || "—"}</td>
+                          <td style={styles.td}>{equipo.tipoEquipo || "—"}</td>
+                          <td style={styles.td}>{equipo.marca || "—"}</td>
+                          <td style={styles.td}>{equipo.modelo || "—"}</td>
+                          <td style={styles.td}>{equipo.serie || "—"}</td>
+                          <td style={styles.td}>
+                            <span style={{...styles.badge, ...getBadgeStyle(equipo.estado)}}>
+                              {equipo.estado || "Operativo"}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <div style={styles.acciones}>
+                              <button style={styles.btnAzul} onClick={() => navigate(`/equipo/${equipo.id}`)}>Ver QR</button>
+                              <button style={styles.btnEditar} onClick={() => navigate(`/registrar?id=${equipo.id}`)}>Editar</button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -108,17 +170,19 @@ const styles = {
   stat: { background: "white", borderRadius: "10px", padding: "0.75rem", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
   statNum: { fontSize: "24px", fontWeight: "700", color: "#1a73e8" },
   statLabel: { fontSize: "11px", color: "#888", marginTop: "4px" },
-  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" },
-  card: { background: "white", borderRadius: "10px", padding: "1rem", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
-  cardHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" },
-  tipoEquipo: { fontSize: "11px", color: "#888", textTransform: "uppercase", marginBottom: "2px" },
-  marca: { fontWeight: "600", color: "#222", fontSize: "14px" },
+  clienteBloque: { background: "white", borderRadius: "12px", padding: "1.25rem", boxShadow: "0 2px 10px rgba(0,0,0,0.07)" },
+  tablaWrapper: { overflowX: "auto" },
+  tabla: { width: "100%", borderCollapse: "collapse", fontSize: "13px" },
+  thead: { background: "#f0f4f8" },
+  th: { padding: "10px 12px", textAlign: "left", fontWeight: "600", color: "#444", whiteSpace: "nowrap", borderBottom: "2px solid #e0e0e0" },
+  pisoHeader: { background: "#e3f2fd", color: "#1565c0", fontWeight: "700", padding: "8px 12px", fontSize: "13px" },
+  tr: { borderBottom: "1px solid #f0f0f0" },
+  td: { padding: "10px 12px", color: "#444", whiteSpace: "nowrap" },
   badge: { padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "600", whiteSpace: "nowrap" },
-  info: { color: "#555", fontSize: "13px", margin: "3px 0" },
-  cardBtns: { display: "flex", gap: "0.5rem", marginTop: "0.75rem" },
+  acciones: { display: "flex", gap: "6px" },
   btnVerde: { background: "#34a853", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px" },
   btnRojo: { background: "#ea4335", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px" },
-  btnAzul: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", fontSize: "12px", flex: 1 },
-  btnEditar: { background: "#f9ab00", color: "white", border: "none", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", fontSize: "12px" },
+  btnAzul: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px" },
+  btnEditar: { background: "#f9ab00", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px" },
   vacio: { textAlign: "center", padding: "3rem", background: "white", borderRadius: "12px", color: "#666" }
 };

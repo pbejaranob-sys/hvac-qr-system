@@ -10,6 +10,8 @@ export default function RegistrarEquipo() {
 
   const [form, setForm] = useState({
     cliente: "",
+    piso: "",
+    ambiente: "",
     tipoEquipo: "",
     marca: "",
     modelo: "",
@@ -54,7 +56,7 @@ export default function RegistrarEquipo() {
         });
         alert("Equipo registrado correctamente");
       }
-      navigate("/dashboard");
+      navigate(-1);
     } catch (error) {
       alert("Error al guardar: " + error.message);
     }
@@ -64,7 +66,7 @@ export default function RegistrarEquipo() {
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={styles.header}>
-          <button style={styles.btnVolver} onClick={() => navigate("/dashboard")}>← Volver</button>
+          <button style={styles.btnVolver} onClick={() => navigate(-1)}>← Volver</button>
           <h2 style={styles.titulo}>{equipoId ? "Editar Equipo" : "Registrar Nuevo Equipo"}</h2>
         </div>
 
@@ -74,11 +76,19 @@ export default function RegistrarEquipo() {
           <div style={styles.grid2}>
             <div>
               <label style={styles.label}>Nombre del cliente / empresa</label>
-              <input style={styles.input} name="cliente" placeholder="Clínica San Marcos, Empresa XYZ..." value={form.cliente} onChange={handleChange} required />
+              <input style={styles.input} name="cliente" placeholder="Clínica San Marcos..." value={form.cliente} onChange={handleChange} required />
             </div>
             <div>
-              <label style={styles.label}>Ubicación del equipo</label>
-              <input style={styles.input} name="ubicacion" placeholder="Sala principal, Piso 3..." value={form.ubicacion} onChange={handleChange} required />
+              <label style={styles.label}>Piso</label>
+              <input style={styles.input} name="piso" placeholder="1, 2, Sótano, Azotea..." value={form.piso} onChange={handleChange} required />
+            </div>
+            <div>
+              <label style={styles.label}>Ambiente</label>
+              <input style={styles.input} name="ambiente" placeholder="Sala principal, Oficina..." value={form.ambiente} onChange={handleChange} required />
+            </div>
+            <div>
+              <label style={styles.label}>Ubicación adicional</label>
+              <input style={styles.input} name="ubicacion" placeholder="Referencia adicional..." value={form.ubicacion} onChange={handleChange} />
             </div>
           </div>
 
