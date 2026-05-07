@@ -73,8 +73,13 @@ export default function VistaEquipo() {
 
         <div style={styles.seccion}>
           <p style={styles.seccionTitulo}>🔧 Último mantenimiento</p>
-          <p style={styles.fecha}>{equipo.ultimoMantenimiento || "Sin registro"}</p>
-          <p style={styles.texto}>{equipo.observaciones || "Sin observaciones registradas"}</p>
+<p style={styles.fecha}>{equipo.ultimoMantenimiento || "Sin registro"}</p>
+{equipo.observaciones && (
+  <>
+    <p style={styles.seccionTitulo}>📝 Observaciones</p>
+    <p style={styles.texto}>{equipo.observaciones}</p>
+  </>
+)}
         </div>
 
         {equipo.correctivos && (
