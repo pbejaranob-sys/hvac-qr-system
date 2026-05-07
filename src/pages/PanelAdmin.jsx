@@ -4,6 +4,8 @@ import { db, auth } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
 
 const getBadgeStyle = (estado) => {
   if (estado === "Operativo") return { background: "#e8f5e9", color: "#2e7d32" };
@@ -21,6 +23,143 @@ const ordenarPisos = (a, b) => {
   const bNum = parseInt(b);
   if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
   return a.localeCompare(b);
+};
+
+const agruparPorPiso = (equipos) => {
+  const porPiso = {};
+  equipos.forEach(e => {
+    const piso = e.piso || "Sin piso";
+    if (!porPiso[piso]) porPiso[piso] = [];
+    porPiso[piso].push(e);
+  });
+  return porPiso;
+};
+
+const exportarExcel = (cliente, equiposCliente) => {
+  const porPiso = agruparPorPiso(equiposCliente);
+  const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
+  const filas = [];
+  let item = 1;
+
+  filas.push([`HVAC QR System — Reporte de equipos`]);
+  filas.push([`Cliente: ${cliente}`, "", `Generado: ${new Date().toLocaleDateString("es-PE")}`, "", `Total: ${equiposCliente.length} equipos`]);
+  filas.push([]);
+  filas.push(["#", "Piso", "Ambiente", "Tipo equipo", "Marca", "Modelo", "N° Serie", "Capacidad (BTU)", "Refrigerante", "Voltaje", "Estado", "Observaciones"]);
+
+  pisosOrdenados.forEach(piso => {
+    filas.push([`PISO: ${piso.toUpperCase()}`]);
+    porPiso[piso].forEach(e => {
+      filas.push([
+        item++,
+        e.piso || "—",
+        e.ambiente || "—",
+        e.tipoEquipo || "—",
+        e.marca || "—",
+        e.modelo || "—",
+        e.serie || "—",
+        e.capacidad || "—",
+        e.tipoRefrigerante || "—",
+        e.voltaje ? `${e.voltaje}V` : "—",
+        e.estado || "Operativo",
+        e.observaciones || "—"
+      ]);
+    });
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(filas);
+  ws["!cols"] = [
+    {wch:5},{wch:10},{wch:18},{wch:16},{wch:12},{wch:14},{wch:14},{wch:14},{wch:12},{wch:10},{wch:22},{wch:40}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, cliente.slice(0,31));
+  XLSX.writeFile(wb, `equipos-${cliente.replace(/\s+/g,"-")}-${new Date().getFullYear()}.xlsx`);
+};
+
+const exportarPDF = (cliente, equiposCliente) => {
+  const pdf = new jsPDF("l", "mm", "a4");
+  const margen = 10;
+  let y = 15;
+
+  pdf.setFillColor(26, 115, 232);
+  pdf.rect(0, 0, 297, 20, "F");
+  pdf.setFontSize(13);
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(255, 255, 255);
+  pdf.text("HVAC QR System — Reporte de equipos", margen, 13);
+  pdf.setFontSize(10);
+  pdf.setFont("helvetica", "normal");
+  pdf.text(`Cliente: ${cliente}   ·   Generado: ${new Date().toLocaleDateString("es-PE")}   ·   Total: ${equiposCliente.length} equipos`, margen, 19);
+  y = 28;
+
+  const porPiso = agruparPorPiso(equiposCliente);
+  const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
+  let item = 1;
+
+  const cols = [10, 18, 22, 18, 14, 18, 18, 14, 12, 12, 24, 47];
+  const headers = ["#", "Piso", "Ambiente", "Tipo equipo", "Marca", "Modelo", "Serie", "Capacidad", "Refrig.", "Voltaje", "Estado", "Observaciones"];
+
+  const dibujarEncabezado = () => {
+    pdf.setFillColor(21, 101, 192);
+    pdf.rect(margen, y - 4, 277, 8, "F");
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(255, 255, 255);
+    let x = margen;
+    headers.forEach((h, i) => {
+      pdf.text(h, x + 1, y + 1);
+      x += cols[i];
+    });
+    y += 7;
+  };
+
+  dibujarEncabezado();
+
+  pisosOrdenados.forEach(piso => {
+    if (y > 185) { pdf.addPage(); y = 15; dibujarEncabezado(); }
+    pdf.setFillColor(187, 222, 251);
+    pdf.rect(margen, y - 3, 277, 7, "F");
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(13, 71, 161);
+    pdf.text(`PISO: ${piso.toUpperCase()}`, margen + 2, y + 2);
+    y += 7;
+
+    porPiso[piso].forEach(e => {
+      if (y > 185) { pdf.addPage(); y = 15; dibujarEncabezado(); }
+      const fila = [
+        String(item++),
+        e.piso || "—",
+        e.ambiente || "—",
+        e.tipoEquipo || "—",
+        e.marca || "—",
+        e.modelo || "—",
+        e.serie || "—",
+        e.capacidad ? `${e.capacidad} BTU` : "—",
+        e.tipoRefrigerante || "—",
+        e.voltaje ? `${e.voltaje}V` : "—",
+        e.estado || "Operativo",
+        e.observaciones || "—"
+      ];
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(50, 50, 50);
+      pdf.setFontSize(7.5);
+      let x = margen;
+      fila.forEach((val, i) => {
+        const texto = pdf.splitTextToSize(val, cols[i] - 2);
+        pdf.text(texto[0], x + 1, y + 2);
+        x += cols[i];
+      });
+      pdf.setDrawColor(220, 220, 220);
+      pdf.line(margen, y + 4, margen + 277, y + 4);
+      y += 7;
+    });
+  });
+
+  pdf.setFontSize(8);
+  pdf.setTextColor(150, 150, 150);
+  pdf.text(`HVAC QR System · hvac-qr-system-1odv.vercel.app`, margen, 205);
+
+  pdf.save(`equipos-${cliente.replace(/\s+/g,"-")}-${new Date().getFullYear()}.pdf`);
 };
 
 export default function PanelAdmin() {
@@ -56,16 +195,6 @@ export default function PanelAdmin() {
     agrupados[cliente].push(equipo);
   });
 
-  const agruparPorPiso = (equipos) => {
-    const porPiso = {};
-    equipos.forEach(e => {
-      const piso = e.piso || "Sin piso";
-      if (!porPiso[piso]) porPiso[piso] = [];
-      porPiso[piso].push(e);
-    });
-    return porPiso;
-  };
-
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -90,9 +219,7 @@ export default function PanelAdmin() {
           <span style={styles.filtroLabel}>Cliente:</span>
           <div style={styles.filtrosBtns}>
             {clientes.map(c => (
-              <button key={c} style={{...styles.filtroBtn, ...(filtro === c ? styles.filtroActivo : {})}} onClick={() => setFiltro(c)}>
-                {c}
-              </button>
+              <button key={c} style={{...styles.filtroBtn, ...(filtro === c ? styles.filtroActivo : {})}} onClick={() => setFiltro(c)}>{c}</button>
             ))}
           </div>
         </div>
@@ -106,8 +233,18 @@ export default function PanelAdmin() {
         return (
           <div key={cliente} style={styles.clienteBloque}>
             <div style={styles.clienteHeader}>
-              <span style={styles.clienteNombre}>👤 {cliente}</span>
-              <span style={styles.clienteCount}>{equiposCliente.length} equipo{equiposCliente.length !== 1 ? "s" : ""}</span>
+              <div style={styles.clienteLeft}>
+                <span style={styles.clienteNombre}>👤 {cliente}</span>
+                <span style={styles.clienteCount}>{equiposCliente.length} equipo{equiposCliente.length !== 1 ? "s" : ""}</span>
+              </div>
+              <div style={styles.exportBtns}>
+                <button style={styles.btnExcel} onClick={() => exportarExcel(cliente, equiposCliente)}>
+                  📊 Excel
+                </button>
+                <button style={styles.btnPdfExp} onClick={() => exportarPDF(cliente, equiposCliente)}>
+                  📄 PDF
+                </button>
+              </div>
             </div>
             <div style={styles.tablaWrapper}>
               <table style={styles.tabla}>
@@ -193,9 +330,13 @@ const styles = {
   filtroBtn: { padding: "6px 14px", borderRadius: "20px", border: "1px solid #ddd", background: "white", cursor: "pointer", fontSize: "13px", color: "#555" },
   filtroActivo: { background: "#1a73e8", color: "white", border: "1px solid #1a73e8" },
   clienteBloque: { background: "white", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.5rem", boxShadow: "0 2px 10px rgba(0,0,0,0.07)" },
-  clienteHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", paddingBottom: "0.75rem", borderBottom: "2px solid #f0f4f8" },
+  clienteHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", paddingBottom: "0.75rem", borderBottom: "2px solid #f0f4f8", flexWrap: "wrap", gap: "8px" },
+  clienteLeft: { display: "flex", alignItems: "center", gap: "12px" },
   clienteNombre: { fontSize: "17px", fontWeight: "700", color: "#1a73e8" },
   clienteCount: { fontSize: "13px", color: "#888", background: "#f0f4f8", padding: "3px 10px", borderRadius: "20px" },
+  exportBtns: { display: "flex", gap: "8px" },
+  btnExcel: { background: "#217346", color: "white", border: "none", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "13px", fontWeight: "500" },
+  btnPdfExp: { background: "#e53935", color: "white", border: "none", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "13px", fontWeight: "500" },
   tablaWrapper: { overflowX: "auto" },
   tabla: { width: "100%", borderCollapse: "collapse", fontSize: "13px" },
   thead: { background: "#f0f4f8" },
