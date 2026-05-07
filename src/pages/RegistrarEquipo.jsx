@@ -10,6 +10,7 @@ export default function RegistrarEquipo() {
 
   const [form, setForm] = useState({
     cliente: "",
+    codigo: "",
     piso: "",
     ambiente: "",
     tipoEquipo: "",
@@ -77,6 +78,10 @@ export default function RegistrarEquipo() {
             <div>
               <label style={styles.label}>Nombre del cliente / empresa</label>
               <input style={styles.input} name="cliente" placeholder="Clínica San Marcos..." value={form.cliente} onChange={handleChange} required />
+            </div>
+            <div>
+              <label style={styles.label}>Código del equipo</label>
+              <input style={styles.input} name="codigo" placeholder="AC-001, VE-002, FC-003..." value={form.codigo || ""} onChange={handleChange} />
             </div>
             <div>
               <label style={styles.label}>Piso</label>

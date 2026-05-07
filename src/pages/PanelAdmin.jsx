@@ -4,7 +4,6 @@ import { db, auth } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 
 const getBadgeStyle = (estado) => {
@@ -40,70 +39,78 @@ const exportarExcel = (cliente, equiposCliente) => {
   const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
   let item = 1;
 
-  const estiloTitulo = { font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1A73E8" } }, alignment: { horizontal: "left" } };
-  const estiloSubtitulo = { font: { sz: 10, color: { rgb: "555555" } }, fill: { fgColor: { rgb: "F0F4F8" } } };
-  const estiloHeader = { font: { bold: true, sz: 10, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1565C0" } }, alignment: { horizontal: "center", wrapText: true }, border: { bottom: { style: "thin", color: { rgb: "FFFFFF" } } } };
-  const estiloPiso = { font: { bold: true, sz: 10, color: { rgb: "0D47A1" } }, fill: { fgColor: { rgb: "BBDEFB" } } };
-  const estiloFila = { font: { sz: 9 }, alignment: { wrapText: true, vertical: "center" }, border: { bottom: { style: "thin", color: { rgb: "E0E0E0" } } } };
-  const estiloFilaAlt = { font: { sz: 9 }, fill: { fgColor: { rgb: "F8F9FA" } }, alignment: { wrapText: true, vertical: "center" }, border: { bottom: { style: "thin", color: { rgb: "E0E0E0" } } } };
-  const estiloOp = { font: { bold: true, sz: 9, color: { rgb: "1B5E20" } }, fill: { fgColor: { rgb: "C8E6C9" } }, alignment: { horizontal: "center" } };
-  const estiloObs = { font: { bold: true, sz: 9, color: { rgb: "E65100" } }, fill: { fgColor: { rgb: "FFF9C4" } }, alignment: { horizontal: "center" } };
-  const estiloFs = { font: { bold: true, sz: 9, color: { rgb: "B71C1C" } }, fill: { fgColor: { rgb: "FFCDD2" } }, alignment: { horizontal: "center" } };
-
-  const getEstadoStyle = (estado) => {
-    if (estado === "Operativo") return estiloOp;
-    if (estado === "Operativo con observaciones") return estiloObs;
-    return estiloFs;
-  };
-
-  const ws = {};
-  let row = 0;
-
-  const setCell = (r, c, v, s) => {
-    const ref = XLSX.utils.encode_cell({ r, c });
-    ws[ref] = { v, s };
-  };
-
-  setCell(row, 0, "HVAC QR System — Reporte de equipos", estiloTitulo);
-  row++;
-  setCell(row, 0, `Cliente: ${cliente}`, estiloSubtitulo);
-  setCell(row, 2, `Generado: ${new Date().toLocaleDateString("es-PE")}`, estiloSubtitulo);
-  setCell(row, 4, `Total: ${equiposCliente.length} equipos`, estiloSubtitulo);
-  row++;
-  row++;
-
-  const headers = ["#", "Piso", "Ambiente", "Tipo equipo", "Marca", "Modelo", "N° Serie", "Capacidad (BTU)", "Refrigerante", "Voltaje", "Estado", "Observaciones"];
-  headers.forEach((h, c) => setCell(row, c, h, estiloHeader));
-  row++;
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+  <head><meta charset="UTF-8">
+  <style>
+    body { font-family: Arial; font-size: 9pt; }
+    .titulo { background: #1A73E8; color: white; font-size: 14pt; font-weight: bold; }
+    .subtitulo { background: #F0F4F8; color: #555; font-size: 9pt; }
+    .header { background: #1565C0; color: white; font-weight: bold; font-size: 9pt; text-align: center; }
+    .piso { background: #BBDEFB; color: #0D47A1; font-weight: bold; font-size: 9pt; }
+    .fila { font-size: 9pt; }
+    .fila-alt { background: #F8F9FA; font-size: 9pt; }
+    .op { background: #C8E6C9; color: #1B5E20; font-weight: bold; text-align: center; }
+    .obs { background: #FFF9C4; color: #E65100; font-weight: bold; text-align: center; }
+    .fs { background: #FFCDD2; color: #B71C1C; font-weight: bold; text-align: center; }
+    .cod { background: #F3E5F5; color: #6A1B9A; font-weight: bold; text-align: center; font-family: monospace; }
+    td { border: 1px solid #E0E0E0; padding: 4px 6px; }
+  </style></head><body>
+  <table>
+    <tr><td colspan="13" class="titulo">HVAC QR System — Reporte de equipos</td></tr>
+    <tr>
+      <td colspan="3" class="subtitulo">Cliente: ${cliente}</td>
+      <td colspan="3" class="subtitulo">Generado: ${new Date().toLocaleDateString("es-PE")}</td>
+      <td colspan="3" class="subtitulo">Total: ${equiposCliente.length} equipos</td>
+      <td colspan="4" class="subtitulo"></td>
+    </tr>
+    <tr><td colspan="13"></td></tr>
+    <tr>
+      <td class="header">#</td>
+      <td class="header">Código</td>
+      <td class="header">Piso</td>
+      <td class="header">Ambiente</td>
+      <td class="header">Tipo equipo</td>
+      <td class="header">Marca</td>
+      <td class="header">Modelo</td>
+      <td class="header">N° Serie</td>
+      <td class="header">Capacidad (BTU)</td>
+      <td class="header">Refrigerante</td>
+      <td class="header">Voltaje</td>
+      <td class="header">Estado</td>
+      <td class="header">Observaciones</td>
+    </tr>`;
 
   pisosOrdenados.forEach(piso => {
-    setCell(row, 0, `PISO: ${piso.toUpperCase()}`, estiloPiso);
-    for (let c = 1; c < 12; c++) setCell(row, c, "", estiloPiso);
-    row++;
+    html += `<tr><td colspan="13" class="piso">PISO: ${piso.toUpperCase()}</td></tr>`;
     porPiso[piso].forEach((e, idx) => {
-      const estilo = idx % 2 === 0 ? estiloFila : estiloFilaAlt;
-      const datos = [
-        item++, e.piso || "—", e.ambiente || "—", e.tipoEquipo || "—",
-        e.marca || "—", e.modelo || "—", e.serie || "—",
-        e.capacidad || "—", e.tipoRefrigerante || "—",
-        e.voltaje ? `${e.voltaje}V` : "—",
-        e.estado || "Operativo", e.observaciones || "—"
-      ];
-      datos.forEach((v, c) => {
-        if (c === 10) setCell(row, c, v, getEstadoStyle(String(v)));
-        else setCell(row, c, v, estilo);
-      });
-      row++;
+      const estadoClass = e.estado === "Operativo" ? "op" : e.estado === "Operativo con observaciones" ? "obs" : "fs";
+      const filaClass = idx % 2 === 0 ? "fila" : "fila-alt";
+      html += `<tr class="${filaClass}">
+        <td>${item++}</td>
+        <td class="cod">${e.codigo || "—"}</td>
+        <td>${e.piso || "—"}</td>
+        <td>${e.ambiente || "—"}</td>
+        <td>${e.tipoEquipo || "—"}</td>
+        <td>${e.marca || "—"}</td>
+        <td>${e.modelo || "—"}</td>
+        <td>${e.serie || "—"}</td>
+        <td>${e.capacidad || "—"}</td>
+        <td>${e.tipoRefrigerante || "—"}</td>
+        <td>${e.voltaje ? e.voltaje + "V" : "—"}</td>
+        <td class="${estadoClass}">${e.estado || "Operativo"}</td>
+        <td>${e.observaciones || "—"}</td>
+      </tr>`;
     });
   });
 
-  ws["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: row, c: 11 } });
-  ws["!cols"] = [{wch:5},{wch:10},{wch:18},{wch:16},{wch:12},{wch:14},{wch:14},{wch:14},{wch:12},{wch:10},{wch:22},{wch:40}];
-  ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 11 } }];
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, cliente.slice(0,31));
-  XLSX.writeFile(wb, `equipos-${cliente.replace(/\s+/g,"-")}-${new Date().getFullYear()}.xlsx`);
+  html += `</table></body></html>`;
+  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `equipos-${cliente.replace(/\s+/g,"-")}-${new Date().getFullYear()}.xls`;
+  a.click();
+  URL.revokeObjectURL(url);
 };
 
 const exportarPDF = (cliente, equiposCliente) => {
@@ -125,13 +132,13 @@ const exportarPDF = (cliente, equiposCliente) => {
   const porPiso = agruparPorPiso(equiposCliente);
   const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
   let item = 1;
-  const cols = [10, 18, 22, 18, 14, 18, 18, 14, 12, 12, 24, 47];
-  const headers = ["#", "Piso", "Ambiente", "Tipo equipo", "Marca", "Modelo", "Serie", "Capacidad", "Refrig.", "Voltaje", "Estado", "Observaciones"];
+  const cols = [8, 14, 14, 20, 16, 14, 16, 16, 13, 11, 11, 22, 42];
+  const headers = ["#", "Código", "Piso", "Ambiente", "Tipo equipo", "Marca", "Modelo", "Serie", "Cap.", "Refrig.", "Volt.", "Estado", "Observaciones"];
 
   const dibujarEncabezado = () => {
     pdf.setFillColor(21, 101, 192);
     pdf.rect(margen, y - 4, 277, 8, "F");
-    pdf.setFontSize(8);
+    pdf.setFontSize(7.5);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(255, 255, 255);
     let x = margen;
@@ -158,21 +165,22 @@ const exportarPDF = (cliente, equiposCliente) => {
         pdf.rect(margen, y - 3, 277, 7, "F");
       }
       const fila = [
-        String(item++), e.piso || "—", e.ambiente || "—", e.tipoEquipo || "—",
-        e.marca || "—", e.modelo || "—", e.serie || "—",
-        e.capacidad ? `${e.capacidad} BTU` : "—",
+        String(item++), e.codigo || "—", e.piso || "—", e.ambiente || "—",
+        e.tipoEquipo || "—", e.marca || "—", e.modelo || "—", e.serie || "—",
+        e.capacidad ? `${e.capacidad}` : "—",
         e.tipoRefrigerante || "—", e.voltaje ? `${e.voltaje}V` : "—",
         e.estado || "Operativo", e.observaciones || "—"
       ];
       pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(50, 50, 50);
-      pdf.setFontSize(7.5);
+      pdf.setFontSize(7);
       let x = margen;
       fila.forEach((val, i) => {
-        if (i === 10) {
+        if (i === 11) {
           if (val === "Operativo") pdf.setTextColor(27, 94, 32);
           else if (val === "Operativo con observaciones") pdf.setTextColor(230, 81, 0);
           else pdf.setTextColor(183, 28, 28);
+        } else if (i === 1) {
+          pdf.setTextColor(106, 27, 154);
         } else {
           pdf.setTextColor(50, 50, 50);
         }
@@ -190,6 +198,62 @@ const exportarPDF = (cliente, equiposCliente) => {
   pdf.setTextColor(150, 150, 150);
   pdf.text(`HVAC QR System · hvac-qr-system-1odv.vercel.app`, margen, 205);
   pdf.save(`equipos-${cliente.replace(/\s+/g,"-")}-${new Date().getFullYear()}.pdf`);
+};
+
+const BarrasEstado = ({ equipos }) => {
+  const total = equipos.length;
+  if (total === 0) return null;
+  const op = equipos.filter(e => e.estado === "Operativo").length;
+  const obs = equipos.filter(e => e.estado === "Operativo con observaciones").length;
+  const fs = equipos.filter(e => e.estado === "Fuera de servicio").length;
+  const pOp = Math.round((op / total) * 100);
+  const pObs = Math.round((obs / total) * 100);
+  const pFs = Math.round((fs / total) * 100);
+
+  return (
+    <div style={barStyles.contenedor}>
+      <div style={barStyles.titulo}>📊 Estado de equipos</div>
+      <div style={barStyles.fila}>
+        <span style={barStyles.etiqueta}>✅ Operativo</span>
+        <div style={barStyles.track}><div style={{...barStyles.fill, width:`${pOp}%`, background:"#43a047"}}></div></div>
+        <span style={{...barStyles.pct, color:"#2e7d32"}}>{pOp}%</span>
+      </div>
+      <div style={barStyles.fila}>
+        <span style={barStyles.etiqueta}>⚠️ Con observaciones</span>
+        <div style={barStyles.track}><div style={{...barStyles.fill, width:`${pObs}%`, background:"#ffa726"}}></div></div>
+        <span style={{...barStyles.pct, color:"#e65100"}}>{pObs}%</span>
+      </div>
+      <div style={barStyles.fila}>
+        <span style={barStyles.etiqueta}>🔴 Fuera de servicio</span>
+        <div style={barStyles.track}><div style={{...barStyles.fill, width:`${pFs}%`, background:"#ef5350"}}></div></div>
+        <span style={{...barStyles.pct, color:"#c62828"}}>{pFs}%</span>
+      </div>
+      <div style={barStyles.combinada}>
+        <div style={{width:`${pOp}%`, background:"#43a047"}}></div>
+        <div style={{width:`${pObs}%`, background:"#ffa726"}}></div>
+        <div style={{width:`${pFs}%`, background:"#ef5350"}}></div>
+      </div>
+      <div style={barStyles.leyenda}>
+        <div style={barStyles.leyendaItem}><div style={{...barStyles.dot, background:"#43a047"}}></div>Operativo {pOp}%</div>
+        <div style={barStyles.leyendaItem}><div style={{...barStyles.dot, background:"#ffa726"}}></div>Con observaciones {pObs}%</div>
+        <div style={barStyles.leyendaItem}><div style={{...barStyles.dot, background:"#ef5350"}}></div>Fuera de servicio {pFs}%</div>
+      </div>
+    </div>
+  );
+};
+
+const barStyles = {
+  contenedor: { marginBottom: "12px", paddingBottom: "12px", borderBottom: "1px solid #f0f0f0" },
+  titulo: { fontSize: "11px", fontWeight: "700", color: "#888", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" },
+  fila: { display: "flex", alignItems: "center", gap: "10px", marginBottom: "5px" },
+  etiqueta: { fontSize: "11px", color: "#555", fontWeight: "600", minWidth: "180px", textAlign: "right" },
+  track: { flex: 1, background: "#f0f0f0", borderRadius: "20px", height: "7px", overflow: "hidden" },
+  fill: { height: "100%", borderRadius: "20px", transition: "width 0.5s" },
+  pct: { fontSize: "11px", fontWeight: "700", minWidth: "36px", textAlign: "left" },
+  combinada: { height: "10px", borderRadius: "20px", overflow: "hidden", display: "flex", marginTop: "8px" },
+  leyenda: { display: "flex", justifyContent: "center", gap: "16px", marginTop: "5px" },
+  leyendaItem: { display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "#555", fontWeight: "600" },
+  dot: { width: "7px", height: "7px", borderRadius: "50%" }
 };
 
 export default function PanelAdmin() {
@@ -272,11 +336,15 @@ export default function PanelAdmin() {
                 <button style={styles.btnPdfExp} onClick={() => exportarPDF(cliente, equiposCliente)}>📄 PDF</button>
               </div>
             </div>
+
+            <BarrasEstado equipos={equiposCliente} />
+
             <div style={styles.tablaWrapper}>
               <table style={styles.tabla}>
                 <thead>
                   <tr style={styles.thead}>
                     <th style={styles.th}>Item</th>
+                    <th style={styles.th}>Código</th>
                     <th style={styles.th}>Piso</th>
                     <th style={styles.th}>Ambiente</th>
                     <th style={styles.th}>Tipo equipo</th>
@@ -298,7 +366,7 @@ export default function PanelAdmin() {
                   {pisosOrdenados.map(piso => (
                     <React.Fragment key={piso}>
                       <tr>
-                        <td colSpan={9} style={styles.pisoHeader}>
+                        <td colSpan={10} style={styles.pisoHeader}>
                           🏢 {piso === "Sin piso" ? "Sin piso asignado" : `Piso ${piso}`}
                         </td>
                       </tr>
@@ -306,14 +374,17 @@ export default function PanelAdmin() {
                         const item = itemNum++;
                         return (
                           <tr key={equipo.id} style={styles.tr}>
-                            <td style={styles.td}>{item}</td>
-                            <td style={styles.td}>{equipo.piso || "—"}</td>
-                            <td style={styles.td}>{equipo.ambiente || "—"}</td>
-                            <td style={styles.td}>{equipo.tipoEquipo || "—"}</td>
-                            <td style={styles.td}>{equipo.marca || "—"}</td>
-                            <td style={styles.td}>{equipo.modelo || "—"}</td>
-                            <td style={styles.td}>{equipo.serie || "—"}</td>
-                            <td style={styles.td}>
+                            <td style={{...styles.td, textAlign:"center"}}>{item}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>
+                              {equipo.codigo ? <span style={styles.codigo}>{equipo.codigo}</span> : "—"}
+                            </td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.piso || "—"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.ambiente || "—"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.tipoEquipo || "—"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.marca || "—"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.modelo || "—"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>{equipo.serie || "—"}</td>
+                            <td style={{...styles.td, textAlign:"center"}}>
                               <span style={{...styles.badge, ...getBadgeStyle(equipo.estado)}}>
                                 {equipo.estado || "Operativo"}
                               </span>
@@ -341,15 +412,15 @@ export default function PanelAdmin() {
 }
 
 const styles = {
-  container: { minHeight: "100vh", background: "#f0f4f8", padding: "1.5rem" },
+  container: { minHeight: "100vh", background: "#f0f4f8", padding: "1.5rem", fontFamily: "'Segoe UI', Arial, sans-serif" },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "1rem" },
   titulo: { color: "#1a73e8", margin: 0 },
   headerBtns: { display: "flex", gap: "0.5rem", flexWrap: "wrap" },
   statsRow: { display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px", marginBottom: "1.5rem" },
   stat: { background: "white", borderRadius: "10px", padding: "0.75rem", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
   statNum: { fontSize: "24px", fontWeight: "700", color: "#1a73e8" },
-  statLabel: { fontSize: "11px", color: "#888", marginTop: "4px" },
-  filtroRow: { background: "white", borderRadius: "10px", padding: "1rem", marginBottom: "1.5rem", display: "flex", flexDirection: "column", gap: "0.75rem" },
+  statLabel: { fontSize: "11px", color: "#888", marginTop: "4px", textTransform: "uppercase", letterSpacing: "0.03em" },
+  filtroRow: { background: "white", borderRadius: "10px", padding: "1rem", marginBottom: "1.5rem" },
   filtroGrupo: { display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" },
   filtroLabel: { fontSize: "14px", color: "#555", fontWeight: "600", minWidth: "60px" },
   filtrosBtns: { display: "flex", gap: "8px", flexWrap: "wrap" },
@@ -359,24 +430,25 @@ const styles = {
   clienteHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", paddingBottom: "0.75rem", borderBottom: "2px solid #f0f4f8", flexWrap: "wrap", gap: "8px" },
   clienteLeft: { display: "flex", alignItems: "center", gap: "12px" },
   clienteNombre: { fontSize: "17px", fontWeight: "700", color: "#1a73e8" },
-  clienteCount: { fontSize: "13px", color: "#888", background: "#f0f4f8", padding: "3px 10px", borderRadius: "20px" },
+  clienteCount: { fontSize: "13px", color: "#888", background: "#f0f4f8", padding: "3px 10px", borderRadius: "20px", fontWeight: "600" },
   exportBtns: { display: "flex", gap: "8px" },
-  btnExcel: { background: "#217346", color: "white", border: "none", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "13px", fontWeight: "500" },
-  btnPdfExp: { background: "#e53935", color: "white", border: "none", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "13px", fontWeight: "500" },
+  btnExcel: { background: "#217346", color: "white", border: "none", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "13px", fontWeight: "600" },
+  btnPdfExp: { background: "#e53935", color: "white", border: "none", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "13px", fontWeight: "600" },
   tablaWrapper: { overflowX: "auto" },
-  tabla: { width: "100%", borderCollapse: "collapse", fontSize: "13px" },
+  tabla: { width: "100%", borderCollapse: "collapse", fontSize: "12px", fontFamily: "'Segoe UI', Arial, sans-serif" },
   thead: { background: "#f0f4f8" },
-  th: { padding: "10px 12px", textAlign: "left", fontWeight: "600", color: "#444", whiteSpace: "nowrap", borderBottom: "2px solid #e0e0e0" },
-  thSelect: { border: "none", background: "transparent", fontWeight: "600", color: "#444", fontSize: "13px", cursor: "pointer", padding: "0" },
-  pisoHeader: { background: "#e3f2fd", color: "#1565c0", fontWeight: "700", padding: "8px 12px", fontSize: "13px" },
+  th: { padding: "10px 12px", textAlign: "center", fontWeight: "700", color: "#444", whiteSpace: "nowrap", borderBottom: "2px solid #e0e0e0", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.03em" },
+  thSelect: { border: "none", background: "transparent", fontWeight: "700", color: "#444", fontSize: "11px", cursor: "pointer", padding: "0", textTransform: "uppercase", letterSpacing: "0.03em" },
+  pisoHeader: { background: "#e3f2fd", color: "#1565c0", fontWeight: "700", padding: "8px 12px", fontSize: "12px" },
   tr: { borderBottom: "1px solid #f0f0f0" },
-  td: { padding: "10px 12px", color: "#444", whiteSpace: "nowrap" },
+  td: { padding: "10px 12px", color: "#444" },
   badge: { padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "600", whiteSpace: "nowrap" },
-  acciones: { display: "flex", gap: "6px" },
-  btnVerde: { background: "#34a853", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px" },
-  btnAzul: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px" },
-  btnRojo: { background: "#ea4335", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px" },
-  btnInfo: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "12px" },
-  btnEditar: { background: "#f9ab00", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "12px" },
-  btnCotizar: { background: "#9c27b0", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "12px" }
+  codigo: { background: "#f3e5f5", color: "#6a1b9a", fontWeight: "700", fontSize: "11px", padding: "2px 8px", borderRadius: "6px", fontFamily: "monospace" },
+  acciones: { display: "flex", gap: "6px", justifyContent: "center" },
+  btnVerde: { background: "#34a853", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px", fontWeight: "600" },
+  btnAzul: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px", fontWeight: "600" },
+  btnRojo: { background: "#ea4335", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px", fontWeight: "600" },
+  btnInfo: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "11px", fontWeight: "600" },
+  btnEditar: { background: "#f9ab00", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "11px", fontWeight: "600" },
+  btnCotizar: { background: "#9c27b0", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "11px", fontWeight: "600" }
 };
