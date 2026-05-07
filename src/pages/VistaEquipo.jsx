@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const getBadgeStyle = (estado) => {
   if (estado === "Operativo") return { background: "#e8f5e9", color: "#2e7d32" };
@@ -26,6 +28,17 @@ export default function VistaEquipo() {
     setCargando(false);
   };
 
+  const generarPDF = async () => {
+    const elemento = document.getElementById("reporte-equipo");
+    const canvas = await html2canvas(elemento, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`equipo-${id.slice(0,6)}-reporte.pdf`);
+  };
+
   if (cargando) return <div style={styles.centro}>Cargando equipo...</div>;
   if (!equipo) return <div style={styles.centro}>Equipo no encontrado</div>;
 
@@ -34,7 +47,7 @@ export default function VistaEquipo() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
+      <div style={styles.card} id="reporte-equipo">
         <button style={styles.btnVolver} onClick={() => navigate("/dashboard")}>← Volver al panel</button>
 
         <div style={styles.encabezado}>
@@ -73,13 +86,13 @@ export default function VistaEquipo() {
 
         <div style={styles.seccion}>
           <p style={styles.seccionTitulo}>🔧 Último mantenimiento</p>
-<p style={styles.fecha}>{equipo.ultimoMantenimiento || "Sin registro"}</p>
-{equipo.observaciones && (
-  <>
-    <p style={styles.seccionTitulo}>📝 Observaciones</p>
-    <p style={styles.texto}>{equipo.observaciones}</p>
-  </>
-)}
+          <p style={styles.fecha}>{equipo.ultimoMantenimiento || "Sin registro"}</p>
+          {equipo.observaciones && (
+            <>
+              <p style={styles.seccionTitulo}>📝 Observaciones</p>
+              <p style={styles.texto}>{equipo.observaciones}</p>
+            </>
+          )}
         </div>
 
         {equipo.correctivos && (
@@ -117,7 +130,10 @@ export default function VistaEquipo() {
             <img src={qrUrl} alt="Código QR" style={{width: 200, height: 200}} />
           </div>
           <p style={styles.qrUrl}>{urlEquipo}</p>
-          <button style={styles.btnImprimir} onClick={() => window.print()}>🖨️ Imprimir QR</button>
+          <div style={{display:"flex", gap:"10px", justifyContent:"center"}}>
+            <button style={styles.btnImprimir} onClick={() => window.print()}>🖨️ Imprimir QR</button>
+            <button style={styles.btnPDF} onClick={generarPDF}>📄 Descargar PDF</button>
+          </div>
         </div>
       </div>
     </div>
@@ -150,5 +166,6 @@ const styles = {
   qrDesc: { color: "#666", fontSize: "14px", marginBottom: "1.25rem" },
   qrBox: { display: "inline-block", padding: "1rem", background: "white", border: "1px solid #eee", borderRadius: "12px", marginBottom: "1rem" },
   qrUrl: { fontSize: "11px", color: "#999", marginBottom: "1rem", wordBreak: "break-all" },
-  btnImprimir: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "10px 24px", cursor: "pointer", fontSize: "14px" }
+  btnImprimir: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "10px 24px", cursor: "pointer", fontSize: "14px" },
+  btnPDF: { background: "#34a853", color: "white", border: "none", borderRadius: "8px", padding: "10px 24px", cursor: "pointer", fontSize: "14px" }
 };
