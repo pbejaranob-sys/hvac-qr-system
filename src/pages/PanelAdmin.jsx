@@ -96,15 +96,6 @@ export default function PanelAdmin() {
             ))}
           </div>
         </div>
-        <div style={styles.filtroGrupo}>
-          <span style={styles.filtroLabel}>Estado:</span>
-          <select style={styles.selectEstado} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
-            <option value="Todos">Todos</option>
-            <option value="Operativo">✅ Operativo</option>
-            <option value="Operativo con observaciones">⚠️ Con observaciones</option>
-            <option value="Fuera de servicio">🔴 Fuera de servicio</option>
-          </select>
-        </div>
       </div>
 
       {Object.entries(agrupados).map(([cliente, equiposCliente]) => {
@@ -129,7 +120,14 @@ export default function PanelAdmin() {
                     <th style={styles.th}>Marca</th>
                     <th style={styles.th}>Modelo</th>
                     <th style={styles.th}>Serie</th>
-                    <th style={styles.th}>Estado</th>
+                    <th style={styles.th}>
+                      <select style={styles.thSelect} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+                        <option value="Todos">Estado ▼</option>
+                        <option value="Operativo">✅ Operativo</option>
+                        <option value="Operativo con observaciones">⚠️ Con observaciones</option>
+                        <option value="Fuera de servicio">🔴 Fuera de servicio</option>
+                      </select>
+                    </th>
                     <th style={styles.th}>Acciones</th>
                   </tr>
                 </thead>
@@ -194,7 +192,6 @@ const styles = {
   filtrosBtns: { display: "flex", gap: "8px", flexWrap: "wrap" },
   filtroBtn: { padding: "6px 14px", borderRadius: "20px", border: "1px solid #ddd", background: "white", cursor: "pointer", fontSize: "13px", color: "#555" },
   filtroActivo: { background: "#1a73e8", color: "white", border: "1px solid #1a73e8" },
-  selectEstado: { padding: "6px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "13px", cursor: "pointer", background: "white" },
   clienteBloque: { background: "white", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.5rem", boxShadow: "0 2px 10px rgba(0,0,0,0.07)" },
   clienteHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", paddingBottom: "0.75rem", borderBottom: "2px solid #f0f4f8" },
   clienteNombre: { fontSize: "17px", fontWeight: "700", color: "#1a73e8" },
@@ -203,6 +200,7 @@ const styles = {
   tabla: { width: "100%", borderCollapse: "collapse", fontSize: "13px" },
   thead: { background: "#f0f4f8" },
   th: { padding: "10px 12px", textAlign: "left", fontWeight: "600", color: "#444", whiteSpace: "nowrap", borderBottom: "2px solid #e0e0e0" },
+  thSelect: { border: "none", background: "transparent", fontWeight: "600", color: "#444", fontSize: "13px", cursor: "pointer", padding: "0" },
   pisoHeader: { background: "#e3f2fd", color: "#1565c0", fontWeight: "700", padding: "8px 12px", fontSize: "13px" },
   tr: { borderBottom: "1px solid #f0f0f0" },
   td: { padding: "10px 12px", color: "#444", whiteSpace: "nowrap" },

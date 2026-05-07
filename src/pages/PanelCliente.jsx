@@ -93,16 +93,6 @@ export default function PanelCliente() {
         <div style={styles.stat}><div style={{...styles.statNum, color:"#c62828"}}>{equipos.filter(e => e.estado === "Fuera de servicio").length}</div><div style={styles.statLabel}>Fuera de servicio</div></div>
       </div>
 
-      <div style={styles.filtroRow}>
-        <span style={styles.filtroLabel}>Estado:</span>
-        <select style={styles.selectEstado} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
-          <option value="Todos">Todos</option>
-          <option value="Operativo">✅ Operativo</option>
-          <option value="Operativo con observaciones">⚠️ Con observaciones</option>
-          <option value="Fuera de servicio">🔴 Fuera de servicio</option>
-        </select>
-      </div>
-
       {equipos.length === 0 && (
         <div style={styles.vacio}>
           <p>No hay equipos registrados aún.</p>
@@ -122,7 +112,14 @@ export default function PanelCliente() {
                   <th style={styles.th}>Marca</th>
                   <th style={styles.th}>Modelo</th>
                   <th style={styles.th}>Serie</th>
-                  <th style={styles.th}>Estado</th>
+                  <th style={styles.th}>
+                    <select style={styles.thSelect} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+                      <option value="Todos">Estado ▼</option>
+                      <option value="Operativo">✅ Operativo</option>
+                      <option value="Operativo con observaciones">⚠️ Con observaciones</option>
+                      <option value="Fuera de servicio">🔴 Fuera de servicio</option>
+                    </select>
+                  </th>
                   <th style={styles.th}>Acciones</th>
                 </tr>
               </thead>
@@ -181,14 +178,12 @@ const styles = {
   stat: { background: "white", borderRadius: "10px", padding: "0.75rem", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
   statNum: { fontSize: "24px", fontWeight: "700", color: "#1a73e8" },
   statLabel: { fontSize: "11px", color: "#888", marginTop: "4px" },
-  filtroRow: { background: "white", borderRadius: "10px", padding: "1rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem" },
-  filtroLabel: { fontSize: "14px", color: "#555", fontWeight: "600" },
-  selectEstado: { padding: "6px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "13px", cursor: "pointer", background: "white" },
   clienteBloque: { background: "white", borderRadius: "12px", padding: "1.25rem", boxShadow: "0 2px 10px rgba(0,0,0,0.07)" },
   tablaWrapper: { overflowX: "auto" },
   tabla: { width: "100%", borderCollapse: "collapse", fontSize: "13px" },
   thead: { background: "#f0f4f8" },
   th: { padding: "10px 12px", textAlign: "left", fontWeight: "600", color: "#444", whiteSpace: "nowrap", borderBottom: "2px solid #e0e0e0" },
+  thSelect: { border: "none", background: "transparent", fontWeight: "600", color: "#444", fontSize: "13px", cursor: "pointer", padding: "0" },
   pisoHeader: { background: "#e3f2fd", color: "#1565c0", fontWeight: "700", padding: "8px 12px", fontSize: "13px" },
   tr: { borderBottom: "1px solid #f0f0f0" },
   td: { padding: "10px 12px", color: "#444", whiteSpace: "nowrap" },
