@@ -24,6 +24,7 @@ const ordenarPisos = (a, b) => {
 
 export default function Dashboard() {
   const [equiposPorCliente, setEquiposPorCliente] = useState({});
+  const [filtroEstado, setFiltroEstado] = useState("Todos");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,6 +72,11 @@ export default function Dashboard() {
     return porPiso;
   };
 
+  const filtrarEquipos = (equipos) => {
+    if (filtroEstado === "Todos") return equipos;
+    return equipos.filter(e => e.estado === filtroEstado);
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -88,8 +94,20 @@ export default function Dashboard() {
         <div style={styles.stat}><div style={{...styles.statNum, color:"#c62828"}}>{Object.values(equiposPorCliente).flat().filter(e => e.estado === "Fuera de servicio").length}</div><div style={styles.statLabel}>Fuera de servicio</div></div>
       </div>
 
+      <div style={styles.filtroRow}>
+        <span style={styles.filtroLabel}>Estado:</span>
+        <select style={styles.selectEstado} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+          <option value="Todos">Todos</option>
+          <option value="Operativo">✅ Operativo</option>
+          <option value="Operativo con observaciones">⚠️ Con observaciones</option>
+          <option value="Fuera de servicio">🔴 Fuera de servicio</option>
+        </select>
+      </div>
+
       {Object.entries(equiposPorCliente).map(([cliente, equipos]) => {
-        const porPiso = agruparPorPiso(equipos);
+        const equiposFiltrados = filtrarEquipos(equipos);
+        if (equiposFiltrados.length === 0) return null;
+        const porPiso = agruparPorPiso(equiposFiltrados);
         const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
         let itemNum = 1;
 
@@ -97,7 +115,7 @@ export default function Dashboard() {
           <div key={cliente} style={styles.clienteBloque}>
             <div style={styles.clienteHeader}>
               <span style={styles.clienteNombre}>👤 {cliente}</span>
-              <span style={styles.clienteCount}>{equipos.length} equipo{equipos.length !== 1 ? "s" : ""}</span>
+              <span style={styles.clienteCount}>{equiposFiltrados.length} equipo{equiposFiltrados.length !== 1 ? "s" : ""}</span>
             </div>
 
             <div style={styles.tablaWrapper}>
@@ -141,8 +159,9 @@ export default function Dashboard() {
                             </td>
                             <td style={styles.td}>
                               <div style={styles.acciones}>
-                                <button style={styles.btnAzul} onClick={() => navigate(`/equipo/${equipo.id}`)}>Ver QR</button>
+                                <button style={styles.btnInfo} onClick={() => navigate(`/equipo/${equipo.id}`)}>Información</button>
                                 <button style={styles.btnEditar} onClick={() => navigate(`/registrar?id=${equipo.id}`)}>Editar</button>
+                                <button style={styles.btnCotizar} onClick={() => navigate(`/cotizacion/${equipo.id}`)}>Cotización</button>
                               </div>
                             </td>
                           </tr>
@@ -169,6 +188,9 @@ const styles = {
   stat: { background: "white", borderRadius: "10px", padding: "1rem", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
   statNum: { fontSize: "28px", fontWeight: "700", color: "#1a73e8" },
   statLabel: { fontSize: "12px", color: "#888", marginTop: "4px" },
+  filtroRow: { background: "white", borderRadius: "10px", padding: "1rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem" },
+  filtroLabel: { fontSize: "14px", color: "#555", fontWeight: "600" },
+  selectEstado: { padding: "6px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "13px", cursor: "pointer", background: "white" },
   clienteBloque: { background: "white", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.5rem", boxShadow: "0 2px 10px rgba(0,0,0,0.07)" },
   clienteHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", paddingBottom: "0.75rem", borderBottom: "2px solid #f0f4f8" },
   clienteNombre: { fontSize: "17px", fontWeight: "700", color: "#1a73e8" },
@@ -184,7 +206,7 @@ const styles = {
   acciones: { display: "flex", gap: "6px" },
   btnVerde: { background: "#34a853", color: "white", border: "none", borderRadius: "8px", padding: "10px 16px", cursor: "pointer", fontWeight: "500" },
   btnRojo: { background: "#ea4335", color: "white", border: "none", borderRadius: "8px", padding: "10px 16px", cursor: "pointer", fontWeight: "500" },
-  btnAzul: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px" },
-  btnEditar: { background: "#f9ab00", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px" },
-  vacio: { textAlign: "center", padding: "3rem", background: "white", borderRadius: "12px", color: "#666" }
+  btnInfo: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "12px" },
+  btnEditar: { background: "#f9ab00", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "12px" },
+  btnCotizar: { background: "#9c27b0", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "12px" }
 };

@@ -26,6 +26,7 @@ export default function PanelAdmin() {
   const [equipos, setEquipos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [filtro, setFiltro] = useState("Todos");
+  const [filtroEstado, setFiltroEstado] = useState("Todos");
   const navigate = useNavigate();
 
   useEffect(() => { cargarEquipos(); }, []);
@@ -43,7 +44,9 @@ export default function PanelAdmin() {
     navigate("/");
   };
 
-  const equiposFiltrados = filtro === "Todos" ? equipos : equipos.filter(e => (e.cliente || "Sin cliente") === filtro);
+  const equiposFiltrados = equipos
+    .filter(e => filtro === "Todos" || (e.cliente || "Sin cliente") === filtro)
+    .filter(e => filtroEstado === "Todos" || e.estado === filtroEstado);
 
   const agrupados = {};
   equiposFiltrados.forEach((equipo) => {
@@ -82,13 +85,24 @@ export default function PanelAdmin() {
       </div>
 
       <div style={styles.filtroRow}>
-        <span style={styles.filtroLabel}>Filtrar por cliente:</span>
-        <div style={styles.filtrosBtns}>
-          {clientes.map(c => (
-            <button key={c} style={{...styles.filtroBtn, ...(filtro === c ? styles.filtroActivo : {})}} onClick={() => setFiltro(c)}>
-              {c}
-            </button>
-          ))}
+        <div style={styles.filtroGrupo}>
+          <span style={styles.filtroLabel}>Cliente:</span>
+          <div style={styles.filtrosBtns}>
+            {clientes.map(c => (
+              <button key={c} style={{...styles.filtroBtn, ...(filtro === c ? styles.filtroActivo : {})}} onClick={() => setFiltro(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={styles.filtroGrupo}>
+          <span style={styles.filtroLabel}>Estado:</span>
+          <select style={styles.selectEstado} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+            <option value="Todos">Todos</option>
+            <option value="Operativo">✅ Operativo</option>
+            <option value="Operativo con observaciones">⚠️ Con observaciones</option>
+            <option value="Fuera de servicio">🔴 Fuera de servicio</option>
+          </select>
         </div>
       </div>
 
@@ -145,8 +159,9 @@ export default function PanelAdmin() {
                             </td>
                             <td style={styles.td}>
                               <div style={styles.acciones}>
-                                <button style={styles.btnVerQR} onClick={() => navigate(`/equipo/${equipo.id}`)}>Ver QR</button>
+                                <button style={styles.btnInfo} onClick={() => navigate(`/equipo/${equipo.id}`)}>Información</button>
                                 <button style={styles.btnEditar} onClick={() => navigate(`/registrar?id=${equipo.id}`)}>Editar</button>
+                                <button style={styles.btnCotizar} onClick={() => navigate(`/cotizacion/${equipo.id}`)}>Cotización</button>
                               </div>
                             </td>
                           </tr>
@@ -173,11 +188,13 @@ const styles = {
   stat: { background: "white", borderRadius: "10px", padding: "0.75rem", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
   statNum: { fontSize: "24px", fontWeight: "700", color: "#1a73e8" },
   statLabel: { fontSize: "11px", color: "#888", marginTop: "4px" },
-  filtroRow: { background: "white", borderRadius: "10px", padding: "1rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" },
-  filtroLabel: { fontSize: "14px", color: "#555", fontWeight: "500" },
+  filtroRow: { background: "white", borderRadius: "10px", padding: "1rem", marginBottom: "1.5rem", display: "flex", flexDirection: "column", gap: "0.75rem" },
+  filtroGrupo: { display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" },
+  filtroLabel: { fontSize: "14px", color: "#555", fontWeight: "600", minWidth: "60px" },
   filtrosBtns: { display: "flex", gap: "8px", flexWrap: "wrap" },
   filtroBtn: { padding: "6px 14px", borderRadius: "20px", border: "1px solid #ddd", background: "white", cursor: "pointer", fontSize: "13px", color: "#555" },
   filtroActivo: { background: "#1a73e8", color: "white", border: "1px solid #1a73e8" },
+  selectEstado: { padding: "6px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "13px", cursor: "pointer", background: "white" },
   clienteBloque: { background: "white", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.5rem", boxShadow: "0 2px 10px rgba(0,0,0,0.07)" },
   clienteHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", paddingBottom: "0.75rem", borderBottom: "2px solid #f0f4f8" },
   clienteNombre: { fontSize: "17px", fontWeight: "700", color: "#1a73e8" },
@@ -194,6 +211,7 @@ const styles = {
   btnVerde: { background: "#34a853", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px" },
   btnAzul: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px" },
   btnRojo: { background: "#ea4335", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px" },
-  btnVerQR: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px" },
-  btnEditar: { background: "#f9ab00", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px" }
+  btnInfo: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "12px" },
+  btnEditar: { background: "#f9ab00", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "12px" },
+  btnCotizar: { background: "#9c27b0", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "12px" }
 };

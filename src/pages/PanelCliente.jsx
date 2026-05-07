@@ -25,6 +25,7 @@ const ordenarPisos = (a, b) => {
 export default function PanelCliente() {
   const [equipos, setEquipos] = useState([]);
   const [usuario, setUsuario] = useState(null);
+  const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [cargando, setCargando] = useState(true);
   const navigate = useNavigate();
 
@@ -65,11 +66,12 @@ export default function PanelCliente() {
     return porPiso;
   };
 
-  if (cargando) return <div style={styles.centro}>Cargando...</div>;
-
-  const porPiso = agruparPorPiso(equipos);
+  const equiposFiltrados = filtroEstado === "Todos" ? equipos : equipos.filter(e => e.estado === filtroEstado);
+  const porPiso = agruparPorPiso(equiposFiltrados);
   const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
   let itemNum = 1;
+
+  if (cargando) return <div style={styles.centro}>Cargando...</div>;
 
   return (
     <div style={styles.container}>
@@ -79,7 +81,6 @@ export default function PanelCliente() {
           <p style={styles.bienvenida}>Bienvenido, {usuario?.nombre}</p>
         </div>
         <div style={styles.headerBtns}>
-          <button style={styles.btnVerde} onClick={() => navigate("/registrar")}>+ Nuevo equipo</button>
           <button style={styles.btnRojo} onClick={handleLogout}>Cerrar sesión</button>
         </div>
       </div>
@@ -91,14 +92,23 @@ export default function PanelCliente() {
         <div style={styles.stat}><div style={{...styles.statNum, color:"#c62828"}}>{equipos.filter(e => e.estado === "Fuera de servicio").length}</div><div style={styles.statLabel}>Fuera de servicio</div></div>
       </div>
 
+      <div style={styles.filtroRow}>
+        <span style={styles.filtroLabel}>Estado:</span>
+        <select style={styles.selectEstado} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+          <option value="Todos">Todos</option>
+          <option value="Operativo">✅ Operativo</option>
+          <option value="Operativo con observaciones">⚠️ Con observaciones</option>
+          <option value="Fuera de servicio">🔴 Fuera de servicio</option>
+        </select>
+      </div>
+
       {equipos.length === 0 && (
         <div style={styles.vacio}>
           <p>No hay equipos registrados aún.</p>
-          <button style={styles.btnVerde} onClick={() => navigate("/registrar")}>Registrar primer equipo</button>
         </div>
       )}
 
-      {equipos.length > 0 && (
+      {equiposFiltrados.length > 0 && (
         <div style={styles.clienteBloque}>
           <div style={styles.tablaWrapper}>
             <table style={styles.tabla}>
@@ -141,8 +151,8 @@ export default function PanelCliente() {
                           </td>
                           <td style={styles.td}>
                             <div style={styles.acciones}>
-                              <button style={styles.btnAzul} onClick={() => navigate(`/equipo/${equipo.id}`)}>Ver QR</button>
-                              <button style={styles.btnEditar} onClick={() => navigate(`/registrar?id=${equipo.id}`)}>Editar</button>
+                              <button style={styles.btnInfo} onClick={() => navigate(`/equipo/${equipo.id}`)}>Información</button>
+                              <button style={styles.btnCotizar} onClick={() => navigate(`/cotizacion/${equipo.id}`)}>Cotización</button>
                             </div>
                           </td>
                         </tr>
@@ -170,6 +180,9 @@ const styles = {
   stat: { background: "white", borderRadius: "10px", padding: "0.75rem", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
   statNum: { fontSize: "24px", fontWeight: "700", color: "#1a73e8" },
   statLabel: { fontSize: "11px", color: "#888", marginTop: "4px" },
+  filtroRow: { background: "white", borderRadius: "10px", padding: "1rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem" },
+  filtroLabel: { fontSize: "14px", color: "#555", fontWeight: "600" },
+  selectEstado: { padding: "6px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "13px", cursor: "pointer", background: "white" },
   clienteBloque: { background: "white", borderRadius: "12px", padding: "1.25rem", boxShadow: "0 2px 10px rgba(0,0,0,0.07)" },
   tablaWrapper: { overflowX: "auto" },
   tabla: { width: "100%", borderCollapse: "collapse", fontSize: "13px" },
@@ -180,9 +193,8 @@ const styles = {
   td: { padding: "10px 12px", color: "#444", whiteSpace: "nowrap" },
   badge: { padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "600", whiteSpace: "nowrap" },
   acciones: { display: "flex", gap: "6px" },
-  btnVerde: { background: "#34a853", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px" },
   btnRojo: { background: "#ea4335", color: "white", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", fontSize: "13px" },
-  btnAzul: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px" },
-  btnEditar: { background: "#f9ab00", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px" },
+  btnInfo: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "12px" },
+  btnCotizar: { background: "#9c27b0", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "12px" },
   vacio: { textAlign: "center", padding: "3rem", background: "white", borderRadius: "12px", color: "#666" }
 };
