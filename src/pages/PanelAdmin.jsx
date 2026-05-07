@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
@@ -117,7 +118,6 @@ export default function PanelAdmin() {
               <span style={styles.clienteNombre}>👤 {cliente}</span>
               <span style={styles.clienteCount}>{equiposCliente.length} equipo{equiposCliente.length !== 1 ? "s" : ""}</span>
             </div>
-
             <div style={styles.tablaWrapper}>
               <table style={styles.tabla}>
                 <thead>
@@ -135,8 +135,8 @@ export default function PanelAdmin() {
                 </thead>
                 <tbody>
                   {pisosOrdenados.map(piso => (
-                    <>
-                      <tr key={`piso-${piso}`}>
+                    <React.Fragment key={piso}>
+                      <tr>
                         <td colSpan={9} style={styles.pisoHeader}>
                           🏢 {piso === "Sin piso" ? "Sin piso asignado" : `Piso ${piso}`}
                         </td>
@@ -167,7 +167,7 @@ export default function PanelAdmin() {
                           </tr>
                         );
                       })}
-                    </>
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -127,8 +128,8 @@ export default function PanelCliente() {
               </thead>
               <tbody>
                 {pisosOrdenados.map(piso => (
-                  <>
-                    <tr key={`piso-${piso}`}>
+                  <React.Fragment key={piso}>
+                    <tr>
                       <td colSpan={9} style={styles.pisoHeader}>
                         🏢 {piso === "Sin piso" ? "Sin piso asignado" : `Piso ${piso}`}
                       </td>
@@ -158,7 +159,7 @@ export default function PanelCliente() {
                         </tr>
                       );
                     })}
-                  </>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
