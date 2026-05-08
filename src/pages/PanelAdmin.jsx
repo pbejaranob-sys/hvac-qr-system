@@ -1,18 +1,12 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 
-const getBadgeStyle = (estado) => {
-  if (estado === "Operativo") return { background: "#e8f5e9", color: "#2e7d32", whiteSpace: "nowrap", display: "inline-block" };
-  if (estado === "Operativo con observaciones") return { background: "#fff8e1", color: "#f57f17", whiteSpace: "nowrap", display: "inline-block" };
-  return { background: "#ffebee", color: "#c62828", whiteSpace: "nowrap", display: "inline-block" };
-};
-
 const ordenarPisos = (a, b) => {
-  const orden = ["sotano", "s�tano", "subsuelo", "ss"];
+  const orden = ["sotano", "sótano", "subsuelo", "ss"];
   const aLow = a.toLowerCase(); const bLow = b.toLowerCase();
   if (orden.includes(aLow)) return -1; if (orden.includes(bLow)) return 1;
   const aNum = parseInt(a); const bNum = parseInt(b);
@@ -135,15 +129,23 @@ export default function PanelAdmin() {
   const [clientes, setClientes] = useState([]);
   const navigate = useNavigate();
 
-  useEffect(() => { cargarEquipos(); }, []);
-
-  const cargarEquipos = async () => {
-    const snapshot = await getDocs(collection(db, "equipos"));
+ const cargarEquipos = async (uid) => {
+    console.log("UID recibido:", uid);
+    const q = query(collection(db, "equipos"), where("adminid", "==", uid));
+    const snapshot = await getDocs(q);
+    console.log("Equipos encontrados:", snapshot.docs.length);
     const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     setEquipos(lista);
     const clientesUnicos = [...new Set(lista.map(e => e.cliente || "Sin cliente"))];
     setClientes(clientesUnicos);
   };
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) cargarEquipos(user.uid);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -196,7 +198,6 @@ export default function PanelAdmin() {
             const pObs = total ? Math.round((obs / total) * 100) : 0;
             const pFs = total ? Math.round((fs / total) * 100) : 0;
             const av = colorAvatar(cliente);
-
             return (
               <div key={cliente} style={s.card}>
                 <div style={s.cardHeader}>
@@ -210,7 +211,6 @@ export default function PanelAdmin() {
                     <button style={s.btnPdf} onClick={() => exportarPDF(cliente, equiposCliente)}>PDF</button>
                   </div>
                 </div>
-
                 <div style={s.miniStats}>
                   <div style={{ ...s.miniStat, background: op > 0 ? "#e8f5e9" : "#f5f5f5" }}>
                     <div style={{ ...s.miniNum, color: op > 0 ? "#2e7d32" : "#aaa" }}>{op}</div>
@@ -225,7 +225,6 @@ export default function PanelAdmin() {
                     <div style={{ ...s.miniLabel, color: fs > 0 ? "#c62828" : "#aaa" }}>Fuera serv.</div>
                   </div>
                 </div>
-
                 <div style={s.barraWrap}>
                   <div style={s.barra}>
                     {pOp > 0 && <div style={{ width: `${pOp}%`, background: "#43a047", height: "100%" }}></div>}
@@ -233,7 +232,6 @@ export default function PanelAdmin() {
                     {pFs > 0 && <div style={{ width: `${pFs}%`, background: "#ef5350", height: "100%" }}></div>}
                   </div>
                 </div>
-
                 <button style={s.btnVerLista} onClick={() => navigate(`/admin/cliente/${encodeURIComponent(cliente)}`)}>
                   Ver lista de equipos
                 </button>
