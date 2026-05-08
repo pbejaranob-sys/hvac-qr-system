@@ -12,7 +12,7 @@ const getBadgeStyle = (estado) => {
 };
 
 const ordenarPisos = (a, b) => {
-  const orden = ["sotano", "sÃ³tano", "subsuelo", "ss"];
+  const orden = ["sotano", "sótano", "subsuelo", "ss"];
   const aLow = a.toLowerCase();
   const bLow = b.toLowerCase();
   if (orden.includes(aLow)) return -1;
@@ -342,12 +342,74 @@ export default function PanelAdmin() {
                   </div>
                 </div>
 
-                {/* BotÃ³n ver equipos */}
+                {/* Botón ver equipos */}
                 <button
                   style={{ ...s.btnVerLista, background: abierto ? "#1a5fa8" : "white", color: abierto ? "white" : "#1a5fa8" }}
                   onClick={() => navigate(`/admin/cliente/${encodeURIComponent(cliente)}`)}
                 >
-                 {"â–¼ Ver lista de equipos"}
+                  {abierto ? "▲ Ocultar equipos" : "▼ Ver lista de equipos"}
                 </button>
 
+                {/* Tabla equipos (desplegable) */}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const s = {
+  page: { minHeight: "100vh", background: "#f0f4f8", fontFamily: "Inter, Arial, sans-serif" },
+  navbar: { background: "white", borderBottom: "0.5px solid #e0e0e0", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
+  navLeft: { display: "flex", alignItems: "center", gap: "12px" },
+  logo: { fontFamily: "'Arial Black', sans-serif", fontWeight: 900, fontSize: "22px", display: "flex", alignItems: "baseline" },
+  letraAzul: { color: "#1a5fa8" },
+  letraDorada: { color: "#f0c040" },
+  navDivider: { width: "1px", height: "20px", background: "#e0e0e0" },
+  navTitle: { fontSize: "13px", color: "#888" },
+  navBtns: { display: "flex", gap: "8px", flexWrap: "wrap" },
+  btnSuccess: { background: "#e8f5e9", color: "#2e7d32", border: "0.5px solid #a5d6a7", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
+  btnDefault: { background: "white", color: "#333", border: "0.5px solid #ddd", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
+  btnDanger: { background: "#ffebee", color: "#c62828", border: "0.5px solid #ef9a9a", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
+  content: { maxWidth: "1200px", margin: "0 auto", padding: "20px 24px" },
+  statsGrid: { display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", marginBottom: "20px" },
+  statCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "14px", textAlign: "center" },
+  statNum: { fontSize: "28px", fontWeight: 500, color: "#333" },
+  statLabel: { fontSize: "10px", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "2px" },
+  cardsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "16px" },
+  card: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", overflow: "hidden" },
+  cardHeader: { padding: "14px 16px", borderBottom: "0.5px solid #f0f0f0", display: "flex", alignItems: "center", gap: "10px" },
+  avatar: { width: "38px", height: "38px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 500, flexShrink: 0 },
+  cardInfo: { flex: 1 },
+  cardNombre: { fontSize: "14px", fontWeight: 500, color: "#222" },
+  cardSub: { fontSize: "11px", color: "#888", marginTop: "2px" },
+  cardBtns: { display: "flex", gap: "4px" },
+  btnExcel: { fontSize: "11px", padding: "4px 10px", background: "#1e7e34", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" },
+  btnPdf: { fontSize: "11px", padding: "4px 10px", background: "#c62828", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" },
+  miniStats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", padding: "12px 16px" },
+  miniStat: { textAlign: "center", padding: "8px", borderRadius: "8px" },
+  miniNum: { fontSize: "20px", fontWeight: 500 },
+  miniLabel: { fontSize: "10px", marginTop: "2px" },
+  barraWrap: { padding: "0 16px 12px" },
+  barra: { display: "flex", height: "6px", borderRadius: "3px", overflow: "hidden", background: "#f0f0f0" },
+  btnVerLista: { width: "100%", padding: "10px", border: "none", borderTop: "0.5px solid #f0f0f0", cursor: "pointer", fontSize: "13px", fontWeight: 500, transition: "all 0.2s" },
+  tablaWrap: { borderTop: "0.5px solid #f0f0f0", overflowX: "auto" },
+  filtroEstadoWrap: { display: "flex", alignItems: "center", gap: "6px", padding: "10px 14px", flexWrap: "wrap", borderBottom: "0.5px solid #f0f0f0" },
+  filtroLabel: { fontSize: "11px", color: "#888" },
+  filtroBtn: { fontSize: "11px", padding: "3px 10px", borderRadius: "20px", border: "0.5px solid #ddd", background: "white", cursor: "pointer", color: "#555" },
+  filtroBtnActivo: { background: "#1a5fa8", color: "white", border: "0.5px solid #1a5fa8" },
+  tabla: { width: "100%", borderCollapse: "collapse", fontSize: "12px" },
+  thead: { background: "#f8f9fa" },
+  th: { padding: "8px 10px", textAlign: "left", fontWeight: 500, color: "#666", borderBottom: "0.5px solid #e0e0e0", fontSize: "11px", textTransform: "uppercase", whiteSpace: "nowrap" },
+  tr: { borderBottom: "0.5px solid #f5f5f5" },
+  td: { padding: "8px 10px", color: "#333", fontSize: "12px" },
+  badge: { padding: "2px 8px", borderRadius: "10px", fontSize: "11px", fontWeight: 500, whiteSpace: "nowrap" },
+  codigo: { background: "#f3e5f5", color: "#6a1b9a", padding: "2px 6px", borderRadius: "4px", fontFamily: "monospace", fontWeight: 700, fontSize: "11px" },
+  pisoHeader: { background: "#e8f0fe", color: "#1a5fa8", fontWeight: 500, padding: "6px 10px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" },
+  acciones: { display: "flex", gap: "4px" },
+  btnInfo: { background: "#1a5fa8", color: "white", border: "none", borderRadius: "4px", padding: "3px 8px", cursor: "pointer", fontSize: "11px" },
+  btnEditar: { background: "#f57c00", color: "white", border: "none", borderRadius: "4px", padding: "3px 8px", cursor: "pointer", fontSize: "11px" },
+  btnCotizar: { background: "#7b1fa2", color: "white", border: "none", borderRadius: "4px", padding: "3px 8px", cursor: "pointer", fontSize: "11px" },
 };
