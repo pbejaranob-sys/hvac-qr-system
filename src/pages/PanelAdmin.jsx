@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
@@ -12,7 +12,7 @@ const getBadgeStyle = (estado) => {
 };
 
 const ordenarPisos = (a, b) => {
-  const orden = ["sotano", "sótano", "subsuelo", "ss"];
+  const orden = ["sotano", "s�tano", "subsuelo", "ss"];
   const aLow = a.toLowerCase(); const bLow = b.toLowerCase();
   if (orden.includes(aLow)) return -1; if (orden.includes(bLow)) return 1;
   const aNum = parseInt(a); const bNum = parseInt(b);

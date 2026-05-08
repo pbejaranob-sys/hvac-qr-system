@@ -173,7 +173,7 @@ export default function PanelCliente() {
         </div>
         <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
           <div style={s.avatar}>{usuario?.nombre?.substring(0,2).toUpperCase()||"U"}</div>
-          <span style={{fontSize:"13px",color:"#555"}}>{usuario?.nombre}</span>
+          <span style={{fontSize:"13px",color:"#555",textAlign:"left"}}>{usuario?.nombre}</span>
           <button style={s.btnSalir} onClick={handleLogout}>Salir</button>
         </div>
       </div>
@@ -195,7 +195,7 @@ export default function PanelCliente() {
         <div style={s.barrasCard}>
           {[["Operativo",op,"#43a047","#2e7d32"],["Con observaciones",obs,"#ffa726","#e65100"],["Fuera de servicio",fs,"#ef5350","#c62828"]].map(([label,val,bg,color])=>(
             <div key={label} style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"8px"}}>
-              <span style={{fontSize:"12px",color:"#666",minWidth:"150px"}}>{label}</span>
+              <span style={{fontSize:"12px",fontWeight:700,color:"#444",minWidth:"120px",textAlign:"left"}}>{label}</span>
               <div style={{flex:1,height:"8px",background:"#f0f0f0",borderRadius:"4px",overflow:"hidden"}}>
                 <div style={{width:`${tot?Math.round(val/tot*100):0}%`,height:"100%",background:bg}}></div>
               </div>
@@ -228,7 +228,7 @@ export default function PanelCliente() {
                 <thead>
                   <tr style={{background:"#f8f9fa"}}>
                     {["#","Código","Piso","Ambiente","Tipo equipo","Marca / Modelo","Serie","Estado","Acciones"].map(h=>(
-                      <th key={h} style={{padding:"10px 14px",textAlign:"left",fontWeight:500,color:"#666",borderBottom:"0.5px solid #e0e0e0",fontSize:"11px",textTransform:"uppercase",whiteSpace:"nowrap"}}>{h}</th>
+                      <th key={h} style={{padding:"10px 14px",textAlign:"left",fontWeight:700,color:"#444",borderBottom:"0.5px solid #e0e0e0",fontSize:"11px",textTransform:"uppercase",whiteSpace:"nowrap"}}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -243,12 +243,12 @@ export default function PanelCliente() {
                           <td style={{padding:"10px 14px"}}>
                             {equipo.codigo ? <span style={{fontSize:"11px",padding:"2px 7px",background:"#f3e5f5",color:"#6a1b9a",borderRadius:"4px",fontFamily:"monospace",fontWeight:700}}>{equipo.codigo}</span> : "-"}
                           </td>
-                          <td style={{padding:"10px 14px",fontSize:"13px",fontWeight:500,color:"#222"}}>{equipo.piso||"-"}</td>
-                          <td style={{padding:"10px 14px",fontSize:"13px",fontWeight:500,color:"#222"}}>{equipo.ambiente||"-"}</td>
-                          <td style={{padding:"10px 14px",fontSize:"13px",color:"#555"}}>{equipo.tipoEquipo||"-"}</td>
-                          <td style={{padding:"10px 14px",fontSize:"13px",color:"#555"}}>{equipo.marca||"-"}{equipo.modelo?` / ${equipo.modelo}`:""}</td>
-                          <td style={{padding:"10px 14px",fontSize:"13px",color:"#555"}}>{equipo.serie||"-"}</td>
-                          <td style={{padding:"10px 14px"}}>{getBadge(equipo.estado)}</td>
+                          <td style={{padding:"10px 14px",fontSize:"13px",fontWeight:500,color:"#222",textAlign:"left"}}>{equipo.piso||"-"}</td>
+                          <td style={{padding:"10px 14px",fontSize:"13px",fontWeight:500,color:"#222",textAlign:"left"}}>{equipo.ambiente||"-"}</td>
+                          <td style={{padding:"10px 14px",fontSize:"13px",color:"#555",textAlign:"left"}}>{equipo.tipoEquipo||"-"}</td>
+                          <td style={{padding:"10px 14px",fontSize:"13px",color:"#555",textAlign:"left"}}>{equipo.marca||"-"}{equipo.modelo?` / ${equipo.modelo}`:""}</td>
+                          <td style={{padding:"10px 14px",fontSize:"13px",color:"#555",textAlign:"left"}}>{equipo.serie||"-"}</td>
+                          <td style={{padding:"10px 14px",textAlign:"left"}}>{getBadge(equipo.estado)}</td>
                           <td style={{padding:"10px 14px"}}>
                             <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
                               <button style={s.btnInfo} onClick={()=>navigate(`/equipo/${equipo.id}`)}>Info</button>
@@ -297,14 +297,14 @@ const s = {
   div:{width:"1px",height:"18px",background:"#e0e0e0"},
   navEmpresa:{fontSize:"14px",fontWeight:500,color:"#222"},
   avatar:{width:"30px",height:"30px",borderRadius:"50%",background:"#e8f0fe",color:"#1a5fa8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",fontWeight:500},
-  btnSalir:{background:"#ffebee",color:"#c62828",border:"0.5px solid #ef9a9a",borderRadius:"8px",padding:"6px 14px",cursor:"pointer",fontSize:"12px",fontWeight:500},
+  btnSalir:{background:"#c62828",color:"white",border:"none",borderRadius:"8px",padding:"6px 14px",cursor:"pointer",fontSize:"12px",fontWeight:500},
   content:{maxWidth:"1200px",margin:"0 auto",padding:"20px 24px"},
   statsGrid:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"12px",marginBottom:"16px"},
   barrasCard:{background:"white",border:"0.5px solid #e0e0e0",borderRadius:"12px",padding:"14px 16px",marginBottom:"16px"},
   tablaCard:{background:"white",border:"0.5px solid #e0e0e0",borderRadius:"12px",overflow:"hidden"},
   tablaHeader:{padding:"12px 16px",borderBottom:"0.5px solid #f0f0f0",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"10px"},
-  btnExcel:{fontSize:"12px",padding:"5px 12px",background:"#e8f5e9",color:"#2e7d32",border:"0.5px solid #a5d6a7",borderRadius:"6px",cursor:"pointer",fontWeight:500},
-  btnPdf:{fontSize:"12px",padding:"5px 12px",background:"#ffebee",color:"#c62828",border:"0.5px solid #ef9a9a",borderRadius:"6px",cursor:"pointer",fontWeight:500},
+  btnExcel:{fontSize:"12px",padding:"5px 12px",background:"#1e7e34",color:"white",border:"none",borderRadius:"6px",cursor:"pointer",fontWeight:500},
+  btnPdf:{fontSize:"12px",padding:"5px 12px",background:"#c62828",color:"white",border:"none",borderRadius:"6px",cursor:"pointer",fontWeight:500},
   btnInfo:{fontSize:"11px",padding:"4px 10px",background:"#1a5fa8",color:"white",border:"none",borderRadius:"5px",cursor:"pointer",fontWeight:500},
   vacio:{textAlign:"center",padding:"3rem",background:"white",borderRadius:"12px",color:"#888",border:"0.5px solid #e0e0e0"},
   centro:{textAlign:"center",padding:"3rem",fontSize:"16px",color:"#888"},
