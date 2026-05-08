@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 import { collection, addDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -129,9 +129,11 @@ export default function RegistrarEquipo() {
         await updateDoc(doc(db, "equipos", equipoId), data);
         alert("Equipo actualizado correctamente");
       } else {
-        await addDoc(collection(db, "equipos"), {
-          ...data, fechaRegistro: new Date().toLocaleDateString("es-PE")
-        });
+       await addDoc(collection(db, "equipos"), {
+  ...data,
+  adminid: auth.currentUser?.uid || "",
+  fechaRegistro: new Date().toLocaleDateString("es-PE")
+}); 
         alert("Equipo registrado correctamente");
       }
       navigate(-1);
