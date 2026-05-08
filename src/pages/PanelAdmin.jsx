@@ -1,5 +1,4 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
@@ -7,13 +6,13 @@ import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 
 const getBadgeStyle = (estado) => {
-  if (estado === "Operativo") return { background: "#e8f5e9", color: "#2e7d32" };
-  if (estado === "Operativo con observaciones") return { background: "#fff8e1", color: "#f57f17" };
-  return { background: "#ffebee", color: "#c62828" };
+  if (estado === "Operativo") return { background: "#e8f5e9", color: "#2e7d32", whiteSpace:"nowrap", display:"inline-block" };
+  if (estado === "Operativo con observaciones") return { background: "#fff8e1", color: "#f57f17", whiteSpace:"nowrap", display:"inline-block" };
+  return { background: "#ffebee", color: "#c62828", whiteSpace:"nowrap", display:"inline-block" };
 };
 
 const ordenarPisos = (a, b) => {
-  const orden = ["sotano", "sótano", "subsuelo", "ss"];
+  const orden = ["sotano", "sÃ³tano", "subsuelo", "ss"];
   const aLow = a.toLowerCase();
   const bLow = b.toLowerCase();
   if (orden.includes(aLow)) return -1;
@@ -32,6 +31,26 @@ const agruparPorPiso = (equipos) => {
     porPiso[piso].push(e);
   });
   return porPiso;
+};
+
+const initiales = (nombre) => {
+  const words = nombre.trim().split(" ");
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return nombre.substring(0, 2).toUpperCase();
+};
+
+const colorAvatar = (nombre) => {
+  const colores = [
+    { bg: "#e8f0fe", color: "#1a5fa8" },
+    { bg: "#e8f5e9", color: "#2e7d32" },
+    { bg: "#f3e5f5", color: "#6a1b9a" },
+    { bg: "#fff8e1", color: "#e65100" },
+    { bg: "#fce4ec", color: "#c62828" },
+    { bg: "#e0f2f1", color: "#00695c" },
+  ];
+  let sum = 0;
+  for (let i = 0; i < nombre.length; i++) sum += nombre.charCodeAt(i);
+  return colores[sum % colores.length];
 };
 
 const exportarExcel = (cliente, equiposCliente) => {
@@ -55,7 +74,7 @@ const exportarExcel = (cliente, equiposCliente) => {
     td { border: 1px solid #E0E0E0; padding: 4px 6px; }
   </style></head><body>
   <table>
-    <tr><td colspan="13" class="titulo">HVAC QR System - Reporte de equipos</td></tr>
+    <tr><td colspan="13" class="titulo">HVAC - Sistema de Mantenimiento</td></tr>
     <tr>
       <td colspan="3" class="subtitulo">Cliente: ${cliente}</td>
       <td colspan="3" class="subtitulo">Generado: ${new Date().toLocaleDateString("es-PE")}</td>
@@ -105,7 +124,7 @@ const exportarExcel = (cliente, equiposCliente) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `equipos-${cliente.replace(/\s+/g,"-")}-${new Date().getFullYear()}.xls`;
+  a.download = `equipos-${cliente.replace(/\s+/g, "-")}-${new Date().getFullYear()}.xls`;
   a.click();
   URL.revokeObjectURL(url);
 };
@@ -119,7 +138,7 @@ const exportarPDF = (cliente, equiposCliente) => {
   pdf.setFontSize(13);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(255, 255, 255);
-  pdf.text("HVAC QR System - Reporte de equipos", margen, 13);
+  pdf.text("HVAC - Sistema de Mantenimiento", margen, 13);
   pdf.setFontSize(10);
   pdf.setFont("helvetica", "normal");
   pdf.text(`Cliente: ${cliente}   Generado: ${new Date().toLocaleDateString("es-PE")}   Total: ${equiposCliente.length} equipos`, margen, 19);
@@ -151,10 +170,7 @@ const exportarPDF = (cliente, equiposCliente) => {
     y += 7;
     porPiso[piso].forEach((e, idx) => {
       if (y > 185) { pdf.addPage(); y = 15; dibujarEncabezado(); }
-      if (idx % 2 === 0) {
-        pdf.setFillColor(248, 249, 250);
-        pdf.rect(margen, y - 3, 277, 7, "F");
-      }
+      if (idx % 2 === 0) { pdf.setFillColor(248, 249, 250); pdf.rect(margen, y - 3, 277, 7, "F"); }
       const fila = [
         String(item++), e.codigo || "-", e.piso || "-", e.ambiente || "-",
         e.tipoEquipo || "-", e.marca || "-", e.modelo || "-", e.serie || "-",
@@ -170,11 +186,8 @@ const exportarPDF = (cliente, equiposCliente) => {
           if (val === "Operativo") pdf.setTextColor(27, 94, 32);
           else if (val === "Operativo con observaciones") pdf.setTextColor(230, 81, 0);
           else pdf.setTextColor(183, 28, 28);
-        } else if (i === 1) {
-          pdf.setTextColor(106, 27, 154);
-        } else {
-          pdf.setTextColor(50, 50, 50);
-        }
+        } else if (i === 1) { pdf.setTextColor(106, 27, 154); }
+        else { pdf.setTextColor(50, 50, 50); }
         const texto = pdf.splitTextToSize(val, cols[i] - 2);
         pdf.text(texto[0], x + 1, y + 2);
         x += cols[i];
@@ -186,70 +199,16 @@ const exportarPDF = (cliente, equiposCliente) => {
   });
   pdf.setFontSize(8);
   pdf.setTextColor(150, 150, 150);
-  pdf.text(`HVAC QR System - hvac-qr-system-1odv.vercel.app`, margen, 205);
-  pdf.save(`equipos-${cliente.replace(/\s+/g,"-")}-${new Date().getFullYear()}.pdf`);
-};
-
-const barStyles = {
-  contenedor: { padding: "16px 20px", background: "#f9fafb", borderRadius: "8px", marginBottom: "16px", border: "1px solid #e0e0e0" },
-  titulo: { fontWeight: "bold", fontSize: "13px", color: "#555", marginBottom: "12px" },
-  fila: { display: "flex", alignItems: "center", marginBottom: "8px", gap: "10px" },
-  etiqueta: { width: "180px", fontSize: "13px", color: "#444" },
-  track: { flex: 1, height: "12px", background: "#e0e0e0", borderRadius: "6px", overflow: "hidden" },
-  fill: { height: "100%", borderRadius: "6px" },
-  pct: { width: "40px", textAlign: "right", fontSize: "13px", fontWeight: "bold" },
-  combinada: { display: "flex", height: "10px", borderRadius: "6px", overflow: "hidden", marginTop: "10px" },
-  leyenda: { display: "flex", gap: "16px", marginTop: "8px", fontSize: "12px", color: "#666", flexWrap: "wrap" },
-  leyendaItem: { display: "flex", alignItems: "center", gap: "5px" },
-  dot: { width: "10px", height: "10px", borderRadius: "50%" },
-};
-
-const BarrasEstado = ({ equipos }) => {
-  const total = equipos.length;
-  if (total === 0) return null;
-  const op = equipos.filter(e => e.estado === "Operativo").length;
-  const obs = equipos.filter(e => e.estado === "Operativo con observaciones").length;
-  const fs = equipos.filter(e => e.estado === "Fuera de servicio").length;
-  const pOp = Math.round((op / total) * 100);
-  const pObs = Math.round((obs / total) * 100);
-  const pFs = Math.round((fs / total) * 100);
-  return (
-    <div style={barStyles.contenedor}>
-      <div style={barStyles.titulo}>📊 Estado de equipos</div>
-      <div style={barStyles.fila}>
-        <span style={barStyles.etiqueta}>✅ Operativo</span>
-        <div style={barStyles.track}><div style={{...barStyles.fill, width:`${pOp}%`, background:"#43a047"}}></div></div>
-        <span style={{...barStyles.pct, color:"#2e7d32"}}>{pOp}%</span>
-      </div>
-      <div style={barStyles.fila}>
-        <span style={barStyles.etiqueta}>⚠️ Con observaciones</span>
-        <div style={barStyles.track}><div style={{...barStyles.fill, width:`${pObs}%`, background:"#ffa726"}}></div></div>
-        <span style={{...barStyles.pct, color:"#e65100"}}>{pObs}%</span>
-      </div>
-      <div style={barStyles.fila}>
-        <span style={barStyles.etiqueta}>🔴 Fuera de servicio</span>
-        <div style={barStyles.track}><div style={{...barStyles.fill, width:`${pFs}%`, background:"#ef5350"}}></div></div>
-        <span style={{...barStyles.pct, color:"#c62828"}}>{pFs}%</span>
-      </div>
-      <div style={barStyles.combinada}>
-        <div style={{width:`${pOp}%`, background:"#43a047"}}></div>
-        <div style={{width:`${pObs}%`, background:"#ffa726"}}></div>
-        <div style={{width:`${pFs}%`, background:"#ef5350"}}></div>
-      </div>
-      <div style={barStyles.leyenda}>
-        <div style={barStyles.leyendaItem}><div style={{...barStyles.dot, background:"#43a047"}}></div>Operativo {pOp}%</div>
-        <div style={barStyles.leyendaItem}><div style={{...barStyles.dot, background:"#ffa726"}}></div>Con observaciones {pObs}%</div>
-        <div style={barStyles.leyendaItem}><div style={{...barStyles.dot, background:"#ef5350"}}></div>Fuera de servicio {pFs}%</div>
-      </div>
-    </div>
-  );
+  pdf.text(`HVAC Sistema de Mantenimiento - hvac-qr-system-1odv.vercel.app`, margen, 205);
+  pdf.save(`equipos-${cliente.replace(/\s+/g, "-")}-${new Date().getFullYear()}.pdf`);
 };
 
 export default function PanelAdmin() {
   const [equipos, setEquipos] = useState([]);
   const [clientes, setClientes] = useState([]);
-  const [filtro, setFiltro] = useState("Todos");
+  const [clienteAbierto, setClienteAbierto] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [obsAbierto, setObsAbierto] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => { cargarEquipos(); }, []);
@@ -258,7 +217,7 @@ export default function PanelAdmin() {
     const snapshot = await getDocs(collection(db, "equipos"));
     const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     setEquipos(lista);
-    const clientesUnicos = ["Todos", ...new Set(lista.map(e => e.cliente || "Sin cliente"))];
+    const clientesUnicos = [...new Set(lista.map(e => e.cliente || "Sin cliente"))];
     setClientes(clientesUnicos);
   };
 
@@ -268,174 +227,127 @@ export default function PanelAdmin() {
   };
 
   const agrupados = {};
-  const equiposFiltrados = filtro === "Todos" ? equipos : equipos.filter(e => e.cliente === filtro);
-  const equiposFiltradosEstado = filtroEstado === "Todos" ? equiposFiltrados : equiposFiltrados.filter(e => e.estado === filtroEstado);
-
-  equiposFiltradosEstado.forEach(e => {
+  equipos.forEach(e => {
     const cliente = e.cliente || "Sin cliente";
     if (!agrupados[cliente]) agrupados[cliente] = [];
     agrupados[cliente].push(e);
   });
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.titulo}>👑 Panel Maestro</h1>
-        <div style={styles.headerBtns}>
-          <button style={styles.btnVerde} onClick={() => navigate("/crear-usuario")}>+ Crear usuario</button>
-          <button style={styles.btnAzul} onClick={() => navigate("/registrar")}>+ Nuevo equipo</button>
-          <button style={styles.btnRojo} onClick={handleLogout}>Cerrar sesión</button>
+    <div style={s.page}>
+
+      {/* NAVBAR */}
+      <div style={s.navbar}>
+        <div style={s.navLeft}>
+          <div style={s.logo}>
+            <span style={s.letraAzul}>H</span>
+            <span style={{ ...s.letraAzul, marginRight: "-8px" }}>V</span>
+            <span style={s.letraDorada}>A</span>
+            <span style={{ ...s.letraAzul, marginLeft: "-2px" }}>C</span>
+          </div>
+          <div style={s.navDivider}></div>
+          <span style={s.navTitle}>Panel Maestro</span>
+        </div>
+        <div style={s.navBtns}>
+          <button style={s.btnSuccess} onClick={() => navigate("/crear-usuario")}>+ Crear usuario</button>
+          <button style={s.btnDefault} onClick={() => navigate("/registrar")}>+ Nuevo equipo</button>
+          <button style={s.btnDanger} onClick={handleLogout}>Salir</button>
         </div>
       </div>
 
-      <div style={styles.statsRow}>
-        <div style={styles.stat}><div style={styles.statNum}>{clientes.length - 1}</div><div style={styles.statLabel}>Clientes</div></div>
-        <div style={styles.stat}><div style={styles.statNum}>{equipos.length}</div><div style={styles.statLabel}>Equipos totales</div></div>
-        <div style={styles.stat}><div style={{...styles.statNum, color:"#2e7d32"}}>{equipos.filter(e => e.estado === "Operativo").length}</div><div style={styles.statLabel}>Operativos</div></div>
-        <div style={styles.stat}><div style={{...styles.statNum, color:"#f57f17"}}>{equipos.filter(e => e.estado === "Operativo con observaciones").length}</div><div style={styles.statLabel}>Con observaciones</div></div>
-        <div style={styles.stat}><div style={{...styles.statNum, color:"#c62828"}}>{equipos.filter(e => e.estado === "Fuera de servicio").length}</div><div style={styles.statLabel}>Fuera de servicio</div></div>
-      </div>
+      <div style={s.content}>
 
-      <div style={styles.filtroRow}>
-        <div style={styles.filtroGrupo}>
-          <span style={styles.filtroLabel}>Cliente:</span>
-          <div style={styles.filtrosBtns}>
-            {clientes.map(c => (
-              <button key={c} style={{...styles.filtroBtn, ...(filtro === c ? styles.filtroActivo : {})}} onClick={() => setFiltro(c)}>{c}</button>
-            ))}
+        {/* STATS GLOBALES */}
+        <div style={s.statsGrid}>
+          <div style={s.statCard}>
+            <div style={{ ...s.statNum, color: "#1a5fa8" }}>{clientes.length}</div>
+            <div style={s.statLabel}>Clientes</div>
+          </div>
+          <div style={s.statCard}>
+            <div style={s.statNum}>{equipos.length}</div>
+            <div style={s.statLabel}>Equipos</div>
+          </div>
+          <div style={s.statCard}>
+            <div style={{ ...s.statNum, color: "#2e7d32" }}>{equipos.filter(e => e.estado === "Operativo").length}</div>
+            <div style={s.statLabel}>Operativos</div>
+          </div>
+          <div style={s.statCard}>
+            <div style={{ ...s.statNum, color: "#e65100" }}>{equipos.filter(e => e.estado === "Operativo con observaciones").length}</div>
+            <div style={s.statLabel}>Con obs.</div>
+          </div>
+          <div style={s.statCard}>
+            <div style={{ ...s.statNum, color: "#c62828" }}>{equipos.filter(e => e.estado === "Fuera de servicio").length}</div>
+            <div style={s.statLabel}>Fuera serv.</div>
           </div>
         </div>
-      </div>
 
-      {Object.entries(agrupados).map(([cliente, equiposCliente]) => {
-        const porPiso = agruparPorPiso(equiposCliente);
-        const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
-        let itemNum = 1;
-        return (
-          <div key={cliente} style={styles.clienteBloque}>
-            <div style={styles.clienteHeader}>
-              <div style={styles.clienteLeft}>
-                <span style={styles.clienteNombre}>👤 {cliente}</span>
-                <span style={styles.clienteCount}>{equiposCliente.length} equipo{equiposCliente.length !== 1 ? "s" : ""}</span>
-              </div>
-              <div style={styles.exportBtns}>
-                <button style={styles.btnExcel} onClick={() => exportarExcel(cliente, equiposCliente)}>📊 Excel</button>
-                <button style={styles.btnPdfExp} onClick={() => exportarPDF(cliente, equiposCliente)}>📄 PDF</button>
-              </div>
-            </div>
+        {/* CARDS POR CLIENTE */}
+        <div style={s.cardsGrid}>
+          {Object.entries(agrupados).map(([cliente, equiposCliente]) => {
+            const op = equiposCliente.filter(e => e.estado === "Operativo").length;
+            const obs = equiposCliente.filter(e => e.estado === "Operativo con observaciones").length;
+            const fs = equiposCliente.filter(e => e.estado === "Fuera de servicio").length;
+            const total = equiposCliente.length;
+            const pOp = total ? Math.round((op / total) * 100) : 0;
+            const pObs = total ? Math.round((obs / total) * 100) : 0;
+            const pFs = total ? Math.round((fs / total) * 100) : 0;
+            const av = colorAvatar(cliente);
+            const abierto = clienteAbierto === cliente;
 
-            <BarrasEstado equipos={equiposCliente} />
+            const porPiso = agruparPorPiso(equiposCliente);
+            const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
+            let itemNum = 1;
 
-            <div style={styles.tablaWrapper}>
-              <table style={styles.tabla}>
-                <thead>
-                  <tr style={styles.thead}>
-                    <th style={styles.th}>Item</th>
-                    <th style={styles.th}>Código</th>
-                    <th style={styles.th}>Piso</th>
-                    <th style={styles.th}>Ambiente</th>
-                    <th style={styles.th}>Tipo equipo</th>
-                    <th style={styles.th}>Marca</th>
-                    <th style={styles.th}>Modelo</th>
-                    <th style={styles.th}>Serie</th>
-                    <th style={styles.th}>
-                      <select style={styles.thSelect} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
-                        <option value="Todos">Estado ▼</option>
-                        <option value="Operativo">✅ Operativo</option>
-                        <option value="Operativo con observaciones">⚠️ Con observaciones</option>
-                        <option value="Fuera de servicio">🔴 Fuera de servicio</option>
-                      </select>
-                    </th>
-                    <th style={styles.th}>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pisosOrdenados.map(piso => (
-                    <React.Fragment key={piso}>
-                      <tr>
-                        <td colSpan={10} style={styles.pisoHeader}>
-                          🏢 {piso === "Sin piso" ? "Sin piso asignado" : `Piso ${piso}`}
-                        </td>
-                      </tr>
-                      {porPiso[piso].map((equipo) => {
-                        const item = itemNum++;
-                        return (
-                          <tr key={equipo.id} style={styles.tr}>
-                            <td style={{...styles.td, textAlign:"center"}}>{item}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>
-                              {equipo.codigo ? <span style={styles.codigo}>{equipo.codigo}</span> : "-"}
-                            </td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.piso || "-"}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.ambiente || "-"}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.tipoEquipo || "-"}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.marca || "-"}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.modelo || "-"}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>{equipo.serie || "-"}</td>
-                            <td style={{...styles.td, textAlign:"center"}}>
-                              <span style={{...styles.badge, ...getBadgeStyle(equipo.estado)}}>
-                                {equipo.estado || "Operativo"}
-                              </span>
-                            </td>
-                            <td style={styles.td}>
-                              <div style={styles.acciones}>
-                                <button style={styles.btnInfo} onClick={() => navigate(`/equipo/${equipo.id}`)}>Información</button>
-                                <button style={styles.btnEditar} onClick={() => navigate(`/registrar?id=${equipo.id}`)}>Editar</button>
-                                <button style={styles.btnCotizar} onClick={() => navigate(`/cotizacion/${equipo.id}`)}>Cotización</button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+            const equiposFiltrados = filtroEstado === "Todos"
+              ? equiposCliente
+              : equiposCliente.filter(e => e.estado === filtroEstado);
 
-const styles = {
-  container: { maxWidth: "1200px", margin: "0 auto", padding: "20px", fontFamily: "Inter, sans-serif" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "12px" },
-  titulo: { fontSize: "28px", fontWeight: "700", color: "#1a73e8", margin: 0 },
-  headerBtns: { display: "flex", gap: "10px", flexWrap: "wrap" },
-  btnVerde: { background: "#43a047", color: "white", border: "none", borderRadius: "8px", padding: "10px 18px", cursor: "pointer", fontWeight: "600", fontSize: "14px" },
-  btnAzul: { background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", padding: "10px 18px", cursor: "pointer", fontWeight: "600", fontSize: "14px" },
-  btnRojo: { background: "#e53935", color: "white", border: "none", borderRadius: "8px", padding: "10px 18px", cursor: "pointer", fontWeight: "600", fontSize: "14px" },
-  statsRow: { display: "flex", gap: "16px", marginBottom: "24px", flexWrap: "wrap" },
-  stat: { flex: 1, minWidth: "140px", background: "white", borderRadius: "12px", padding: "20px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #f0f0f0" },
-  statNum: { fontSize: "32px", fontWeight: "700", color: "#1a73e8" },
-  statLabel: { fontSize: "12px", color: "#888", marginTop: "4px", textTransform: "uppercase", letterSpacing: "0.05em" },
-  filtroRow: { background: "white", borderRadius: "12px", padding: "16px 20px", marginBottom: "20px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", border: "1px solid #f0f0f0" },
-  filtroGrupo: { display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" },
-  filtroLabel: { fontWeight: "600", color: "#555", fontSize: "14px" },
-  filtrosBtns: { display: "flex", gap: "8px", flexWrap: "wrap" },
-  filtroBtn: { padding: "6px 14px", borderRadius: "20px", border: "1px solid #ddd", background: "white", cursor: "pointer", fontSize: "13px", color: "#555" },
-  filtroActivo: { background: "#1a73e8", color: "white", border: "1px solid #1a73e8" },
-  clienteBloque: { background: "white", borderRadius: "12px", padding: "20px", marginBottom: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", border: "1px solid #f0f0f0" },
-  clienteHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" },
-  clienteLeft: { display: "flex", alignItems: "center", gap: "10px" },
-  clienteNombre: { fontSize: "18px", fontWeight: "700", color: "#333" },
-  clienteCount: { background: "#e8f0fe", color: "#1a73e8", borderRadius: "20px", padding: "2px 10px", fontSize: "13px", fontWeight: "600" },
-  exportBtns: { display: "flex", gap: "8px" },
-  btnExcel: { background: "#1e7e34", color: "white", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontWeight: "600", fontSize: "13px" },
-  btnPdfExp: { background: "#c62828", color: "white", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontWeight: "600", fontSize: "13px" },
-  tablaWrapper: { overflowX: "auto" },
-  tabla: { width: "100%", borderCollapse: "collapse", fontSize: "13px" },
-  thead: { background: "#f8f9fa" },
-  th: { padding: "10px 12px", textAlign: "left", fontWeight: "600", color: "#555", borderBottom: "2px solid #e0e0e0", whiteSpace: "nowrap", fontSize: "12px", textTransform: "uppercase" },
-  thSelect: { background: "transparent", border: "none", cursor: "pointer", fontWeight: "600", color: "#555", fontSize: "12px", textTransform: "uppercase" },
-  tr: { borderBottom: "1px solid #f0f0f0" },
-  td: { padding: "10px 12px", color: "#333", fontSize: "13px" },
-  badge: { padding: "3px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "600", whiteSpace: "nowrap" },
-  codigo: { background: "#f3e5f5", color: "#6a1b9a", padding: "2px 8px", borderRadius: "6px", fontFamily: "monospace", fontWeight: "700", fontSize: "12px" },
-  pisoHeader: { background: "#e3f2fd", color: "#0d47a1", fontWeight: "700", padding: "8px 12px", fontSize: "13px" },
-  acciones: { display: "flex", gap: "6px", flexWrap: "wrap" },
-  btnInfo: { background: "#1a73e8", color: "white", border: "none", borderRadius: "6px", padding: "5px 10px", cursor: "pointer", fontSize: "12px", fontWeight: "600" },
-  btnEditar: { background: "#f57c00", color: "white", border: "none", borderRadius: "6px", padding: "5px 10px", cursor: "pointer", fontSize: "12px", fontWeight: "600" },
-  btnCotizar: { background: "#7b1fa2", color: "white", border: "none", borderRadius: "6px", padding: "5px 10px", cursor: "pointer", fontSize: "12px", fontWeight: "600" },
+            return (
+              <div key={cliente} style={s.card}>
+                {/* Header card */}
+                <div style={s.cardHeader}>
+                  <div style={{ ...s.avatar, background: av.bg, color: av.color }}>{initiales(cliente)}</div>
+                  <div style={s.cardInfo}>
+                    <div style={s.cardNombre}>{cliente}</div>
+                    <div style={s.cardSub}>{total} equipo{total !== 1 ? "s" : ""} registrado{total !== 1 ? "s" : ""}</div>
+                  </div>
+                  <div style={s.cardBtns}>
+                    <button style={s.btnExcel} onClick={() => exportarExcel(cliente, equiposCliente)}>Excel</button>
+                    <button style={s.btnPdf} onClick={() => exportarPDF(cliente, equiposCliente)}>PDF</button>
+                  </div>
+                </div>
+
+                {/* Mini stats */}
+                <div style={s.miniStats}>
+                  <div style={{ ...s.miniStat, background: op > 0 ? "#e8f5e9" : "#f5f5f5" }}>
+                    <div style={{ ...s.miniNum, color: op > 0 ? "#2e7d32" : "#aaa" }}>{op}</div>
+                    <div style={{ ...s.miniLabel, color: op > 0 ? "#2e7d32" : "#aaa" }}>Operativo</div>
+                  </div>
+                  <div style={{ ...s.miniStat, background: obs > 0 ? "#fff8e1" : "#f5f5f5" }}>
+                    <div style={{ ...s.miniNum, color: obs > 0 ? "#e65100" : "#aaa" }}>{obs}</div>
+                    <div style={{ ...s.miniLabel, color: obs > 0 ? "#e65100" : "#aaa" }}>Con obs.</div>
+                  </div>
+                  <div style={{ ...s.miniStat, background: fs > 0 ? "#ffebee" : "#f5f5f5" }}>
+                    <div style={{ ...s.miniNum, color: fs > 0 ? "#c62828" : "#aaa" }}>{fs}</div>
+                    <div style={{ ...s.miniLabel, color: fs > 0 ? "#c62828" : "#aaa" }}>Fuera serv.</div>
+                  </div>
+                </div>
+
+                {/* Barra estado */}
+                <div style={s.barraWrap}>
+                  <div style={s.barra}>
+                    {pOp > 0 && <div style={{ width: `${pOp}%`, background: "#43a047", height: "100%" }}></div>}
+                    {pObs > 0 && <div style={{ width: `${pObs}%`, background: "#ffa726", height: "100%" }}></div>}
+                    {pFs > 0 && <div style={{ width: `${pFs}%`, background: "#ef5350", height: "100%" }}></div>}
+                  </div>
+                </div>
+
+                {/* BotÃ³n ver equipos */}
+                <button
+                  style={{ ...s.btnVerLista, background: abierto ? "#1a5fa8" : "white", color: abierto ? "white" : "#1a5fa8" }}
+                  onClick={() => navigate(`/admin/cliente/${encodeURIComponent(cliente)}`)}
+                >
+                 {"â–¼ Ver lista de equipos"}
+                </button>
+
 };

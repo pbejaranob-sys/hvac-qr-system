@@ -7,6 +7,7 @@ import PanelCliente from "./pages/PanelCliente";
 import PanelAdmin from "./pages/PanelAdmin";
 import CrearUsuario from "./pages/CrearUsuario";
 import Cotizacion from "./pages/Cotizacion";
+import ListaEquiposCliente from "./pages/ListaEquiposCliente";
 
 function App() {
   return (
@@ -18,11 +19,11 @@ function App() {
         <Route path="/equipo/:id" element={<VistaEquipo />} />
         <Route path="/cliente" element={<PanelCliente />} />
         <Route path="/admin" element={<PanelAdmin />} />
+        <Route path="/admin/cliente/:clienteNombre" element={<ListaEquiposCliente />} />
         <Route path="/crear-usuario" element={<CrearUsuario />} />
         <Route path="/cotizacion/:id" element={<Cotizacion />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
 export default App;
