@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { auth, db } from "../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
@@ -17,11 +17,15 @@ export default function Login() {
     setCargando(true);
     setError("");
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      const q = query(collection(db, "usuarios"), where("email", "==", email));
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        const userData = snap.docs[0].data();
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
+
+      // Buscar por UID (compatible con las nuevas reglas de seguridad)
+      const docRef = doc(db, "usuarios", uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
         if (userData.rol === "admin") {
           navigate("/admin");
         } else {
@@ -31,7 +35,14 @@ export default function Login() {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError("Correo o contraseña incorrectos");
+      console.error("Error login:", err.code, err.message);
+      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        setError("Correo o contraseña incorrectos");
+      } else if (err.code === "auth/too-many-requests") {
+        setError("Demasiados intentos. Espera unos minutos.");
+      } else {
+        setError("Error al ingresar: " + err.code);
+      }
     }
     setCargando(false);
   };
@@ -39,7 +50,6 @@ export default function Login() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-
         <div style={styles.logoWrap}>
           <div style={styles.logoLetras}>
             <span style={styles.letraAzul}>H</span>
@@ -75,10 +85,7 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <span
-              style={styles.inputIconRight}
-              onClick={() => setVerPass(!verPass)}
-            >
+            <span style={styles.inputIconRight} onClick={() => setVerPass(!verPass)}>
               {verPass ? "🙈" : "👁"}
             </span>
           </div>
@@ -94,106 +101,19 @@ export default function Login() {
 }
 
 const styles = {
-  container: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#dce8f5",
-  },
-  card: {
-    background: "white",
-    padding: "2.5rem 2rem",
-    borderRadius: "14px",
-    width: "100%",
-    maxWidth: "380px",
-    border: "0.5px solid #d0dce8",
-  },
-  logoWrap: {
-    textAlign: "center",
-    marginBottom: "1.8rem",
-  },
-  logoLetras: {
-    display: "inline-flex",
-    alignItems: "baseline",
-    fontFamily: "'Arial Black', 'Helvetica Neue', sans-serif",
-    fontWeight: 900,
-    fontSize: "48px",
-    lineHeight: 1,
-    marginBottom: "8px",
-  },
-  letraAzul: {
-    color: "#1a5fa8",
-  },
-  letraDorada: {
-    color: "#f0c040",
-  },
-  lineaDivisor: {
-    width: "100%",
-    height: "1px",
-    background: "#c8d8ea",
-    margin: "6px 0 5px",
-  },
-  subLogo: {
-    fontFamily: "Arial, sans-serif",
-    fontSize: "10px",
-    letterSpacing: "3px",
-    color: "#6b8cae",
-    textTransform: "uppercase",
-  },
-  error: {
-    color: "#c62828",
-    textAlign: "center",
-    marginBottom: "1rem",
-    fontSize: "13px",
-    background: "#ffebee",
-    padding: "8px",
-    borderRadius: "6px",
-  },
-  inputWrap: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    border: "0.5px solid #c5d5e8",
-    borderRadius: "8px",
-    padding: "10px 12px",
-    background: "#f7fafd",
-    marginBottom: "10px",
-  },
-  inputIcon: {
-    fontSize: "15px",
-    color: "#6b8cae",
-  },
-  inputIconRight: {
-    fontSize: "15px",
-    color: "#6b8cae",
-    marginLeft: "auto",
-    cursor: "pointer",
-  },
-  input: {
-    flex: 1,
-    border: "none",
-    background: "transparent",
-    fontSize: "14px",
-    color: "#333",
-    outline: "none",
-  },
-  button: {
-    width: "100%",
-    padding: "12px",
-    background: "#1a5fa8",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: 500,
-    cursor: "pointer",
-    marginTop: "6px",
-  },
-  footer: {
-    textAlign: "center",
-    marginTop: "1.2rem",
-    fontSize: "11px",
-    color: "#a0b4c8",
-  },
+  container: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#dce8f5" },
+  card: { background: "white", padding: "2.5rem 2rem", borderRadius: "14px", width: "100%", maxWidth: "380px", border: "0.5px solid #d0dce8" },
+  logoWrap: { textAlign: "center", marginBottom: "1.8rem" },
+  logoLetras: { display: "inline-flex", alignItems: "baseline", fontFamily: "'Arial Black', 'Helvetica Neue', sans-serif", fontWeight: 900, fontSize: "48px", lineHeight: 1, marginBottom: "8px" },
+  letraAzul: { color: "#1a5fa8" },
+  letraDorada: { color: "#f0c040" },
+  lineaDivisor: { width: "100%", height: "1px", background: "#c8d8ea", margin: "6px 0 5px" },
+  subLogo: { fontFamily: "Arial, sans-serif", fontSize: "10px", letterSpacing: "3px", color: "#6b8cae", textTransform: "uppercase" },
+  error: { color: "#c62828", textAlign: "center", marginBottom: "1rem", fontSize: "13px", background: "#ffebee", padding: "8px", borderRadius: "6px" },
+  inputWrap: { display: "flex", alignItems: "center", gap: "8px", border: "0.5px solid #c5d5e8", borderRadius: "8px", padding: "10px 12px", background: "#f7fafd", marginBottom: "10px" },
+  inputIcon: { fontSize: "15px", color: "#6b8cae" },
+  inputIconRight: { fontSize: "15px", color: "#6b8cae", marginLeft: "auto", cursor: "pointer" },
+  input: { flex: 1, border: "none", background: "transparent", fontSize: "14px", color: "#333", outline: "none" },
+  button: { width: "100%", padding: "12px", background: "#1a5fa8", color: "white", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: 500, cursor: "pointer", marginTop: "6px" },
+  footer: { textAlign: "center", marginTop: "1.2rem", fontSize: "11px", color: "#a0b4c8" },
 };
