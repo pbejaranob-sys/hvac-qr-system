@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+};
 import { db, auth } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
@@ -12,7 +13,7 @@ const getBadgeStyle = (estado) => {
 };
 
 const ordenarPisos = (a, b) => {
-  const orden = ["sotano", "sótano", "subsuelo", "ss"];
+  const orden = ["sotano", "sÃ³tano", "subsuelo", "ss"];
   const aLow = a.toLowerCase();
   const bLow = b.toLowerCase();
   if (orden.includes(aLow)) return -1;
@@ -342,12 +343,12 @@ export default function PanelAdmin() {
                   </div>
                 </div>
 
-                {/* Botón ver equipos */}
+                {/* BotÃ³n ver equipos */}
                 <button
                   style={{ ...s.btnVerLista, background: abierto ? "#1a5fa8" : "white", color: abierto ? "white" : "#1a5fa8" }}
                   onClick={() => navigate(`/admin/cliente/${encodeURIComponent(cliente)}`)}
                 >
-                  {abierto ? "▲ Ocultar equipos" : "▼ Ver lista de equipos"}
+                  {abierto ? "â–² Ocultar equipos" : "â–¼ Ver lista de equipos"}
                 </button>
 
                 {/* Tabla equipos (desplegable) */}
