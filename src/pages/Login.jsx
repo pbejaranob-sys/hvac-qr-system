@@ -20,14 +20,15 @@ export default function Login() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const uid = userCredential.user.uid;
 
-      // Buscar por UID (compatible con las nuevas reglas de seguridad)
       const docRef = doc(db, "usuarios", uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        if (userData.rol === "admin") {
+        if (userData.superadmin === true) {
           navigate("/admin");
+        } else if (userData.rol === "admin") {
+          navigate("/panel-admin");
         } else {
           navigate("/cliente");
         }
@@ -46,7 +47,7 @@ export default function Login() {
     }
     setCargando(false);
   };
-
+  
   return (
     <div style={styles.container}>
       <div style={styles.card}>

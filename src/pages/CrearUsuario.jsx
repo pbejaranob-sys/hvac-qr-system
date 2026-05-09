@@ -1,24 +1,18 @@
 import { useState } from "react";
-import { auth, db } from "../firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { collection, addDoc } from "firebase/firestore";
+import { db, auth } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+
+const FIREBASE_API_KEY = "AIzaSyCkdDUDpl-rTNLjABO_o6gLTqHa92yUbIs";
 
 export default function CrearUsuario() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    nombre: "",
-    empresa: "",
-    email: "",
-    password: ""
-  });
+  const [form, setForm] = useState({ nombre: "", empresa: "", email: "", password: "", rol: "admin" });
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,16 +20,36 @@ export default function CrearUsuario() {
     setError("");
     setMensaje("");
     try {
-      await createUserWithEmailAndPassword(auth, form.email, form.password);
-      await addDoc(collection(db, "usuarios"), {
+      // Crear usuario en Firebase Auth sin cerrar sesión actual
+      const res = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: form.email,
+            password: form.password,
+            returnSecureToken: true
+          })
+        }
+      );
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const nuevoUID = data.localId;
+
+      // Crear documento en Firestore con el UID como ID
+      await setDoc(doc(db, "usuarios", nuevoUID), {
         nombre: form.nombre,
         empresa: form.empresa,
         email: form.email,
-        rol: "cliente",
+        rol: form.rol,
+        adminid: auth.currentUser?.uid || "",
         fechaCreacion: new Date().toLocaleDateString("es-PE")
       });
-      setMensaje(`✅ Usuario creado exitosamente para ${form.empresa}`);
-      setForm({ nombre: "", empresa: "", email: "", password: "" });
+
+      setMensaje(`✅ ${form.rol === "admin" ? "Admin" : "Cliente"} creado: ${form.email}`);
+      setForm({ nombre: "", empresa: "", email: "", password: "", rol: "admin" });
     } catch (err) {
       setError("Error: " + err.message);
     }
@@ -47,23 +61,26 @@ export default function CrearUsuario() {
       <div style={styles.card}>
         <div style={styles.header}>
           <button style={styles.btnVolver} onClick={() => navigate("/admin")}>← Volver</button>
-          <h2 style={styles.titulo}>➕ Crear nuevo usuario cliente</h2>
+          <h2 style={styles.titulo}>➕ Crear nuevo usuario</h2>
         </div>
-
-        <p style={styles.descripcion}>
-          Crea una cuenta para que tu cliente pueda acceder a su panel y ver/editar solo sus equipos.
-        </p>
 
         {mensaje && <div style={styles.exito}>{mensaje}</div>}
         {error && <div style={styles.errorBox}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div style={styles.formRow}>
-            <label style={styles.label}>Nombre del contacto</label>
+            <label style={styles.label}>Rol</label>
+            <select style={styles.input} name="rol" value={form.rol} onChange={handleChange}>
+              <option value="admin">Admin — gestiona sus propios clientes y equipos</option>
+              <option value="cliente">Cliente — solo ve sus equipos</option>
+            </select>
+          </div>
+          <div style={styles.formRow}>
+            <label style={styles.label}>Nombre completo</label>
             <input style={styles.input} name="nombre" placeholder="Carlos Gómez" value={form.nombre} onChange={handleChange} required />
           </div>
           <div style={styles.formRow}>
-            <label style={styles.label}>Nombre de la empresa</label>
+            <label style={styles.label}>Empresa</label>
             <input style={styles.input} name="empresa" placeholder="Clínica San Marcos" value={form.empresa} onChange={handleChange} required />
           </div>
           <div style={styles.formRow}>
@@ -72,17 +89,16 @@ export default function CrearUsuario() {
           </div>
           <div style={styles.formRow}>
             <label style={styles.label}>Contraseña temporal</label>
-            <input style={styles.input} type="password" name="password" placeholder="Mínimo 6 caracteres" value={form.password} onChange={handleChange} required />
+            <input style={styles.input} type="password" name="password" placeholder="Mínimo 6 caracteres" value={form.password} onChange={handleChange} required minLength={6} />
           </div>
 
           <div style={styles.infoBox}>
-            <p style={styles.infoTexto}>💡 El cliente ingresará con este correo y contraseña a:</p>
+            <p style={styles.infoTexto}>💡 El usuario ingresará con este correo y contraseña a:</p>
             <p style={styles.infoUrl}>https://hvac-qr-system-1odv.vercel.app</p>
-            <p style={styles.infoTexto}>Solo verá los equipos registrados con el nombre exacto de su empresa.</p>
           </div>
 
           <button style={styles.btnGuardar} type="submit" disabled={cargando}>
-            {cargando ? "Creando usuario..." : "✅ Crear usuario cliente"}
+            {cargando ? "Creando..." : "✅ Crear usuario"}
           </button>
         </form>
       </div>
@@ -93,17 +109,16 @@ export default function CrearUsuario() {
 const styles = {
   container: { minHeight: "100vh", background: "#f0f4f8", padding: "1.5rem" },
   card: { background: "white", borderRadius: "12px", padding: "2rem", maxWidth: "550px", margin: "0 auto", boxShadow: "0 2px 10px rgba(0,0,0,0.08)" },
-  header: { display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" },
-  titulo: { color: "#1a73e8", margin: 0, fontSize: "20px" },
-  descripcion: { color: "#666", fontSize: "14px", marginBottom: "1.5rem", lineHeight: "1.6" },
+  header: { display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" },
+  titulo: { color: "#1a5fa8", margin: 0, fontSize: "20px" },
   formRow: { marginBottom: "1rem" },
   label: { display: "block", fontSize: "13px", color: "#555", marginBottom: "4px", fontWeight: "500" },
   input: { width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "14px", boxSizing: "border-box" },
-  btnGuardar: { width: "100%", padding: "14px", background: "#1a73e8", color: "white", border: "none", borderRadius: "8px", fontSize: "16px", cursor: "pointer", fontWeight: "600", marginTop: "1rem" },
+  btnGuardar: { width: "100%", padding: "14px", background: "#1a5fa8", color: "white", border: "none", borderRadius: "8px", fontSize: "15px", cursor: "pointer", fontWeight: "600", marginTop: "1rem" },
   btnVolver: { background: "none", border: "1px solid #ddd", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", color: "#555" },
   exito: { background: "#e8f5e9", color: "#2e7d32", padding: "12px", borderRadius: "8px", marginBottom: "1rem", fontSize: "14px" },
   errorBox: { background: "#ffebee", color: "#c62828", padding: "12px", borderRadius: "8px", marginBottom: "1rem", fontSize: "14px" },
   infoBox: { background: "#e3f2fd", borderRadius: "8px", padding: "12px", marginTop: "1rem" },
   infoTexto: { color: "#1565c0", fontSize: "13px", margin: "4px 0" },
-  infoUrl: { color: "#1565c0", fontSize: "13px", fontWeight: "600", margin: "4px 0" }
+  infoUrl: { color: "#1565c0", fontSize: "13px", fontWeight: "600", margin: "4px 0" },
 };
