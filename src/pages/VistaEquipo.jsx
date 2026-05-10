@@ -36,7 +36,13 @@ export default function VistaEquipo() {
     return escala * 37.8;
   };
 
-  const getObs = () => equipo.observacionesArray?.filter(Boolean) || equipo.observaciones?.split(/\n|;/).map(o=>o.trim()).filter(Boolean) || [];
+  const getObs = () => {
+    const arr = equipo.observacionesArray || [];
+    const norm = arr.map(o => typeof o === "string" ? { texto: o, fecha: "", tecnico: "" } : o);
+    const filtradas = norm.filter(o => o?.texto?.trim());
+    if (filtradas.length > 0) return filtradas;
+    return equipo.observaciones?.split(/\n|;/).map(o => ({ texto: o.trim(), fecha: "", tecnico: "" })).filter(o => o.texto) || [];
+  };
   const getRec = () => equipo.recomendacionesArray?.filter(Boolean) || equipo.recomendaciones?.split(/\n|;/).map(r=>r.trim()).filter(Boolean) || [];
   const getCor = () => {
     if (equipo.correctivosArray?.length > 0) return equipo.correctivosArray.filter(c => c.descripcion);
@@ -286,7 +292,11 @@ export default function VistaEquipo() {
             <div style={s.sec}>
               <div style={s.secT}>⚠️ Observaciones</div>
               <div style={s.scroll}>
-                {obs.length>0 ? obs.map((o,i)=><div key={i} style={s.iObs}>{o}</div>)
+                {obs.length>0 ? obs.map((o,i)=>(
+                  <div key={i} style={s.iObs}>
+                    <div>{o.texto}</div>
+                    {(o.fecha||o.tecnico)&&<div style={{fontSize:"10px",color:"#bf8000",marginTop:"3px"}}>{o.fecha}{o.fecha&&o.tecnico?" · ":""}{o.tecnico?"Técnico: "+o.tecnico:""}</div>}
+                  </div>))
                   : <div style={s.iObs}>Sin observaciones registradas</div>}
               </div>
             </div>

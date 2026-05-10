@@ -154,8 +154,13 @@ useEffect(() => {
   }, []);
   const handleLogout = async () => { await signOut(auth); navigate("/"); };
 
-  const getObs = (e) => e.observacionesArray?.filter(Boolean) ||
-    e.observaciones?.split(/\n|;/).map(o => o.trim()).filter(Boolean) || [];
+  const getObs = (e) => {
+    const arr = e.observacionesArray || [];
+    const norm = arr.map(o => typeof o === "string" ? { texto: o, fecha: "", tecnico: "" } : o);
+    const filtradas = norm.filter(o => o?.texto?.trim());
+    if (filtradas.length > 0) return filtradas;
+    return e.observaciones?.split(/\n|;/).map(o => ({ texto: o.trim(), fecha: "", tecnico: "" })).filter(o => o.texto) || [];
+  };
 
   const getRec = (e) => e.recomendacionesArray?.filter(Boolean) ||
     e.recomendaciones?.split(/\n|;/).map(r => r.trim()).filter(Boolean) || [];
@@ -447,7 +452,10 @@ useEffect(() => {
                   <div style={s.modalSec}>
                     <div style={s.modalSecTitulo}>⚠️ Observaciones</div>
                     {getObs(modalEquipo).length > 0 ? getObs(modalEquipo).map((o, i) => (
-                      <div key={i} style={s.obsItem}>{o}</div>
+                      <div key={i} style={s.obsItem}>
+                        <div>{o.texto}</div>
+                        {(o.fecha||o.tecnico)&&<div style={{fontSize:"10px",color:"#888",marginTop:"3px"}}>{o.fecha}{o.fecha&&o.tecnico?" · ":""}{o.tecnico?"Técnico: "+o.tecnico:""}</div>}
+                      </div>
                     )) : <div style={s.vaciomsg}>Sin observaciones registradas</div>}
                   </div>
 
@@ -474,7 +482,10 @@ useEffect(() => {
                 <div style={s.modalSec}>
                   <div style={s.modalSecTitulo}>⚠️ Observaciones — {modalEquipo.codigo || modalEquipo.ambiente}</div>
                   {getObs(modalEquipo).length > 0 ? getObs(modalEquipo).map((o, i) => (
-                    <div key={i} style={s.obsItem}>{o}</div>
+                    <div key={i} style={s.obsItem}>
+                      <div>{o.texto}</div>
+                      {(o.fecha||o.tecnico)&&<div style={{fontSize:"10px",color:"#888",marginTop:"3px"}}>{o.fecha}{o.fecha&&o.tecnico?" · ":""}{o.tecnico?"Técnico: "+o.tecnico:""}</div>}
+                    </div>
                   )) : <div style={s.vaciomsg}>Sin observaciones registradas</div>}
                 </div>
               )}

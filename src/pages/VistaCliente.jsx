@@ -375,7 +375,7 @@ export default function VistaCliente() {
                   </button>
                 </div>
               );
-            })}'
+            })}
             <div style={s.sedeCardAgregar} onClick={() => setMostrarFormSede(true)}>
               <div style={{ fontSize: "24px", marginBottom: "6px" }}>+</div>
               <div style={{ fontSize: "12px" }}>Agregar sede</div>
