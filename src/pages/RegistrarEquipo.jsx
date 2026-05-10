@@ -13,10 +13,12 @@ export default function RegistrarEquipo() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const equipoId = searchParams.get("id");
+  const clienteParam = searchParams.get("cliente") || "";
+const sedeParam = searchParams.get("sede") || "";
   const [guardando, setGuardando] = useState(false);
 
   const [form, setForm] = useState({
-    cliente: "", codigo: "", piso: "", ambiente: "", tipoEquipo: "",
+    cliente: clienteParam,sede: sedeParam, codigo: "", piso: "", ambiente: "", tipoEquipo: "",
     marca: "", modelo: "", serie: "", capacidad: "", tipoRefrigerante: "",
     voltaje: "", amperaje: "", fases: "Monofásico", ubicacion: "",
     estado: "Operativo", ultimoMantenimiento: "",
@@ -131,12 +133,19 @@ export default function RegistrarEquipo() {
       } else {
        await addDoc(collection(db, "equipos"), {
   ...data,
-  adminid: auth.currentUser?.uid || "",
+  sede: form.sede || sedeParam,
+adminid: auth.currentUser?.uid || "",
   fechaRegistro: new Date().toLocaleDateString("es-PE")
 }); 
         alert("Equipo registrado correctamente");
       }
-      navigate(-1);
+     if (sedeParam && clienteParam) {
+  navigate(`/cliente/${encodeURIComponent(clienteParam)}/sede/${encodeURIComponent(sedeParam)}`);
+} else if (clienteParam) {
+  navigate(`/cliente/${encodeURIComponent(clienteParam)}`);
+} else {
+  navigate(-1);
+}
     } catch (error) {
       alert("Error al guardar: " + error.message);
     }
@@ -154,7 +163,15 @@ export default function RegistrarEquipo() {
             <span style={{ color: "#1a5fa8", marginLeft: "2px" }}>C</span>
           </div>
           <div style={s.divider}></div>
-          <button style={s.btnBack} onClick={() => navigate(-1)}>← Volver</button>
+          <button style={s.btnBack} onClick={() => {
+  if (sedeParam && clienteParam) {
+    navigate(`/cliente/${encodeURIComponent(clienteParam)}/sede/${encodeURIComponent(sedeParam)}`);
+  } else if (clienteParam) {
+    navigate(`/cliente/${encodeURIComponent(clienteParam)}`);
+  } else {
+    navigate(-1);
+  }
+}}>← Volver</button>
           <div style={s.divider}></div>
           <span style={s.navTitle}>{equipoId ? "Editar equipo" : "Registrar equipo"}</span>
         </div>
@@ -190,7 +207,15 @@ export default function RegistrarEquipo() {
               <button type="submit" style={s.btnGuardar} disabled={guardando}>
                 {guardando ? "Guardando..." : equipoId ? "💾 Actualizar" : "💾 Guardar"}
               </button>
-              <button type="button" style={s.btnCancelar} onClick={() => navigate(-1)}>Cancelar</button>
+              <button type="button" style={s.btnCancelar} onClick={() => {
+  if (sedeParam && clienteParam) {
+    navigate(`/cliente/${encodeURIComponent(clienteParam)}/sede/${encodeURIComponent(sedeParam)}`);
+  } else if (clienteParam) {
+    navigate(`/cliente/${encodeURIComponent(clienteParam)}`);
+  } else {
+    navigate(-1);
+  }
+}}>Cancelar</button>
             </div>
 
             {/* MAIN */}
@@ -198,14 +223,27 @@ export default function RegistrarEquipo() {
 
               {/* Datos generales */}
               <div style={s.seccion}>
-                <div style={s.secTitulo}>🏢 Datos generales</div>
-                <div style={s.grid2}>
-                  <div><label style={s.label}>Cliente / Empresa</label><input style={s.input} name="cliente" placeholder="La Positiva..." value={form.cliente} onChange={handleChange} required /></div>
-                  <div><label style={s.label}>Código del equipo</label><input style={s.input} name="codigo" placeholder="SP-01..." value={form.codigo} onChange={handleChange} /></div>
-                  <div><label style={s.label}>Piso</label><input style={s.input} name="piso" placeholder="1, 2, Sótano..." value={form.piso} onChange={handleChange} /></div>
-                  <div><label style={s.label}>Ambiente</label><input style={s.input} name="ambiente" placeholder="Oficina, Comedor..." value={form.ambiente} onChange={handleChange} /></div>
-                </div>
-              </div>
+  <div style={s.secTitulo}>🏢 Datos generales</div>
+
+  {(clienteParam || sedeParam) && (
+    <div style={{ background: "#e8f0fe", border: "0.5px solid #c5d5e8", borderRadius: "8px", padding: "10px 14px", marginBottom: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
+      <span style={{ fontSize: "16px" }}>🏢</span>
+      <div>
+        <div style={{ fontSize: "13px", fontWeight: 500, color: "#1a5fa8" }}>{clienteParam}</div>
+        {sedeParam && <div style={{ fontSize: "11px", color: "#6b8cae", marginTop: "2px" }}>📍 Sede: {sedeParam}</div>}
+      </div>
+    </div>
+  )}
+
+  <div style={s.grid2}>
+    {!clienteParam && (
+      <div><label style={s.label}>Cliente / Empresa</label><input style={s.input} name="cliente" placeholder="La Positiva..." value={form.cliente} onChange={handleChange} required /></div>
+    )}
+    <div><label style={s.label}>Código del equipo</label><input style={s.input} name="codigo" placeholder="SP-01..." value={form.codigo} onChange={handleChange} /></div>
+    <div><label style={s.label}>Piso</label><input style={s.input} name="piso" placeholder="1, 2, Sótano..." value={form.piso} onChange={handleChange} /></div>
+    <div><label style={s.label}>Ambiente</label><input style={s.input} name="ambiente" placeholder="Oficina, Comedor..." value={form.ambiente} onChange={handleChange} /></div>
+  </div>
+</div>
 
               {/* Ficha técnica */}
               <div style={s.seccion}>
@@ -369,7 +407,15 @@ export default function RegistrarEquipo() {
               </div>
 
               <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                <button type="button" style={s.btnCancelar} onClick={() => navigate(-1)}>Cancelar</button>
+                <button type="button" style={s.btnCancelar} onClick={() => {
+  if (sedeParam && clienteParam) {
+    navigate(`/cliente/${encodeURIComponent(clienteParam)}/sede/${encodeURIComponent(sedeParam)}`);
+  } else if (clienteParam) {
+    navigate(`/cliente/${encodeURIComponent(clienteParam)}`);
+  } else {
+    navigate(-1);
+  }
+}}>Cancelar</button>
                 <button type="submit" style={s.btnGuardar} disabled={guardando}>
                   {guardando ? "Guardando..." : equipoId ? "💾 Actualizar equipo" : "💾 Guardar equipo"}
                 </button>

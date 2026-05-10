@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node cleanup.js)",
+      "Bash(vercel --version)",
+      "Bash(vercel whoami *)"
+    ]
+  }
+}

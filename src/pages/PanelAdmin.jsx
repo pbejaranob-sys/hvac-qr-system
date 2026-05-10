@@ -1,28 +1,8 @@
 ﻿import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, query, where } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import jsPDF from "jspdf";
-
-const ordenarPisos = (a, b) => {
-  const orden = ["sotano", "sótano", "subsuelo", "ss"];
-  const aLow = a.toLowerCase(); const bLow = b.toLowerCase();
-  if (orden.includes(aLow)) return -1; if (orden.includes(bLow)) return 1;
-  const aNum = parseInt(a); const bNum = parseInt(b);
-  if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
-  return a.localeCompare(b);
-};
-
-const agruparPorPiso = (equipos) => {
-  const porPiso = {};
-  equipos.forEach(e => {
-    const piso = e.piso || "Sin piso";
-    if (!porPiso[piso]) porPiso[piso] = [];
-    porPiso[piso].push(e);
-  });
-  return porPiso;
-};
 
 const initiales = (nombre) => {
   const words = nombre.trim().split(" ");
@@ -44,120 +24,137 @@ const colorAvatar = (nombre) => {
   return colores[sum % colores.length];
 };
 
-const exportarExcel = (cliente, equiposCliente) => {
-  const porPiso = agruparPorPiso(equiposCliente);
-  const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
-  let item = 1;
-  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
-  <head><meta charset="UTF-8"><style>
-    body{font-family:Arial;font-size:9pt;}.titulo{background:#1A73E8;color:white;font-size:14pt;font-weight:bold;}
-    .header{background:#1565C0;color:white;font-weight:bold;font-size:9pt;text-align:center;}
-    .piso{background:#BBDEFB;color:#0D47A1;font-weight:bold;font-size:9pt;}
-    .fila{font-size:9pt;}.fila-alt{background:#F8F9FA;font-size:9pt;}
-    .op{background:#C8E6C9;color:#1B5E20;font-weight:bold;text-align:center;}
-    .obs{background:#FFF9C4;color:#E65100;font-weight:bold;text-align:center;}
-    .fs{background:#FFCDD2;color:#B71C1C;font-weight:bold;text-align:center;}
-    .cod{background:#F3E5F5;color:#6A1B9A;font-weight:bold;text-align:center;font-family:monospace;}
-    td{border:1px solid #E0E0E0;padding:4px 6px;}
-  </style></head><body><table>
-  <tr><td colspan="13" class="titulo">HVAC - Sistema de Mantenimiento</td></tr>
-  <tr><td colspan="3">Cliente: ${cliente}</td><td colspan="3">Generado: ${new Date().toLocaleDateString("es-PE")}</td><td colspan="3">Total: ${equiposCliente.length} equipos</td><td colspan="4"></td></tr>
-  <tr><td colspan="13"></td></tr>
-  <tr><td class="header">#</td><td class="header">Codigo</td><td class="header">Piso</td><td class="header">Ambiente</td><td class="header">Tipo</td><td class="header">Marca</td><td class="header">Modelo</td><td class="header">Serie</td><td class="header">Capacidad</td><td class="header">Refrigerante</td><td class="header">Voltaje</td><td class="header">Estado</td><td class="header">Observaciones</td></tr>`;
-  pisosOrdenados.forEach(piso => {
-    html += `<tr><td colspan="13" class="piso">PISO: ${piso.toUpperCase()}</td></tr>`;
-    porPiso[piso].forEach((e, idx) => {
-      const ec = e.estado === "Operativo" ? "op" : e.estado === "Operativo con observaciones" ? "obs" : "fs";
-      html += `<tr class="${idx % 2 === 0 ? "fila" : "fila-alt"}"><td>${item++}</td><td class="cod">${e.codigo || "-"}</td><td>${e.piso || "-"}</td><td>${e.ambiente || "-"}</td><td>${e.tipoEquipo || "-"}</td><td>${e.marca || "-"}</td><td>${e.modelo || "-"}</td><td>${e.serie || "-"}</td><td>${e.capacidad || "-"}</td><td>${e.tipoRefrigerante || "-"}</td><td>${e.voltaje ? e.voltaje + "V" : "-"}</td><td class="${ec}">${e.estado || "Operativo"}</td><td>${e.observaciones || "-"}</td></tr>`;
-    });
-  });
-  html += `</table></body></html>`;
-  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `equipos-${cliente.replace(/\s+/g, "-")}-${new Date().getFullYear()}.xls`;
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-const exportarPDF = (cliente, equiposCliente) => {
-  const pdf = new jsPDF("l", "mm", "a4");
-  const margen = 10; let y = 15;
-  pdf.setFillColor(26, 115, 232); pdf.rect(0, 0, 297, 20, "F");
-  pdf.setFontSize(13); pdf.setFont("helvetica", "bold"); pdf.setTextColor(255, 255, 255);
-  pdf.text("HVAC - Sistema de Mantenimiento", margen, 13);
-  pdf.setFontSize(10); pdf.setFont("helvetica", "normal");
-  pdf.text(`Cliente: ${cliente}   Generado: ${new Date().toLocaleDateString("es-PE")}   Total: ${equiposCliente.length} equipos`, margen, 19);
-  y = 28;
-  const porPiso = agruparPorPiso(equiposCliente);
-  const pisosOrdenados = Object.keys(porPiso).sort(ordenarPisos);
-  let item = 1;
-  const cols = [8, 14, 14, 20, 16, 14, 16, 16, 13, 11, 11, 22, 42];
-  const headers = ["#", "Codigo", "Piso", "Ambiente", "Tipo", "Marca", "Modelo", "Serie", "Cap.", "Refrig.", "Volt.", "Estado", "Obs."];
-  const drawH = () => {
-    pdf.setFillColor(21, 101, 192); pdf.rect(margen, y - 4, 277, 8, "F");
-    pdf.setFontSize(7.5); pdf.setFont("helvetica", "bold"); pdf.setTextColor(255, 255, 255);
-    let x = margen; headers.forEach((h, i) => { pdf.text(h, x + 1, y + 1); x += cols[i]; }); y += 7;
-  };
-  drawH();
-  pisosOrdenados.forEach(piso => {
-    if (y > 185) { pdf.addPage(); y = 15; drawH(); }
-    pdf.setFillColor(187, 222, 251); pdf.rect(margen, y - 3, 277, 7, "F");
-    pdf.setFontSize(8); pdf.setFont("helvetica", "bold"); pdf.setTextColor(13, 71, 161);
-    pdf.text(`PISO: ${piso.toUpperCase()}`, margen + 2, y + 2); y += 7;
-    porPiso[piso].forEach((e, idx) => {
-      if (y > 185) { pdf.addPage(); y = 15; drawH(); }
-      if (idx % 2 === 0) { pdf.setFillColor(248, 249, 250); pdf.rect(margen, y - 3, 277, 7, "F"); }
-      const fila = [String(item++), e.codigo || "-", e.piso || "-", e.ambiente || "-", e.tipoEquipo || "-", e.marca || "-", e.modelo || "-", e.serie || "-", e.capacidad || "-", e.tipoRefrigerante || "-", e.voltaje ? `${e.voltaje}V` : "-", e.estado || "Operativo", e.observaciones || "-"];
-      pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); let x = margen;
-      fila.forEach((val, i) => {
-        if (i === 11) { if (val === "Operativo") pdf.setTextColor(27, 94, 32); else if (val === "Operativo con observaciones") pdf.setTextColor(230, 81, 0); else pdf.setTextColor(183, 28, 28); }
-        else if (i === 1) pdf.setTextColor(106, 27, 154); else pdf.setTextColor(50, 50, 50);
-        pdf.text(pdf.splitTextToSize(val, cols[i] - 2)[0], x + 1, y + 2); x += cols[i];
-      });
-      pdf.setDrawColor(220, 220, 220); pdf.line(margen, y + 4, margen + 277, y + 4); y += 7;
-    });
-  });
-  pdf.setFontSize(8); pdf.setTextColor(150, 150, 150);
-  pdf.text(`HVAC Sistema de Mantenimiento`, margen, 205);
-  pdf.save(`equipos-${cliente.replace(/\s+/g, "-")}-${new Date().getFullYear()}.pdf`);
-};
-
 export default function PanelAdmin() {
-  const [equipos, setEquipos] = useState([]);
-  const [clientes, setClientes] = useState([]);
+  const [admins, setAdmins] = useState([]);
+  const [totalClientes, setTotalClientes] = useState(0);
+  const [totalEquipos, setTotalEquipos] = useState(0);
+  const [cargando, setCargando] = useState(true);
+  const [viendoAdmin, setViendoAdmin] = useState(null);
+  const [clientesAdmin, setClientesAdmin] = useState([]);
+  const [equiposAdmin, setEquiposAdmin] = useState([]);
+  const [cargandoVista, setCargandoVista] = useState(false);
   const navigate = useNavigate();
 
- const cargarEquipos = async (uid) => {
-    console.log("UID recibido:", uid);
-    const q = query(collection(db, "equipos"), where("adminid", "==", uid));
-    const snapshot = await getDocs(q);
-    console.log("Equipos encontrados:", snapshot.docs.length);
-    const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    setEquipos(lista);
-    const clientesUnicos = [...new Set(lista.map(e => e.cliente || "Sin cliente"))];
-    setClientes(clientesUnicos);
+  useEffect(() => { cargarAdmins(); }, []);
+
+  const cargarAdmins = async () => {
+    setCargando(true);
+    try {
+      const snapUsuarios = await getDocs(collection(db, "usuarios"));
+      const listaAdmins = snapUsuarios.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(u => u.rol === "admin" && !u.superadmin);
+
+      const snapEquipos = await getDocs(collection(db, "equipos"));
+      const equipos = snapEquipos.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const snapClientes = await getDocs(collection(db, "clientes"));
+      const clientes = snapClientes.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const adminsConDatos = listaAdmins.map(admin => {
+        const adminUid = admin.uid || admin.id;
+        const equiposAdminLista = equipos.filter(e => e.adminid === adminUid);
+        const clientesAdminLista = clientes.filter(c => c.adminid === adminUid);
+        return {
+          ...admin,
+          adminUid,
+          numEquipos: equiposAdminLista.length,
+          numClientes: clientesAdminLista.length
+        };
+      });
+
+     setAdmins(adminsConDatos);
+setTotalClientes(adminsConDatos.reduce((acc, a) => acc + a.numClientes, 0));
+setTotalEquipos(adminsConDatos.reduce((acc, a) => acc + a.numEquipos, 0));  // ← corregida
+    } catch (err) {
+      console.error("Error cargando admins:", err);
+    }
+    setCargando(false);
   };
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) cargarEquipos(user.uid);
+  const handleVerAdmin = async (admin) => {
+    setViendoAdmin(admin);
+    setCargandoVista(true);
+    try {
+      const adminUid = admin.uid || admin.id;
+      const qClientes = query(collection(db, "clientes"), where("adminid", "==", adminUid));
+      const snapClientes = await getDocs(qClientes);
+      setClientesAdmin(snapClientes.docs.map(d => ({ id: d.id, ...d.data() })));
+
+      const qEquipos = query(collection(db, "equipos"), where("adminid", "==", adminUid));
+      const snapEquipos = await getDocs(qEquipos);
+      setEquiposAdmin(snapEquipos.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) {
+      console.error(err);
+    }
+    setCargandoVista(false);
+  };
+
+const handleEliminar = async (admin, nombre) => {
+  if (!window.confirm(`¿Eliminar al admin ${nombre} y todos sus clientes, equipos y sedes? Esta acción no se puede deshacer.`)) return;
+  const adminId = admin.id;
+  const adminUid = admin.uid || admin.id;
+  try {
+    const borrarQuery = async (col) => {
+      const snap = await getDocs(query(collection(db, col), where("adminid", "==", adminUid)));
+      await Promise.all(snap.docs.map(d => deleteDoc(doc(db, col, d.id))));
+      return snap.size;
+    };
+
+    await borrarQuery("equipos");
+    await borrarQuery("sedes");
+
+    const snapUsuariosCliente = await getDocs(query(collection(db, "usuarios"), where("adminid", "==", adminUid)));
+    await Promise.all(snapUsuariosCliente.docs.map(d => deleteDoc(doc(db, "usuarios", d.id))));
+
+    await borrarQuery("clientes");
+    await deleteDoc(doc(db, "usuarios", adminId));
+
+    // ✅ Actualizar lista y recalcular contadores
+    setAdmins(prev => {
+      const nuevaLista = prev.filter(a => a.id !== adminId);
+      setTotalClientes(nuevaLista.reduce((acc, a) => acc + a.numClientes, 0));
+      setTotalEquipos(nuevaLista.reduce((acc, a) => acc + a.numEquipos, 0));
+      return nuevaLista;
     });
-    return () => unsubscribe();
-  }, []);
+
+    // Cerrar modal si estaba viendo ese admin
+    if (viendoAdmin?.id === adminId) setViendoAdmin(null);
+
+  } catch (err) {
+    alert("Error al eliminar: " + err.message);
+  }
+};
+
+  const handleBackup = async () => {
+    try {
+      const snapEquipos = await getDocs(collection(db, "equipos"));
+      const snapUsuarios = await getDocs(collection(db, "usuarios"));
+      const snapClientes = await getDocs(collection(db, "clientes"));
+      const snapSedes = await getDocs(collection(db, "sedes"));
+      const data = {
+        fecha: new Date().toISOString(),
+        equipos: snapEquipos.docs.map(d => ({ id: d.id, ...d.data() })),
+        usuarios: snapUsuarios.docs.map(d => ({ id: d.id, ...d.data() })),
+        clientes: snapClientes.docs.map(d => ({ id: d.id, ...d.data() })),
+        sedes: snapSedes.docs.map(d => ({ id: d.id, ...d.data() })),
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `hvac-backup-${new Date().toLocaleDateString("es-PE").replace(/\//g, "-")}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Error al generar backup: " + err.message);
+    }
+  };
 
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/");
   };
-
-  const agrupados = {};
-  equipos.forEach(e => {
-    const cliente = e.cliente || "Sin cliente";
-    if (!agrupados[cliente]) agrupados[cliente] = [];
-    agrupados[cliente].push(e);
-  });
 
   return (
     <div style={s.page}>
@@ -174,72 +171,126 @@ export default function PanelAdmin() {
         </div>
         <div style={s.navBtns}>
           <button style={s.btnSuccess} onClick={() => navigate("/crear-usuario")}>+ Crear usuario</button>
-          <button style={s.btnDefault} onClick={() => navigate("/registrar")}>+ Nuevo equipo</button>
+          <button style={s.btnWarning} onClick={handleBackup}>⬇ Backup</button>
           <button style={s.btnDanger} onClick={handleLogout}>Salir</button>
         </div>
       </div>
 
       <div style={s.content}>
         <div style={s.statsGrid}>
-          <div style={s.statCard}><div style={{ ...s.statNum, color: "#1a5fa8" }}>{clientes.length}</div><div style={s.statLabel}>Clientes</div></div>
-          <div style={s.statCard}><div style={s.statNum}>{equipos.length}</div><div style={s.statLabel}>Equipos</div></div>
-          <div style={s.statCard}><div style={{ ...s.statNum, color: "#2e7d32" }}>{equipos.filter(e => e.estado === "Operativo").length}</div><div style={s.statLabel}>Operativos</div></div>
-          <div style={s.statCard}><div style={{ ...s.statNum, color: "#e65100" }}>{equipos.filter(e => e.estado === "Operativo con observaciones").length}</div><div style={s.statLabel}>Con obs.</div></div>
-          <div style={s.statCard}><div style={{ ...s.statNum, color: "#c62828" }}>{equipos.filter(e => e.estado === "Fuera de servicio").length}</div><div style={s.statLabel}>Fuera serv.</div></div>
+          <div style={s.statCard}>
+            <div style={{ ...s.statNum, color: "#1a5fa8" }}>{admins.length}</div>
+            <div style={s.statLabel}>Admins</div>
+          </div>
+          <div style={s.statCard}>
+            <div style={s.statNum}>{totalClientes}</div>
+            <div style={s.statLabel}>Clientes totales</div>
+          </div>
+          <div style={s.statCard}>
+            <div style={{ ...s.statNum, color: "#2e7d32" }}>{totalEquipos}</div>
+            <div style={s.statLabel}>Equipos totales</div>
+          </div>
         </div>
 
-        <div style={s.cardsGrid}>
-          {Object.entries(agrupados).map(([cliente, equiposCliente]) => {
-            const op = equiposCliente.filter(e => e.estado === "Operativo").length;
-            const obs = equiposCliente.filter(e => e.estado === "Operativo con observaciones").length;
-            const fs = equiposCliente.filter(e => e.estado === "Fuera de servicio").length;
-            const total = equiposCliente.length;
-            const pOp = total ? Math.round((op / total) * 100) : 0;
-            const pObs = total ? Math.round((obs / total) * 100) : 0;
-            const pFs = total ? Math.round((fs / total) * 100) : 0;
-            const av = colorAvatar(cliente);
-            return (
-              <div key={cliente} style={s.card}>
-                <div style={s.cardHeader}>
-                  <div style={{ ...s.avatar, background: av.bg, color: av.color }}>{initiales(cliente)}</div>
-                  <div style={s.cardInfo}>
-                    <div style={s.cardNombre}>{cliente}</div>
-                    <div style={s.cardSub}>{total} equipo{total !== 1 ? "s" : ""} registrado{total !== 1 ? "s" : ""}</div>
+        <div style={s.secTitle}>Usuarios administradores</div>
+
+        {cargando ? (
+          <div style={s.empty}>Cargando...</div>
+        ) : admins.length === 0 ? (
+          <div style={s.empty}>No hay admins creados aún. Usa "Crear usuario" para agregar uno.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {admins.map(admin => {
+              const av = colorAvatar(admin.nombre || admin.email);
+              return (
+                <div key={admin.id} style={s.adminRow}>
+                  <div style={{ ...s.avatar, background: av.bg, color: av.color }}>
+                    {initiales(admin.nombre || admin.email)}
                   </div>
-                  <div style={s.cardBtns}>
-                    <button style={s.btnExcel} onClick={() => exportarExcel(cliente, equiposCliente)}>Excel</button>
-                    <button style={s.btnPdf} onClick={() => exportarPDF(cliente, equiposCliente)}>PDF</button>
+                  <div style={s.adminInfo}>
+                    <div style={s.adminNombre}>{admin.nombre || "Sin nombre"}</div>
+                    <div style={s.adminSub}>{admin.email} · {admin.numClientes} cliente{admin.numClientes !== 1 ? "s" : ""} · {admin.numEquipos} equipo{admin.numEquipos !== 1 ? "s" : ""}</div>
                   </div>
+                  <span style={s.badge}>Admin</span>
+                  <button style={s.btnIcon} onClick={() => handleVerAdmin(admin)}>👁</button>
+                  <button style={s.btnIconDanger} onClick={() => handleEliminar(admin, admin.nombre)}>🗑</button>
                 </div>
-                <div style={s.miniStats}>
-                  <div style={{ ...s.miniStat, background: op > 0 ? "#e8f5e9" : "#f5f5f5" }}>
-                    <div style={{ ...s.miniNum, color: op > 0 ? "#2e7d32" : "#aaa" }}>{op}</div>
-                    <div style={{ ...s.miniLabel, color: op > 0 ? "#2e7d32" : "#aaa" }}>Operativo</div>
-                  </div>
-                  <div style={{ ...s.miniStat, background: obs > 0 ? "#fff8e1" : "#f5f5f5" }}>
-                    <div style={{ ...s.miniNum, color: obs > 0 ? "#e65100" : "#aaa" }}>{obs}</div>
-                    <div style={{ ...s.miniLabel, color: obs > 0 ? "#e65100" : "#aaa" }}>Con obs.</div>
-                  </div>
-                  <div style={{ ...s.miniStat, background: fs > 0 ? "#ffebee" : "#f5f5f5" }}>
-                    <div style={{ ...s.miniNum, color: fs > 0 ? "#c62828" : "#aaa" }}>{fs}</div>
-                    <div style={{ ...s.miniLabel, color: fs > 0 ? "#c62828" : "#aaa" }}>Fuera serv.</div>
-                  </div>
-                </div>
-                <div style={s.barraWrap}>
-                  <div style={s.barra}>
-                    {pOp > 0 && <div style={{ width: `${pOp}%`, background: "#43a047", height: "100%" }}></div>}
-                    {pObs > 0 && <div style={{ width: `${pObs}%`, background: "#ffa726", height: "100%" }}></div>}
-                    {pFs > 0 && <div style={{ width: `${pFs}%`, background: "#ef5350", height: "100%" }}></div>}
-                  </div>
-                </div>
-                <button style={s.btnVerLista} onClick={() => navigate(`/admin/cliente/${encodeURIComponent(cliente)}`)}>
-                  Ver lista de equipos
-                </button>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      {/* Modal ver admin */}
+      {viendoAdmin && (
+        <div style={s.modalOverlay}>
+          <div style={s.modalCard}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+              <div>
+                <div style={{ fontSize: "15px", fontWeight: 500, color: "#222" }}>{viendoAdmin.nombre}</div>
+                <div style={{ fontSize: "12px", color: "#888" }}>{viendoAdmin.email}</div>
+              </div>
+              <button style={s.btnCerrar} onClick={() => setViendoAdmin(null)}>✕</button>
+            </div>
+
+            {cargandoVista ? (
+              <div style={{ textAlign: "center", color: "#888", padding: "20px" }}>Cargando...</div>
+            ) : (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
+                  <div style={s.miniStatCard}>
+                    <div style={{ fontSize: "22px", fontWeight: 500, color: "#1a5fa8" }}>{clientesAdmin.length}</div>
+                    <div style={{ fontSize: "10px", color: "#888", textTransform: "uppercase" }}>Clientes</div>
+                  </div>
+                  <div style={s.miniStatCard}>
+                    <div style={{ fontSize: "22px", fontWeight: 500, color: "#2e7d32" }}>{equiposAdmin.length}</div>
+                    <div style={{ fontSize: "10px", color: "#888", textTransform: "uppercase" }}>Equipos</div>
+                  </div>
+                </div>
+
+                <div style={s.secTitle}>Clientes</div>
+                {clientesAdmin.length === 0 ? (
+                  <div style={{ fontSize: "12px", color: "#aaa", marginBottom: "12px" }}>Sin clientes registrados</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px" }}>
+                    {clientesAdmin.map(c => {
+                      const equiposCliente = equiposAdmin.filter(e => e.cliente === c.empresa);
+                      return (
+                        <div key={c.id} style={s.itemRow}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>{c.empresa}</div>
+                            <div style={{ fontSize: "11px", color: "#888" }}>{c.nombre} · {c.email}</div>
+                          </div>
+                          <span style={{ fontSize: "11px", color: "#888" }}>{equiposCliente.length} equipos</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div style={s.secTitle}>Equipos recientes</div>
+                {equiposAdmin.length === 0 ? (
+                  <div style={{ fontSize: "12px", color: "#aaa" }}>Sin equipos registrados</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "200px", overflowY: "auto" }}>
+                    {equiposAdmin.slice(0, 10).map(e => (
+                      <div key={e.id} style={s.itemRow}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "12px", fontWeight: 500, color: "#222" }}>{e.marca} {e.modelo}</div>
+                          <div style={{ fontSize: "11px", color: "#888" }}>{e.cliente} · {e.tipoEquipo || "-"}</div>
+                        </div>
+                        <span style={e.estado === "Operativo" ? s.badgeOp : e.estado === "Operativo con observaciones" ? s.badgeObs : s.badgeFs}>
+                          {e.estado === "Operativo" ? "Op." : e.estado === "Operativo con observaciones" ? "Obs." : "F.S."}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -253,28 +304,29 @@ const s = {
   navTitle: { fontSize: "13px", color: "#888" },
   navBtns: { display: "flex", gap: "8px" },
   btnSuccess: { background: "#e8f5e9", color: "#2e7d32", border: "0.5px solid #a5d6a7", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
-  btnDefault: { background: "white", color: "#333", border: "0.5px solid #ddd", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
+  btnWarning: { background: "#fff8e1", color: "#e65100", border: "0.5px solid #ffe082", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
   btnDanger: { background: "#ffebee", color: "#c62828", border: "0.5px solid #ef9a9a", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
-  content: { maxWidth: "1200px", margin: "0 auto", padding: "20px 24px" },
-  statsGrid: { display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", marginBottom: "20px" },
-  statCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "14px", textAlign: "center" },
-  statNum: { fontSize: "28px", fontWeight: 500, color: "#333" },
-  statLabel: { fontSize: "10px", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "2px" },
-  cardsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" },
-  card: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", overflow: "hidden" },
-  cardHeader: { padding: "14px 16px", borderBottom: "0.5px solid #f0f0f0", display: "flex", alignItems: "center", gap: "10px" },
+  content: { maxWidth: "900px", margin: "0 auto", padding: "20px 24px" },
+  statsGrid: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "24px" },
+  statCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "20px", textAlign: "center" },
+  statNum: { fontSize: "32px", fontWeight: 500, color: "#333" },
+  statLabel: { fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "4px" },
+  secTitle: { fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "12px", fontWeight: 500 },
+  adminRow: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "12px 16px", display: "flex", alignItems: "center", gap: "12px" },
   avatar: { width: "38px", height: "38px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 500, flexShrink: 0 },
-  cardInfo: { flex: 1 },
-  cardNombre: { fontSize: "14px", fontWeight: 500, color: "#222" },
-  cardSub: { fontSize: "11px", color: "#888", marginTop: "2px" },
-  cardBtns: { display: "flex", gap: "4px" },
-  btnExcel: { fontSize: "11px", padding: "4px 10px", background: "#1e7e34", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" },
-  btnPdf: { fontSize: "11px", padding: "4px 10px", background: "#c62828", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" },
-  miniStats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", padding: "12px 16px" },
-  miniStat: { textAlign: "center", padding: "8px", borderRadius: "8px" },
-  miniNum: { fontSize: "20px", fontWeight: 500 },
-  miniLabel: { fontSize: "10px", marginTop: "2px" },
-  barraWrap: { padding: "0 16px 12px" },
-  barra: { display: "flex", height: "6px", borderRadius: "3px", overflow: "hidden", background: "#f0f0f0" },
-  btnVerLista: { width: "100%", padding: "10px", border: "none", borderTop: "0.5px solid #f0f0f0", cursor: "pointer", fontSize: "13px", fontWeight: 500, background: "white", color: "#1a5fa8" },
+  adminInfo: { flex: 1 },
+  adminNombre: { fontSize: "14px", fontWeight: 500, color: "#222" },
+  adminSub: { fontSize: "11px", color: "#888", marginTop: "2px" },
+  badge: { fontSize: "11px", padding: "3px 10px", borderRadius: "20px", background: "#e8f0fe", color: "#1a5fa8" },
+  btnIcon: { background: "white", border: "0.5px solid #ddd", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "13px" },
+  btnIconDanger: { background: "#ffebee", border: "0.5px solid #ef9a9a", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "13px" },
+  empty: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "30px", textAlign: "center", color: "#888", fontSize: "14px" },
+  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
+  modalCard: { background: "white", borderRadius: "12px", padding: "24px", width: "100%", maxWidth: "520px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", maxHeight: "80vh", overflowY: "auto" },
+  btnCerrar: { background: "none", border: "none", fontSize: "16px", cursor: "pointer", color: "#888", padding: "4px 8px" },
+  miniStatCard: { background: "#f8f9fa", border: "0.5px solid #e0e0e0", borderRadius: "8px", padding: "12px", textAlign: "center" },
+  itemRow: { background: "#f8f9fa", border: "0.5px solid #e0e0e0", borderRadius: "8px", padding: "8px 12px", display: "flex", alignItems: "center", gap: "10px" },
+  badgeOp: { fontSize: "10px", padding: "2px 6px", borderRadius: "20px", background: "#e8f5e9", color: "#2e7d32", whiteSpace: "nowrap" },
+  badgeObs: { fontSize: "10px", padding: "2px 6px", borderRadius: "20px", background: "#fff8e1", color: "#e65100", whiteSpace: "nowrap" },
+  badgeFs: { fontSize: "10px", padding: "2px 6px", borderRadius: "20px", background: "#ffebee", color: "#c62828", whiteSpace: "nowrap" },
 };
