@@ -80,8 +80,12 @@ export default function ListaEquiposCliente() {
   ];
 
   const getObs = (e) => {
-  const arr = e.observacionesArray?.filter(Boolean) || e.observaciones?.split(/\n|;/).map(o=>o.trim()).filter(Boolean) || [];
-  return arr.map(o => typeof o === "string" ? { texto: o, fecha: "", tecnico: "" } : o);
+  const arr = e.observacionesArray || [];
+  const norm = arr.map(o => typeof o === "string" ? { texto: o, fecha: "", tecnico: "" } : o);
+  const filtradas = norm.filter(o => o?.texto?.trim());
+  if (filtradas.length > 0) return filtradas;
+  const texto = e.observaciones || "";
+  return texto.split(/\n|;/).map(o => o.trim()).filter(Boolean).map(o => ({ texto: o, fecha: "", tecnico: "" }));
 };
 
   return (
