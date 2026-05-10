@@ -79,7 +79,10 @@ export default function ListaEquiposCliente() {
     {label:"Fuera serv.",val:fs,color:"#c62828",bg:"#ffebee",border:"#ef9a9a",filtro:"Fuera de servicio"},
   ];
 
-  const getObs = (e) => e.observacionesArray?.filter(Boolean)||e.observaciones?.split(/\n|;/).map(o=>o.trim()).filter(Boolean)||[];
+  const getObs = (e) => {
+  const arr = e.observacionesArray?.filter(Boolean) || e.observaciones?.split(/\n|;/).map(o=>o.trim()).filter(Boolean) || [];
+  return arr.map(o => typeof o === "string" ? { texto: o, fecha: "", tecnico: "" } : o);
+};
 
   return (
     <div style={s.page}>
@@ -184,8 +187,15 @@ export default function ListaEquiposCliente() {
                             <div style={{background:"white",border:"0.5px solid #ffe082",borderRadius:"8px",padding:"12px 14px",marginTop:"4px"}}>
                               <div style={{fontSize:"11px",color:"#e65100",textTransform:"uppercase",letterSpacing:"0.05em",fontWeight:500,marginBottom:"10px"}}>⚠️ Observaciones — {equipo.codigo||equipo.ambiente}</div>
                               {obsArr.length>0?obsArr.map((o,idx)=>(
-                                <div key={idx} style={{padding:"8px 12px",background:"#fff8e1",borderRadius:"6px",borderLeft:"3px solid #ffa726",fontSize:"12px",color:"#e65100",marginBottom:"6px"}}>{o}</div>
-                              )):<div style={{fontSize:"12px",color:"#aaa",fontStyle:"italic"}}>Sin observaciones registradas</div>}
+  <div key={idx} style={{padding:"8px 12px",background:"#fff8e1",borderRadius:"6px",borderLeft:"3px solid #ffa726",marginBottom:"6px"}}>
+    <div style={{fontSize:"12px",color:"#333",lineHeight:1.5}}>{o.texto}</div>
+    <div style={{fontSize:"10px",color:"#888",marginTop:"3px"}}>
+      {o.fecha&&<span>{o.fecha}</span>}
+      {o.fecha&&o.tecnico&&<span> · </span>}
+      {o.tecnico&&<span>Técnico: {o.tecnico}</span>}
+    </div>
+  </div>
+)):<div style={{fontSize:"12px",color:"#aaa",fontStyle:"italic"}}>Sin observaciones registradas</div>}
                             </div>
                           </td>
                         </tr>
