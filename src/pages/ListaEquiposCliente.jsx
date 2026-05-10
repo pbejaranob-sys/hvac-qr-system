@@ -162,6 +162,7 @@ export default function ListaEquiposCliente() {
                 {filtrados.map((equipo,i)=>{
                   const abierto = obsAbierto===equipo.id;
                   const obsArr = getObs(equipo);
+                  const numObs = obsArr.length;
                   return (
                     <React.Fragment key={equipo.id}>
                       <tr style={{borderBottom:abierto?"none":"0.5px solid #f5f5f5"}}>
@@ -178,28 +179,35 @@ export default function ListaEquiposCliente() {
                             <button style={s.btnInfo} onClick={()=>navigate(`/equipo/${equipo.id}`)}>Info</button>
                             <button style={s.btnEditar} onClick={()=>navigate(`/registrar?id=${equipo.id}`)}>Editar</button>
                             <button onClick={()=>setObsAbierto(abierto?null:equipo.id)}
-                              style={{fontSize:"11px",padding:"4px 10px",borderRadius:"5px",cursor:"pointer",fontWeight:500,whiteSpace:"nowrap",border:`0.5px solid ${abierto?"#ffa726":"#ddd"}`,background:abierto?"#fff8e1":"white",color:abierto?"#e65100":"#555"}}>
-                              {abierto?"▲ Ocultar":"Observaciones"}
-                              {obsArr.length>0&&<span style={{display:"inline-block",minWidth:"16px",height:"16px",background:abierto?"#ffa726":"#e0e0e0",color:abierto?"white":"#666",borderRadius:"50%",fontSize:"10px",lineHeight:"16px",textAlign:"center",marginLeft:"4px"}}>{obsArr.length}</span>}
+                              style={{fontSize:"11px",padding:"4px 10px",borderRadius:"5px",cursor:"pointer",fontWeight:500,whiteSpace:"nowrap",border:`0.5px solid ${abierto?"#ffa726":"#ddd"}`,background:abierto?"#e65100":"#fff8e1",color:abierto?"white":"#e65100",opacity:numObs===0?0.45:1}}>
+                              {"Obs "}
+                              <span style={{background:abierto?"white":"#e65100",color:abierto?"#e65100":"white",borderRadius:"20px",fontSize:"9px",padding:"1px 5px",fontWeight:700,marginRight:"3px"}}>{numObs}</span>
+                              {abierto?"▴":"▾"}
                             </button>
                           </div>
                         </td>
                       </tr>
                       {abierto&&(
                         <tr style={{borderBottom:"0.5px solid #f5f5f5"}}>
-                          <td colSpan={9} style={{padding:"0 14px 12px",background:"#fafafa"}}>
-                            <div style={{background:"white",border:"0.5px solid #ffe082",borderRadius:"8px",padding:"12px 14px",marginTop:"4px"}}>
-                              <div style={{fontSize:"11px",color:"#e65100",textTransform:"uppercase",letterSpacing:"0.05em",fontWeight:500,marginBottom:"10px"}}>⚠️ Observaciones — {equipo.codigo||equipo.ambiente}</div>
-                              {obsArr.length>0?obsArr.map((o,idx)=>(
-  <div key={idx} style={{padding:"8px 12px",background:"#fff8e1",borderRadius:"6px",borderLeft:"3px solid #ffa726",marginBottom:"6px"}}>
-    <div style={{fontSize:"12px",color:"#333",lineHeight:1.5}}>{o.texto}</div>
-    <div style={{fontSize:"10px",color:"#888",marginTop:"3px"}}>
-      {o.fecha&&<span>{o.fecha}</span>}
-      {o.fecha&&o.tecnico&&<span> · </span>}
-      {o.tecnico&&<span>Técnico: {o.tecnico}</span>}
-    </div>
-  </div>
-)):<div style={{fontSize:"12px",color:"#aaa",fontStyle:"italic"}}>Sin observaciones registradas</div>}
+                          <td colSpan={9} style={{padding:"0",background:"#fffdf5",borderTop:"2px solid #ffa726"}}>
+                            <div style={{padding:"12px 16px"}}>
+                              <div style={{fontSize:"11px",fontWeight:500,color:"#e65100",marginBottom:"8px"}}>⚠️ {numObs} observación{numObs!==1?"es":""} — {equipo.codigo||equipo.ambiente}</div>
+                              {numObs===0?(
+                                <div style={{fontSize:"12px",color:"#aaa",fontStyle:"italic"}}>Sin observaciones registradas</div>
+                              ):(
+                                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                                  {obsArr.filter(o=>o.texto?.trim()).map((o,idx)=>(
+                                    <div key={idx} style={{background:"white",border:"0.5px solid #ffe082",borderLeft:"3px solid #ffa726",borderRadius:"8px",padding:"8px 12px"}}>
+                                      <div style={{fontSize:"12px",color:"#333",lineHeight:1.5}}>{o.texto}</div>
+                                      <div style={{fontSize:"10px",color:"#888",marginTop:"3px"}}>
+                                        {o.fecha&&<span>{o.fecha}</span>}
+                                        {o.fecha&&o.tecnico&&<span> · </span>}
+                                        {o.tecnico&&<span>Técnico: {o.tecnico}</span>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </td>
                         </tr>
