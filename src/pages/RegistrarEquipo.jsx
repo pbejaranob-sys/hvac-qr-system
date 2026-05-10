@@ -24,7 +24,7 @@ const sedeParam = searchParams.get("sede") || "";
     estado: "Operativo", ultimoMantenimiento: "",
   });
 
-  const [observaciones, setObservaciones] = useState([""]);
+  const [observaciones, setObservaciones] = useState([{ texto: "", fecha: "", tecnico: "" }]);
   const [correctivos, setCorrectivos] = useState([{ descripcion: "", fecha: "" }]);
   const [recomendaciones, setRecomendaciones] = useState([""]);
   const [cronograma, setCronograma] = useState([
@@ -54,11 +54,14 @@ const sedeParam = searchParams.get("sede") || "";
       });
 
       // Cargar observaciones
-      if (data.observacionesArray && data.observacionesArray.length > 0) {
-        setObservaciones(data.observacionesArray);
-      } else if (data.observaciones) {
-        setObservaciones(data.observaciones.split(/\n|;/).map(o => o.trim()).filter(Boolean));
-      }
+     if (data.observacionesArray && data.observacionesArray.length > 0) {
+  const migradas = data.observacionesArray.map(o =>
+    typeof o === "string" ? { texto: o, fecha: "", tecnico: "" } : o
+  );
+  setObservaciones(migradas);
+} else if (data.observaciones) {
+  setObservaciones(data.observaciones.split(/\n|;/).map(o => ({ texto: o.trim(), fecha: "", tecnico: "" })).filter(o => o.texto));
+} 
 
       // Cargar correctivos
       if (data.correctivosArray && data.correctivosArray.length > 0) {
@@ -85,9 +88,9 @@ const sedeParam = searchParams.get("sede") || "";
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   // Observaciones
-  const addObs = () => setObservaciones([...observaciones, ""]);
+  const addObs = () => setObservaciones([...observaciones, { texto: "", fecha: "", tecnico: "" }]);
   const removeObs = (i) => setObservaciones(observaciones.filter((_, idx) => idx !== i));
-  const updateObs = (i, val) => { const n = [...observaciones]; n[i] = val; setObservaciones(n); };
+  const updateObs = (i, field, val) => { const n = [...observaciones]; n[i] = { ...n[i], [field]: val }; setObservaciones(n); };
 
   // Correctivos
   const addCor = () => setCorrectivos([...correctivos, { descripcion: "", fecha: "" }]);
@@ -112,14 +115,14 @@ const sedeParam = searchParams.get("sede") || "";
     e.preventDefault();
     setGuardando(true);
     try {
-      const obsFiltered = observaciones.filter(o => o.trim());
+      const obsFiltered = observaciones.filter(o => o.texto?.trim());
       const corFiltered = correctivos.filter(c => c.descripcion.trim());
       const recFiltered = recomendaciones.filter(r => r.trim());
 
       const data = {
         ...form,
         observacionesArray: obsFiltered,
-        observaciones: obsFiltered.join("\n"),
+        observaciones: obsFiltered.map(o => o.texto).join("\n"),
         correctivosArray: corFiltered,
         correctivos: corFiltered.map(c => c.descripcion).join("\n"),
         recomendacionesArray: recFiltered,
@@ -305,19 +308,31 @@ adminid: auth.currentUser?.uid || "",
               <div style={s.seccion}>
                 <div style={s.secTitulo}>⚠️ Observaciones</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "10px" }}>
-                  {observaciones.map((obs, i) => (
-                    <div key={i} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                      <input
-                        style={{ ...s.input, flex: 1, background: "#fff8e1", marginBottom: 0 }}
-                        placeholder="Observación..."
-                        value={obs}
-                        onChange={e => updateObs(i, e.target.value)}
-                      />
-                      {observaciones.length > 1 && (
-                        <button type="button" style={s.btnEliminar} onClick={() => removeObs(i)}>✕</button>
-                      )}
-                    </div>
-                  ))}
+                {observaciones.map((obs, i) => (
+  <div key={i} style={{ display: "flex", gap: "8px", alignItems: "flex-start", flexWrap: "wrap" }}>
+    <input
+      style={{ ...s.input, flex: 2, minWidth: "180px", background: "#fff8e1", marginBottom: 0 }}
+      placeholder="Observación..."
+      value={obs.texto}
+      onChange={e => updateObs(i, "texto", e.target.value)}
+    />
+    <input
+      type="date"
+      style={{ ...s.input, width: "150px", background: "#fff8e1", marginBottom: 0 }}
+      value={obs.fecha}
+      onChange={e => updateObs(i, "fecha", e.target.value)}
+    />
+    <input
+      style={{ ...s.input, flex: 1, minWidth: "120px", background: "#fff8e1", marginBottom: 0 }}
+      placeholder="Técnico..."
+      value={obs.tecnico}
+      onChange={e => updateObs(i, "tecnico", e.target.value)}
+    />
+    {observaciones.length > 1 && (
+      <button type="button" style={s.btnEliminar} onClick={() => removeObs(i)}>✕</button>
+    )}
+  </div>
+))}  
                 </div>
                 <button type="button" style={{ ...s.btnAgregar, borderColor: "#ffa726", background: "#fff8e1", color: "#e65100" }} onClick={addObs}>
                   + Agregar observación

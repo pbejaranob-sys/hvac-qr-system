@@ -15,6 +15,8 @@ export default function VistaCliente() {
   const [pisoFiltro, setPisoFiltro] = useState("Todos");
   const [estadoFiltro, setEstadoFiltro] = useState("Todos");
   const [editandoSede, setEditandoSede] = useState(null);
+  const [obsAbiertas, setObsAbiertas] = useState({});
+  const toggleObs = (id) => setObsAbiertas(prev => ({ ...prev, [id]: !prev[id] }));
   const [formEditSede, setFormEditSede] = useState({ nombre: "", direccion: "", referencia: "" });
   const navigate = useNavigate();
 
@@ -261,7 +263,7 @@ export default function VistaCliente() {
                     </select>
                   </div>
                 </div>
-                <div style={s.tablaHeader}>
+<div style={s.tablaHeader}>
                   <span style={s.thCell}>#</span>
                   <span style={s.thCell}>Código</span>
                   <span style={s.thCell}>Piso</span>
@@ -271,31 +273,68 @@ export default function VistaCliente() {
                   <span style={s.thCell}>Estado</span>
                   <span style={s.thCell}>Acciones</span>
                 </div>
-                {equiposFiltrados.map((eq, i) => (
-                  <div key={eq.id} style={{ ...s.tablaRow, background: i % 2 === 0 ? "white" : "#f8f9fa" }}>
-                    <span style={s.tdCell}>{i + 1}</span>
-                    <span style={s.tdCell}>{eq.codigo ? <span style={s.codigo}>{eq.codigo}</span> : <span style={{ color: "#aaa" }}>-</span>}</span>
-                    <span style={s.tdCell}>{eq.piso || "-"}</span>
-                    <span style={s.tdCell}>{eq.ambiente || "-"}</span>
-                    <span style={s.tdCell}>{eq.tipoEquipo || "-"}</span>
-                    <span style={s.tdCell}>
-                      <div style={{ fontWeight: 500, fontSize: "12px" }}>{eq.marca}</div>
-                      <div style={{ fontSize: "10px", color: "#888" }}>{eq.modelo}</div>
-                    </span>
-                    <span style={s.tdCell}>
-                      <span style={eq.estado === "Operativo" ? s.badgeOp : eq.estado === "Operativo con observaciones" ? s.badgeObs : s.badgeFs}>
-                        {eq.estado === "Operativo" ? "Operativo" : eq.estado === "Operativo con observaciones" ? "Con obs." : "Fuera serv."}
-                      </span>
-                    </span>
-                    <span style={s.tdCell}>
-                      <div style={{ display: "flex", gap: "4px" }}>
-                        <button style={s.btnInfo} onClick={() => navigate(`/equipo/${eq.id}`)}>Info</button>
-                        <button style={s.btnEditar} onClick={() => navigate(`/registrar?id=${eq.id}`)}>Editar</button>
-                        <button style={s.btnEliminar} onClick={() => handleEliminarEquipo(eq.id)}>🗑</button>
+                {equiposFiltrados.map((eq, i) => {
+                  const obsArr = eq.observacionesArray || [];
+                  const obsNorm = obsArr.map(o =>
+                    typeof o === "string" ? { texto: o, fecha: "", tecnico: "" } : o
+                  );
+                  const numObs = obsNorm.filter(o => o.texto?.trim()).length;
+                  const abierta = obsAbiertas[eq.id];
+                  return (
+                    <div key={eq.id} style={{ borderBottom: "0.5px solid #f0f0f0" }}>
+                      <div style={{ ...s.tablaRow, background: i % 2 === 0 ? "white" : "#f8f9fa" }}>
+                        <span style={s.tdCell}>{i + 1}</span>
+                        <span style={s.tdCell}>{eq.codigo ? <span style={s.codigo}>{eq.codigo}</span> : <span style={{ color: "#aaa" }}>-</span>}</span>
+                        <span style={s.tdCell}>{eq.piso || "-"}</span>
+                        <span style={s.tdCell}>{eq.ambiente || "-"}</span>
+                        <span style={s.tdCell}>{eq.tipoEquipo || "-"}</span>
+                        <span style={s.tdCell}>
+                          <div style={{ fontWeight: 500, fontSize: "12px" }}>{eq.marca}</div>
+                          <div style={{ fontSize: "10px", color: "#888" }}>{eq.modelo}</div>
+                        </span>
+                        <span style={s.tdCell}>
+                          <span style={eq.estado === "Operativo" ? s.badgeOp : eq.estado === "Operativo con observaciones" ? s.badgeObs : s.badgeFs}>
+                            {eq.estado === "Operativo" ? "Operativo" : eq.estado === "Operativo con observaciones" ? "Con obs." : "Fuera serv."}
+                          </span>
+                        </span>
+                        <span style={s.tdCell}>
+                          <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                            <button style={s.btnInfo} onClick={() => navigate(`/equipo/${eq.id}`)}>Info</button>
+                            <button
+                              style={{ ...s.btnObs, background: abierta ? "#e65100" : "#fff8e1", color: abierta ? "white" : "#e65100", opacity: numObs === 0 ? 0.45 : 1 }}
+                              onClick={() => toggleObs(eq.id)}
+                            >
+                              Obs <span style={{ background: abierta ? "white" : "#e65100", color: abierta ? "#e65100" : "white", borderRadius: "20px", fontSize: "9px", padding: "1px 5px", fontWeight: 700 }}>{numObs}</span> {abierta ? "▴" : "▾"}
+                            </button>
+                            <button style={s.btnEditar} onClick={() => navigate(`/registrar?id=${eq.id}`)}>Editar</button>
+                            <button style={s.btnEliminar} onClick={() => handleEliminarEquipo(eq.id)}>🗑</button>
+                          </div>
+                        </span>
                       </div>
-                    </span>
-                  </div>
-                ))}
+                      {abierta && (
+                        <div style={s.obsPanel}>
+                          <div style={s.obsTitulo}>⚠️ {numObs} observación{numObs !== 1 ? "es" : ""} — {eq.codigo || eq.marca}</div>
+                          {numObs === 0 ? (
+                            <div style={{ fontSize: "12px", color: "#aaa", textAlign: "center", padding: "6px 0" }}>Sin observaciones registradas</div>
+                          ) : (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                              {obsNorm.filter(o => o.texto?.trim()).map((o, idx) => (
+                                <div key={idx} style={s.obsItem}>
+                                  <div style={{ fontSize: "12px", color: "#333", lineHeight: 1.5 }}>{o.texto}</div>
+                                  <div style={{ fontSize: "10px", color: "#888", marginTop: "3px" }}>
+                                    {o.fecha && <span>{o.fecha}</span>}
+                                    {o.fecha && o.tecnico && <span> · </span>}
+                                    {o.tecnico && <span>Técnico: {o.tecnico}</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -336,7 +375,7 @@ export default function VistaCliente() {
                   </button>
                 </div>
               );
-            })}
+            })}'
             <div style={s.sedeCardAgregar} onClick={() => setMostrarFormSede(true)}>
               <div style={{ fontSize: "24px", marginBottom: "6px" }}>+</div>
               <div style={{ fontSize: "12px" }}>Agregar sede</div>
@@ -438,4 +477,8 @@ const s = {
   btnVerSede: { width: "100%", padding: "10px", border: "none", borderTop: "0.5px solid #f0f0f0", cursor: "pointer", fontSize: "13px", fontWeight: 500, background: "white", color: "#1a5fa8" },
   modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
   modalCard: { background: "white", borderRadius: "12px", padding: "24px", width: "100%", maxWidth: "440px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" },
+  btnObs: { fontSize: "11px", padding: "3px 7px", border: "0.5px solid #ffe082", borderRadius: "6px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "3px" },
+  obsPanel: { background: "#fffdf5", borderTop: "2px solid #ffa726", padding: "12px 16px" },
+  obsTitulo: { fontSize: "11px", fontWeight: 500, color: "#e65100", marginBottom: "8px" },
+  obsItem: { background: "white", border: "0.5px solid #ffe082", borderLeft: "3px solid #ffa726", borderRadius: "8px", padding: "8px 12px" },
 };
