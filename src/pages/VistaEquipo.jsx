@@ -76,6 +76,85 @@ export default function VistaEquipo() {
     win.document.close();
   };
 
+  const imprimirFicha = () => {
+    const obsArr = getObs(), recArr = getRec(), corArr = getCor(), cronArr = getCron();
+    const badgeColor = equipo.estado==="Operativo"?"#2e7d32":equipo.estado==="Operativo con observaciones"?"#e65100":"#c62828";
+    const badgeBg = equipo.estado==="Operativo"?"#e8f5e9":equipo.estado==="Operativo con observaciones"?"#fff8e1":"#ffebee";
+    const qrPx = Math.round(getQRpx()) * 2;
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=${qrPx}x${qrPx}&data=${encodeURIComponent(window.location.href)}`;
+
+    const campo = (l,v) => v ? `<div style="background:#f8f9fa;border-radius:6px;padding:7px 10px;"><div style="font-size:10px;color:#888;margin-bottom:2px;">${l}</div><div style="font-size:12px;font-weight:600;color:#222;">${v}</div></div>` : "";
+    const campos = [
+      campo("Tipo equipo",equipo.tipoEquipo), campo("Marca",equipo.marca), campo("Modelo",equipo.modelo), campo("N° Serie",equipo.serie),
+      campo("Capacidad",equipo.capacidad?equipo.capacidad+" BTU":null), campo("Refrigerante",equipo.tipoRefrigerante),
+      campo("Voltaje",equipo.voltaje?equipo.voltaje+"V":null), campo("Amperaje",equipo.amperaje?equipo.amperaje+"A":null),
+      campo("Fases",equipo.fases), campo("Cliente",equipo.cliente), campo("Piso",equipo.piso), campo("Ambiente",equipo.ambiente),
+    ].filter(Boolean).join("");
+
+    const obsHtml = obsArr.length>0 ? obsArr.map(o=>`
+      <div style="background:#fff8e1;border-left:3px solid #ffa726;border-radius:6px;padding:8px 12px;margin-bottom:5px;font-size:12px;color:#e65100;">
+        <div>${o.texto}</div>
+        ${(o.fecha||o.tecnico)?`<div style="font-size:10px;color:#888;margin-top:2px;">${o.fecha||""}${o.fecha&&o.tecnico?" · ":""}${o.tecnico?"Técnico: "+o.tecnico:""}</div>`:""}
+      </div>`).join("") : `<div style="font-size:12px;color:#aaa;font-style:italic;">Sin observaciones</div>`;
+
+    const recHtml = recArr.length>0 ? recArr.map(r=>`
+      <div style="background:#e8f5e9;border-left:3px solid #43a047;border-radius:6px;padding:8px 12px;margin-bottom:5px;font-size:12px;color:#2e7d32;">${typeof r==="string"?r:r.texto||""}</div>`).join("") : `<div style="font-size:12px;color:#aaa;font-style:italic;">Sin recomendaciones</div>`;
+
+    const corHtml = corArr.length>0 ? corArr.map(c=>`
+      <div style="background:#f5f5f5;border-left:3px solid #1a5fa8;border-radius:6px;padding:8px 12px;margin-bottom:5px;font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+        <span>${c.descripcion}</span>${c.fecha?`<span style="font-size:10px;color:#888;">${c.fecha}</span>`:""}
+      </div>`).join("") : "";
+
+    const cronColors = {realizado:{bg:"#e8f5e9",color:"#2e7d32",icon:"✅"},pendiente:{bg:"#fff8e1",color:"#e65100",icon:"⏳"},programado:{bg:"#f5f5f5",color:"#888",icon:"📆"}};
+    const cronHtml = cronArr.map(t=>{ const c=cronColors[t.estado]||cronColors.programado; return `
+      <div style="background:${c.bg};border-radius:8px;padding:10px;text-align:center;flex:1;">
+        <div style="font-size:11px;font-weight:700;color:${c.color};margin-bottom:3px;">${t.label}</div>
+        <div style="font-size:11px;color:${c.color};">${t.fecha||"Sin fecha"}</div>
+        <div style="font-size:10px;color:${c.color};margin-top:3px;">${c.icon} ${t.estado}</div>
+      </div>`;}).join("");
+
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Ficha — ${equipo.codigo||equipo.marca}</title>
+    <style>
+      @page{size:A4;margin:14mm} *{box-sizing:border-box} body{font-family:Arial,sans-serif;font-size:13px;color:#222;background:white;margin:0}
+      .header{background:#1a5fa8;color:white;padding:13px 20px;display:flex;justify-content:space-between;align-items:center}
+      .logo{font-size:18px;font-weight:900;letter-spacing:2px} .badge{background:${badgeBg};color:${badgeColor};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+      .info{background:#f8f9fa;border-radius:8px;padding:12px 16px;margin:14px 0 0}
+      .sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#1a5fa8;border-left:3px solid #1a5fa8;padding-left:8px;margin:14px 0 8px}
+      .sec.obs{color:#e65100;border-color:#e65100} .sec.rec{color:#2e7d32;border-color:#2e7d32}
+      .campos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+      .cron{display:flex;gap:8px} .footer{display:flex;align-items:center;gap:14px;border-top:.5px solid #ddd;margin-top:16px;padding-top:12px}
+      .btn-print{display:block;margin:12px auto;padding:10px 24px;background:#1a5fa8;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600}
+      @media print{.btn-print{display:none!important}}
+    </style></head><body>
+    <div class="header"><div class="logo">HVAC</div><div class="badge">${equipo.estado==="Operativo con observaciones"?"Con observaciones":equipo.estado||"Operativo"}</div></div>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir ficha</button>
+    <div style="padding:0 16px 16px">
+      <div class="info">
+        <div style="font-size:15px;font-weight:700;color:#1a5fa8;">${equipo.marca||""} / ${equipo.modelo||""}</div>
+        <div style="font-size:12px;color:#555;margin-top:4px;">${equipo.tipoEquipo||""} · Código: <b>${equipo.codigo||"-"}</b> · ${equipo.cliente||""} · Piso ${equipo.piso||""} · ${equipo.ambiente||""}</div>
+      </div>
+      <div class="sec">Ficha técnica</div><div class="campos">${campos}</div>
+      <div class="sec obs">Observaciones</div>${obsHtml}
+      <div class="sec rec">Recomendaciones</div>${recHtml}
+      ${corArr.length>0?`<div class="sec">Correctivos realizados</div>${corHtml}`:""}
+      <div class="sec">Cronograma de mantenimiento</div><div class="cron">${cronHtml}</div>
+      <div class="footer">
+        <img src="${qrSrc}" width="70" height="70"/>
+        <div>
+          <div style="font-size:11px;color:#555;font-weight:600;">Escanea para ver esta ficha</div>
+          <div style="font-size:10px;color:#888;margin-top:3px;">${window.location.href}</div>
+          <div style="font-size:10px;color:#aaa;margin-top:2px;">Generado: ${new Date().toLocaleDateString("es-PE")} · HVAC Sistema de Mantenimiento</div>
+        </div>
+      </div>
+    </div>
+    <script>setTimeout(()=>window.print(),600);</script></body></html>`;
+
+    const win = window.open("","_blank");
+    win.document.write(html);
+    win.document.close();
+  };
+
   const generarPDF = async () => {
     setImprimiendo(true);
     try {
@@ -130,16 +209,21 @@ export default function VistaEquipo() {
 
       const listaItems = (lista,br,bg,bb,borR,borG,borB,tR,tG,tB,conFecha=false) => {
         lista.forEach(item=>{
-          const txt = typeof item==="object"?(item.descripcion||""):item;
+          const txt = typeof item==="object"?(item.texto||item.descripcion||""):String(item||"");
           const fecha = typeof item==="object"?(item.fecha||""):"";
+          const tecnico = typeof item==="object"?(item.tecnico||""):"";
+          const meta = [fecha, tecnico ? "Técnico: "+tecnico : ""].filter(Boolean).join(" · ");
           const lines=pdf.splitTextToSize(String(txt),C-14);
-          const h=lines.length*4.5+5;
+          const h=lines.length*4.5+(meta?9:5);
           check(h);
           pdf.setFillColor(br,bg,bb); pdf.rect(M,y,C,h,"F");
           pdf.setFillColor(borR,borG,borB); pdf.rect(M,y,2.5,h,"F");
           pdf.setFont("helvetica","normal"); pdf.setFontSize(8.5); pdf.setTextColor(tR,tG,tB);
           pdf.text(lines,M+5,y+4);
-          if(conFecha&&fecha){
+          if(meta){
+            pdf.setFontSize(7); pdf.setTextColor(150,150,150);
+            pdf.text(meta,M+5,y+h-2.5);
+          } else if(conFecha&&fecha){
             pdf.setFontSize(7.5); pdf.setTextColor(150,150,150);
             pdf.text(fecha,W-M-2,y+4,{align:"right"});
           }
@@ -379,8 +463,9 @@ export default function VistaEquipo() {
                       <span style={{fontSize:"12px",fontWeight:500,minWidth:"36px"}}>{escala} cm</span>
                     </div>
                   )}
-                  <div style={{display:"flex",gap:"8px"}}>
+                  <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
                     <button style={s.btnImp} onClick={imprimirQR}>🖨️ Imprimir QR</button>
+                    <button style={{...s.btnImp,background:"#e8f0fe",color:"#1a5fa8",border:"0.5px solid #c5d5e8"}} onClick={imprimirFicha}>🖨️ Imprimir ficha</button>
                     <button style={s.btnPDF} onClick={generarPDF} disabled={imprimiendo}>
                       {imprimiendo?"Generando...":"📄 Descargar PDF"}
                     </button>

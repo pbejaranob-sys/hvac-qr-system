@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Lectura pública para fichas de equipos (acceso por QR sin login)
+    match /equipos/{equipoId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Todo lo demás requiere autenticación
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
