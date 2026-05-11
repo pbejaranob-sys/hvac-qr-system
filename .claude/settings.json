@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"c:\\\\Users\\\\PC\\\\Desktop\\\\hvac-qr-system\" add src/pages/ListaEquiposCliente.jsx)",
+      "Bash(git -C 'c:\\\\Users\\\\PC\\\\Desktop\\\\hvac-qr-system' commit -m 'fix: observaciones desplegables bajo fila en ListaEquiposCliente *)",
+      "Bash(git -C \"c:\\\\Users\\\\PC\\\\Desktop\\\\hvac-qr-system\" push)"
+    ]
+  }
+}
