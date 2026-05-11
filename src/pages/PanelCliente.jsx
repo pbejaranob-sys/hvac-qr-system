@@ -103,7 +103,8 @@ export default function PanelCliente() {
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [filtroPiso, setFiltroPiso] = useState("Todos");
   const [modalEquipo, setModalEquipo] = useState(null);
-  const [modalTipo, setModalTipo] = useState(null); // "info" | "obs"
+  const [modalTipo, setModalTipo] = useState(null); // "info"
+  const [obsAbierto, setObsAbierto] = useState(null);
   const [vistaActual, setVistaActual] = useState("sedes"); // "sedes" | "equipos"
   const [sedeActual, setSedeActual] = useState(null);
   const navigate = useNavigate();
@@ -330,33 +331,67 @@ useEffect(() => {
                     </tr>
                   </thead>
                   <tbody>
-                    {equiposFiltrados.map((equipo, i) => (
-                      <tr key={equipo.id} style={{ borderBottom: "0.5px solid #f5f5f5", background: i % 2 === 0 ? "white" : "#f8f9fa" }}>
-                        <td style={{ padding: "10px 14px", color: "#888", fontSize: "12px" }}>{i + 1}</td>
-                        <td style={{ padding: "10px 14px" }}>
-                          {equipo.codigo ? <span style={{ fontSize: "11px", padding: "2px 7px", background: "#f3e5f5", color: "#6a1b9a", borderRadius: "4px", fontFamily: "monospace", fontWeight: 700 }}>{equipo.codigo}</span> : <span style={{ color: "#aaa" }}>-</span>}
-                        </td>
-                        <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "#222" }}>{equipo.piso || "-"}</td>
-                        <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "#222" }}>{equipo.ambiente || "-"}</td>
-                        <td style={{ padding: "10px 14px", fontSize: "13px", color: "#555" }}>{equipo.tipoEquipo || "-"}</td>
-                        <td style={{ padding: "10px 14px", fontSize: "13px", color: "#555" }}>
-                          <div style={{ fontWeight: 500, color: "#222" }}>{equipo.marca || "-"}</div>
-                          <div style={{ fontSize: "11px", color: "#888" }}>{equipo.modelo}</div>
-                        </td>
-                        <td style={{ padding: "10px 14px" }}>{getBadge(equipo.estado)}</td>
-                        <td style={{ padding: "10px 14px" }}>
-                          <div style={{ display: "flex", gap: "5px" }}>
-                            <button style={s.btnInfo} onClick={() => { setModalEquipo(equipo); setModalTipo("info"); }}>Info</button>
-                            <button style={{ ...s.btnObs, position: "relative" }} onClick={() => { setModalEquipo(equipo); setModalTipo("obs"); }}>
-                              Obs.
-                              {getObs(equipo).length > 0 && (
-                                <span style={{ marginLeft: "4px", background: "#e65100", color: "white", borderRadius: "10px", padding: "0 5px", fontSize: "10px" }}>{getObs(equipo).length}</span>
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {equiposFiltrados.map((equipo, i) => {
+                      const abierto = obsAbierto === equipo.id;
+                      const obsArr = getObs(equipo);
+                      const numObs = obsArr.length;
+                      return (
+                        <React.Fragment key={equipo.id}>
+                          <tr style={{ borderBottom: abierto ? "none" : "0.5px solid #f5f5f5", background: i % 2 === 0 ? "white" : "#f8f9fa" }}>
+                            <td style={{ padding: "10px 14px", color: "#888", fontSize: "12px" }}>{i + 1}</td>
+                            <td style={{ padding: "10px 14px" }}>
+                              {equipo.codigo ? <span style={{ fontSize: "11px", padding: "2px 7px", background: "#f3e5f5", color: "#6a1b9a", borderRadius: "4px", fontFamily: "monospace", fontWeight: 700 }}>{equipo.codigo}</span> : <span style={{ color: "#aaa" }}>-</span>}
+                            </td>
+                            <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "#222" }}>{equipo.piso || "-"}</td>
+                            <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "#222" }}>{equipo.ambiente || "-"}</td>
+                            <td style={{ padding: "10px 14px", fontSize: "13px", color: "#555" }}>{equipo.tipoEquipo || "-"}</td>
+                            <td style={{ padding: "10px 14px", fontSize: "13px", color: "#555" }}>
+                              <div style={{ fontWeight: 500, color: "#222" }}>{equipo.marca || "-"}</div>
+                              <div style={{ fontSize: "11px", color: "#888" }}>{equipo.modelo}</div>
+                            </td>
+                            <td style={{ padding: "10px 14px" }}>{getBadge(equipo.estado)}</td>
+                            <td style={{ padding: "10px 14px" }}>
+                              <div style={{ display: "flex", gap: "5px" }}>
+                                <button style={s.btnInfo} onClick={() => { setModalEquipo(equipo); setModalTipo("info"); }}>Info</button>
+                                <button
+                                  style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "5px", cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap", border: `0.5px solid ${abierto ? "#ffa726" : "#ddd"}`, background: abierto ? "#e65100" : "#fff8e1", color: abierto ? "white" : "#e65100", opacity: numObs === 0 ? 0.45 : 1 }}
+                                  onClick={() => setObsAbierto(abierto ? null : equipo.id)}
+                                >
+                                  {"Obs "}
+                                  <span style={{ background: abierto ? "white" : "#e65100", color: abierto ? "#e65100" : "white", borderRadius: "20px", fontSize: "9px", padding: "1px 5px", fontWeight: 700, marginRight: "3px" }}>{numObs}</span>
+                                  {abierto ? "▴" : "▾"}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          {abierto && (
+                            <tr style={{ borderBottom: "0.5px solid #f5f5f5" }}>
+                              <td colSpan={8} style={{ padding: "0", background: "#fffdf5", borderTop: "2px solid #ffa726" }}>
+                                <div style={{ padding: "12px 16px" }}>
+                                  <div style={{ fontSize: "11px", fontWeight: 500, color: "#e65100", marginBottom: "8px" }}>⚠️ {numObs} observación{numObs !== 1 ? "es" : ""} — {equipo.codigo || equipo.ambiente}</div>
+                                  {numObs === 0 ? (
+                                    <div style={{ fontSize: "12px", color: "#aaa", fontStyle: "italic" }}>Sin observaciones registradas</div>
+                                  ) : (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                      {obsArr.filter(o => o.texto?.trim()).map((o, idx) => (
+                                        <div key={idx} style={{ background: "white", border: "0.5px solid #ffe082", borderLeft: "3px solid #ffa726", borderRadius: "8px", padding: "8px 12px" }}>
+                                          <div style={{ fontSize: "12px", color: "#333", lineHeight: 1.5 }}>{o.texto}</div>
+                                          <div style={{ fontSize: "10px", color: "#888", marginTop: "3px" }}>
+                                            {o.fecha && <span>{o.fecha}</span>}
+                                            {o.fecha && o.tecnico && <span> · </span>}
+                                            {o.tecnico && <span>Técnico: {o.tecnico}</span>}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
