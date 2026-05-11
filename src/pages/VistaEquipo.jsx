@@ -311,7 +311,9 @@ export default function VistaEquipo() {
       pdf.text(`Reporte · ${equipo.cliente||""} · ${equipo.codigo||id.slice(0,6).toUpperCase()}`,M,291);
 
       if (modo === "ver") {
-        window.location.href = pdf.output("bloburl");
+        const blob = pdf.output("blob");
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank") || (window.location.href = url);
       } else {
         pdf.save(`reporte-${equipo.codigo||id.slice(0,6)}.pdf`);
       }
