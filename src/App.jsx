@@ -13,26 +13,32 @@ import PanelAdminNormal from "./pages/PanelAdminNormal";
 import CrearCliente from "./pages/CrearCliente";
 import VistaSede from "./pages/VistaSede";
 import EditarCliente from "./pages/EditarCliente";
+import Privacidad from "./pages/Privacidad";
+import Terminos from "./pages/Terminos";
+
 function App() {
   return (
-<BrowserRouter>
-  <Routes>
-    <Route path="/" element={<Login />} />
-    <Route path="/dashboard" element={<Dashboard />} />
-    <Route path="/registrar" element={<RegistrarEquipo />} />
-    <Route path="/equipo/:id" element={<VistaEquipo />} />
-    <Route path="/cliente" element={<PanelCliente />} />
-    <Route path="/admin" element={<PanelAdmin />} />
-    <Route path="/admin/cliente/:clienteNombre" element={<ListaEquiposCliente />} />
-    <Route path="/crear-usuario" element={<CrearUsuario />} />
-    <Route path="/panel-admin" element={<PanelAdminNormal />} />
-    <Route path="/crear-cliente" element={<CrearCliente />} />
-    <Route path="/cliente/:clienteNombre" element={<VistaCliente />} />
-    <Route path="/cotizacion/:id" element={<Cotizacion />} />
-    <Route path="/cliente/:clienteNombre/sede/:sedeNombre" element={<VistaSede />} />
-    <Route path="/editar-cliente/:clienteId" element={<EditarCliente />} />
-  </Routes>
-</BrowserRouter>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/registrar" element={<RegistrarEquipo />} />
+        <Route path="/equipo/:id" element={<VistaEquipo />} />
+        <Route path="/cliente" element={<PanelCliente />} />
+        <Route path="/admin" element={<PanelAdmin />} />
+        <Route path="/admin/cliente/:clienteNombre" element={<ListaEquiposCliente />} />
+        <Route path="/crear-usuario" element={<CrearUsuario />} />
+        <Route path="/panel-admin" element={<PanelAdminNormal />} />
+        <Route path="/crear-cliente" element={<CrearCliente />} />
+        <Route path="/cliente/:clienteNombre" element={<VistaCliente />} />
+        <Route path="/cotizacion/:id" element={<Cotizacion />} />
+        <Route path="/cliente/:clienteNombre/sede/:sedeNombre" element={<VistaSede />} />
+        <Route path="/editar-cliente/:clienteId" element={<EditarCliente />} />
+        <Route path="/privacidad" element={<Privacidad />} />
+        <Route path="/terminos" element={<Terminos />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
+
 export default App;
