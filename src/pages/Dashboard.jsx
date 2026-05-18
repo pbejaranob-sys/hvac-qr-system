@@ -2,7 +2,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
-import { signOut } from "firebase/auth";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
 const getBadgeStyle = (estado) => {
@@ -30,9 +30,9 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const verificarRol = async () => {
-      const user = auth.currentUser;
-      if (!user) { navigate("/"); return; }
+    const verificarRol = () => {
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { navigate("/"); return; }
       const snap = await getDoc(doc(db, "usuarios", user.uid));
       if (snap.exists()) {
         const data = snap.data();
@@ -42,9 +42,10 @@ export default function Dashboard() {
       }
       setVerificando(false);
       cargarEquipos();
-    };
-    verificarRol();
-  }, []);
+    });
+  };
+  verificarRol();
+}, []);
 
   const cargarEquipos = async () => {
     const snapshot = await getDocs(collection(db, "equipos"));
