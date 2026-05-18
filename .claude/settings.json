@@ -3,7 +3,10 @@
     "allow": [
       "Bash(git -C \"c:\\\\Users\\\\PC\\\\Desktop\\\\hvac-qr-system\" add src/pages/ListaEquiposCliente.jsx)",
       "Bash(git -C 'c:\\\\Users\\\\PC\\\\Desktop\\\\hvac-qr-system' commit -m 'fix: observaciones desplegables bajo fila en ListaEquiposCliente *)",
-      "Bash(git -C \"c:\\\\Users\\\\PC\\\\Desktop\\\\hvac-qr-system\" push)"
+      "Bash(git -C \"c:\\\\Users\\\\PC\\\\Desktop\\\\hvac-qr-system\" push)",
+      "Bash(git -C \"c:\\\\Users\\\\PC\\\\Desktop\\\\hvac-qr-system\" log --oneline -3)",
+      "Bash(git -C \"c:\\\\Users\\\\PC\\\\Desktop\\\\hvac-qr-system\" add src/pages/PanelCliente.jsx)",
+      "Bash(git -C 'c:\\\\Users\\\\PC\\\\Desktop\\\\hvac-qr-system' commit -m 'fix: observaciones inline bajo fila en PanelCliente en lugar de modal flotante *)"
     ]
   }
 }
