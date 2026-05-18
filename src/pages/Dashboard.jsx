@@ -38,10 +38,9 @@ export default function Dashboard() {
         const data = snap.data();
         if (data.superadmin === true) { navigate("/admin"); return; }
         if (data.rol === "admin") { navigate("/panel-admin"); return; }
-        if (data.rol === "cliente") { navigate("/cliente"); return; }
+        navigate("/cliente"); return;
       }
-      setVerificando(false);
-      cargarEquipos();
+      navigate("/cliente");
     });
   };
   verificarRol();

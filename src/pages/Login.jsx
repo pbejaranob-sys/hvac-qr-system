@@ -33,7 +33,7 @@ export default function Login() {
           navigate("/cliente");
         }
       } else {
-        navigate("/dashboard");
+        navigate("/cliente");
       }
     } catch (err) {
       console.error("Error login:", err.code, err.message);
