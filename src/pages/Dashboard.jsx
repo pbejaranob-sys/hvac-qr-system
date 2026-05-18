@@ -1,7 +1,7 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
@@ -26,19 +26,21 @@ const ordenarPisos = (a, b) => {
 export default function Dashboard() {
   const [equiposPorCliente, setEquiposPorCliente] = useState({});
   const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [verificando, setVerificando] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const verificarRol = async () => {
       const user = auth.currentUser;
       if (!user) { navigate("/"); return; }
-      const q = query(collection(db, "usuarios"), where("email", "==", user.email));
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        const rol = snap.docs[0].data().rol;
-        if (rol === "admin") { navigate("/admin"); return; }
-        if (rol === "cliente") { navigate("/cliente"); return; }
+      const snap = await getDoc(doc(db, "usuarios", user.uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.superadmin === true) { navigate("/admin"); return; }
+        if (data.rol === "admin") { navigate("/panel-admin"); return; }
+        if (data.rol === "cliente") { navigate("/cliente"); return; }
       }
+      setVerificando(false);
       cargarEquipos();
     };
     verificarRol();
@@ -77,6 +79,12 @@ export default function Dashboard() {
     if (filtroEstado === "Todos") return equipos;
     return equipos.filter(e => e.estado === filtroEstado);
   };
+
+  if (verificando) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f0f4f8"}}>
+      <div style={{fontSize:"14px",color:"#888"}}>Cargando...</div>
+    </div>
+  );
 
   return (
     <div style={styles.container}>
