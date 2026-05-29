@@ -256,7 +256,7 @@ adminid: auth.currentUser?.uid || "",
                     <label style={s.label}>Tipo de equipo</label>
                     <select style={s.input} name="tipoEquipo" value={form.tipoEquipo} onChange={handleChange}>
                       <option value="">Seleccionar...</option>
-                      {["Split Muro","Split Piso Techo","Cassette","Casete","Chiller","Fan Coil","Ventilación","Extractor","Torre de Enfriamiento","Otro"].map(t => <option key={t}>{t}</option>)}
+                      {["Split Muro","Split Piso Techo","Split Pared","Split Ducto","Cassette","Casete","Chiller","Fan Coil","Ventilación","Extractor","Torre de Enfriamiento","Ventana","Autocontenido","Precisión","Otro"].map(t => <option key={t}>{t}</option>)}
                     </select>
                   </div>
                   <div><label style={s.label}>Marca</label><input style={s.input} name="marca" placeholder="Daikin, LG, Midea..." value={form.marca} onChange={handleChange} required /></div>
