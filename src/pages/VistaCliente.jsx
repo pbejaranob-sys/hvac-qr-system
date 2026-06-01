@@ -3,6 +3,22 @@ import { db, auth } from "../firebase";
 import { collection, getDocs, query, where, addDoc, deleteDoc, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 
+const parsePiso = (p) => {
+  if (!p) return [99, 0];
+  const s = String(p).toLowerCase().trim();
+  const sotanoMatch = s.match(/s[oó]tano\s*(\d*)/);
+  if (sotanoMatch) return [-1, -(parseInt(sotanoMatch[1]) || 1)];
+  const num = parseFloat(s);
+  if (!isNaN(num)) return [0, num];
+  return [1, 0];
+};
+
+const sortPiso = (a, b) => {
+  const [ta, na] = parsePiso(a.piso);
+  const [tb, nb] = parsePiso(b.piso);
+  return ta !== tb ? ta - tb : na - nb;
+};
+
 export default function VistaCliente() {
   const { clienteNombre } = useParams();
   const nombre = decodeURIComponent(clienteNombre);
@@ -138,15 +154,23 @@ export default function VistaCliente() {
   const pOp = total ? Math.round((stats.op / total) * 100) : 0;
   const pObs = total ? Math.round((stats.obs / total) * 100) : 0;
   const pFs = total ? Math.round((stats.fs / total) * 100) : 0;
-  const pisos = ["Todos", ...new Set(equipos.map(e => e.piso).filter(Boolean))];
-  const equiposFiltrados = equipos.filter(e => {
-    const pasaPiso = pisoFiltro === "Todos" || e.piso === pisoFiltro;
-    const pasaEstado = estadoFiltro === "Todos" ||
-      (estadoFiltro === "Operativo" && e.estado === "Operativo") ||
-      (estadoFiltro === "Con obs." && e.estado === "Operativo con observaciones") ||
-      (estadoFiltro === "Fuera serv." && e.estado === "Fuera de servicio");
-    return pasaPiso && pasaEstado;
-  });
+
+  const pisos = ["Todos", ...[...new Set(equipos.map(e => e.piso).filter(Boolean))].sort((a, b) => {
+    const [ta, na] = parsePiso({ piso: a });
+    const [tb, nb] = parsePiso({ piso: b });
+    return ta !== tb ? ta - tb : na - nb;
+  })];
+
+  const equiposFiltrados = equipos
+    .filter(e => {
+      const pasaPiso = pisoFiltro === "Todos" || e.piso === pisoFiltro;
+      const pasaEstado = estadoFiltro === "Todos" ||
+        (estadoFiltro === "Operativo" && e.estado === "Operativo") ||
+        (estadoFiltro === "Con obs." && e.estado === "Operativo con observaciones") ||
+        (estadoFiltro === "Fuera serv." && e.estado === "Fuera de servicio");
+      return pasaPiso && pasaEstado;
+    })
+    .sort(sortPiso);
 
   return (
     <div style={s.page}>
@@ -263,7 +287,7 @@ export default function VistaCliente() {
                     </select>
                   </div>
                 </div>
-<div style={s.tablaHeader}>
+                <div style={s.tablaHeader}>
                   <span style={s.thCell}>#</span>
                   <span style={s.thCell}>Código</span>
                   <span style={s.thCell}>Piso</span>
