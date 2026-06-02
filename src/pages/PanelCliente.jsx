@@ -5,13 +5,26 @@ import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 
+const parsePiso = (p) => {
+  if (!p) return [99, 0];
+  const s = String(p).toLowerCase().trim();
+  const m = s.match(/s[oó]tano\s*(\d*)/);
+  if (m) return [-1, -(parseInt(m[1]) || 1)];
+  const n = parseFloat(s);
+  if (!isNaN(n)) return [0, n];
+  return [1, 0];
+};
+
+const sortPiso = (a, b) => {
+  const [ta, na] = parsePiso(a.piso);
+  const [tb, nb] = parsePiso(b.piso);
+  return ta !== tb ? ta - tb : na - nb;
+};
+
 const ordenarPisos = (a, b) => {
-  const orden = ["sotano", "sótano", "subsuelo", "ss"];
-  const aLow = a.toLowerCase(); const bLow = b.toLowerCase();
-  if (orden.includes(aLow)) return -1; if (orden.includes(bLow)) return 1;
-  const aNum = parseInt(a); const bNum = parseInt(b);
-  if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
-  return a.localeCompare(b);
+  const [ta, na] = parsePiso({ piso: a });
+  const [tb, nb] = parsePiso({ piso: b });
+  return ta !== tb ? ta - tb : na - nb;
 };
 
 const agruparPorPiso = (equipos) => {
@@ -103,17 +116,16 @@ export default function PanelCliente() {
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [filtroPiso, setFiltroPiso] = useState("Todos");
   const [modalEquipo, setModalEquipo] = useState(null);
-  const [modalTipo, setModalTipo] = useState(null); // "info"
+  const [modalTipo, setModalTipo] = useState(null);
   const [obsAbierto, setObsAbierto] = useState(null);
-  const [vistaActual, setVistaActual] = useState("sedes"); // "sedes" | "equipos"
+  const [vistaActual, setVistaActual] = useState("sedes");
   const [sedeActual, setSedeActual] = useState(null);
   const navigate = useNavigate();
 
-useEffect(() => {
+  useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) { navigate("/"); return; }
       try {
-        // Buscar datos del usuario por UID primero, luego por email
         const { doc, getDoc } = await import("firebase/firestore");
         let data = null;
 
@@ -130,12 +142,10 @@ useEffect(() => {
           setUsuario(data);
           const empresa = data.empresa || data.nombre || "";
 
-          // Cargar equipos del cliente
           const eSnap = await getDocs(query(collection(db, "equipos"), where("cliente", "==", empresa)));
           const lista = eSnap.docs.map(d => ({ id: d.id, ...d.data() }));
           setEquipos(lista);
 
-          // Cargar sedes del cliente
           try {
             const sSnap = await getDocs(query(collection(db, "sedes"), where("cliente", "==", empresa)));
             const listaSedes = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -153,6 +163,7 @@ useEffect(() => {
     });
     return () => unsub();
   }, []);
+
   const handleLogout = async () => { await signOut(auth); navigate("/"); };
 
   const getObs = (e) => {
@@ -172,17 +183,20 @@ useEffect(() => {
     ? equipos.filter(e => e.sede === sedeActual.nombre)
     : equipos;
 
-  const equiposFiltrados = equiposMostrados.filter(e => {
-    const okE = filtroEstado === "Todos" || e.estado === filtroEstado;
-    const okP = filtroPiso === "Todos" || (e.piso || "Sin piso") === filtroPiso;
-    return okE && okP;
-  });
+  const equiposFiltrados = equiposMostrados
+    .filter(e => {
+      const okE = filtroEstado === "Todos" || e.estado === filtroEstado;
+      const okP = filtroPiso === "Todos" || (e.piso || "Sin piso") === filtroPiso;
+      return okE && okP;
+    })
+    .sort(sortPiso);
 
   const tot = equiposMostrados.length;
   const op = equiposMostrados.filter(e => e.estado === "Operativo").length;
   const obs = equiposMostrados.filter(e => e.estado === "Operativo con observaciones").length;
   const fs = equiposMostrados.filter(e => e.estado === "Fuera de servicio").length;
-  const pisos = ["Todos", ...new Set(equiposMostrados.map(e => e.piso).filter(Boolean))];
+
+  const pisos = ["Todos", ...[...new Set(equiposMostrados.map(e => e.piso).filter(Boolean))].sort(ordenarPisos)];
 
   const getBadge = (estado) => {
     const map = { "Operativo": { bg: "#e8f5e9", color: "#2e7d32" }, "Operativo con observaciones": { bg: "#fff8e1", color: "#e65100" }, "Fuera de servicio": { bg: "#ffebee", color: "#c62828" } };
@@ -400,7 +414,7 @@ useEffect(() => {
         )}
       </div>
 
-      {/* Modal ficha técnica o observaciones */}
+      {/* Modal ficha técnica */}
       {modalEquipo && (
         <div style={s.modalOverlay} onClick={() => setModalEquipo(null)}>
           <div style={s.modalCard} onClick={e => e.stopPropagation()}>
@@ -418,7 +432,6 @@ useEffect(() => {
             <div style={{ overflowY: "auto", maxHeight: "65vh" }}>
               {modalTipo === "info" ? (
                 <>
-                  {/* Ubicación */}
                   <div style={s.modalSec}>
                     <div style={s.modalSecTitulo}>📍 Ubicación</div>
                     <div style={s.grid3}>
@@ -431,7 +444,6 @@ useEffect(() => {
                     </div>
                   </div>
 
-                  {/* Ficha técnica */}
                   <div style={s.modalSec}>
                     <div style={s.modalSecTitulo}>📋 Ficha técnica</div>
                     <div style={s.grid2}>
@@ -444,7 +456,6 @@ useEffect(() => {
                     </div>
                   </div>
 
-                  {/* Eléctricos */}
                   <div style={s.modalSec}>
                     <div style={s.modalSecTitulo}>⚡ Datos eléctricos</div>
                     <div style={s.grid3}>
@@ -454,7 +465,6 @@ useEffect(() => {
                     </div>
                   </div>
 
-                  {/* Mantenimiento */}
                   <div style={s.modalSec}>
                     <div style={s.modalSecTitulo}>🔧 Mantenimiento</div>
                     <div style={s.grid2}>
@@ -464,7 +474,6 @@ useEffect(() => {
                     </div>
                   </div>
 
-                  {/* Cronograma */}
                   {modalEquipo.cronograma && modalEquipo.cronograma.length > 0 && (
                     <div style={s.modalSec}>
                       <div style={s.modalSecTitulo}>📅 Cronograma de mantenimiento</div>
@@ -483,7 +492,6 @@ useEffect(() => {
                     </div>
                   )}
 
-                  {/* Observaciones */}
                   <div style={s.modalSec}>
                     <div style={s.modalSecTitulo}>⚠️ Observaciones</div>
                     {getObs(modalEquipo).length > 0 ? getObs(modalEquipo).map((o, i) => (
@@ -494,7 +502,6 @@ useEffect(() => {
                     )) : <div style={s.vaciomsg}>Sin observaciones registradas</div>}
                   </div>
 
-                  {/* Correctivos */}
                   <div style={s.modalSec}>
                     <div style={s.modalSecTitulo}>🔧 Correctivos realizados</div>
                     {getCor(modalEquipo).length > 0 ? getCor(modalEquipo).map((c, i) => (
@@ -505,7 +512,6 @@ useEffect(() => {
                     )) : <div style={s.vaciomsg}>Sin correctivos registrados</div>}
                   </div>
 
-                  {/* Recomendaciones */}
                   <div style={{ ...s.modalSec, borderBottom: "none" }}>
                     <div style={s.modalSecTitulo}>💡 Recomendaciones</div>
                     {getRec(modalEquipo).length > 0 ? getRec(modalEquipo).map((r, i) => (
