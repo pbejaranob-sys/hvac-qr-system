@@ -124,15 +124,31 @@ export default function Protocolo() {
   const [protocolos, setProtocolos] = useState([]); // historial (máx 10)
   const [indexActual, setIndexActual] = useState(0);
   const [form, setForm] = useState(null);
+  const [soloLectura, setSoloLectura] = useState(false); // true = cliente (solo ve)
 
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((user) => {
-      if (user && equipoId) cargarEquipo();
+    const unsub = auth.onAuthStateChanged(async (user) => {
+      if (user && equipoId) {
+        // Detectar rol: si NO es superadmin ni admin, es cliente (solo lectura)
+        let esLectura = true;
+        try {
+          const snapUser = await getDoc(doc(db, "usuarios", user.uid));
+          if (snapUser.exists()) {
+            const u = snapUser.data();
+            const esAdmin = u.superadmin === true || u.rol === "admin";
+            esLectura = !esAdmin;
+          }
+        } catch {
+          esLectura = true;
+        }
+        setSoloLectura(esLectura);
+        cargarEquipo(esLectura);
+      }
     });
     return () => unsub();
   }, [equipoId]);
 
-  const cargarEquipo = async () => {
+  const cargarEquipo = async (esLectura = false) => {
     const ref = doc(db, "equipos", equipoId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
@@ -145,9 +161,8 @@ export default function Protocolo() {
         setForm(historial[0]);
         setIndexActual(0);
       } else {
-        const nuevo = protocoloVacio(grupo);
         setProtocolos([]);
-        setForm(nuevo);
+        setForm(esLectura ? null : protocoloVacio(grupo));
         setIndexActual(-1); // -1 = nuevo sin guardar
       }
     }
@@ -326,7 +341,33 @@ export default function Protocolo() {
   };
 
   if (cargando) return <div style={s.centro}>Cargando protocolo...</div>;
-  if (!equipo || !form) return <div style={s.centro}>Equipo no encontrado.</div>;
+  if (!equipo) return <div style={s.centro}>Equipo no encontrado.</div>;
+
+  // Cliente sin protocolos guardados
+  if (soloLectura && !form) {
+    return (
+      <div style={s.page}>
+        <div style={{ ...s.navbar, background: "#1a5fa8" }}>
+          <div>
+            <div style={s.navTitle}>📋 Protocolos de mantenimiento</div>
+            <div style={s.navSub}>{equipo.cliente} · {equipo.sede || "Sin sede"} · {equipo.ambiente} · {equipo.marca} {equipo.modelo}</div>
+          </div>
+          <div style={s.navBtns}>
+            <button style={s.btnBack} onClick={() => navigate(-1)}>← Volver</button>
+          </div>
+        </div>
+        <div style={s.content}>
+          <div style={{ background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "48px", textAlign: "center" }}>
+            <div style={{ fontSize: "40px", marginBottom: "12px" }}>📋</div>
+            <div style={{ fontSize: "15px", color: "#555", fontWeight: 500 }}>Aún no hay protocolos de mantenimiento</div>
+            <div style={{ fontSize: "13px", color: "#888", marginTop: "6px" }}>Los protocolos aparecerán aquí cuando el equipo técnico registre un mantenimiento.</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!form) return <div style={s.centro}>Equipo no encontrado.</div>;
 
   const grupoInfo = GRUPOS[form.grupo];
   const checklist = CHECKLISTS[form.grupo] || {};
@@ -341,7 +382,7 @@ export default function Protocolo() {
         </div>
         <div style={s.navBtns}>
           <button style={s.btnBack} onClick={() => navigate(-1)}>← Volver</button>
-          <button style={s.btnSave} onClick={guardar} disabled={guardando}>{guardando ? "Guardando..." : "💾 Guardar"}</button>
+          {!soloLectura && <button style={s.btnSave} onClick={guardar} disabled={guardando}>{guardando ? "Guardando..." : "💾 Guardar"}</button>}
           <button style={s.btnPdf} onClick={exportarPDF}>📄 PDF</button>
         </div>
       </div>
@@ -349,16 +390,16 @@ export default function Protocolo() {
       <div style={s.content}>
         {/* Historial */}
         <div style={s.histBar}>
-          <span style={s.histLabel}>Registros:</span>
-          <button style={s.chipNew} onClick={nuevoProtocolo}>+ Nuevo</button>
+          <span style={s.histLabel}>{soloLectura ? "Mantenimientos:" : "Registros:"}</span>
+          {!soloLectura && <button style={s.chipNew} onClick={nuevoProtocolo}>+ Nuevo</button>}
           {protocolos.map((p, i) => (
             <button key={i} style={{ ...s.chip, ...(indexActual === i ? s.chipActive : {}) }} onClick={() => seleccionarProtocolo(i)}>
               {p.fecha}
-              {indexActual === i && <span style={s.chipDel} onClick={(e) => { e.stopPropagation(); eliminarProtocolo(i); }}>✕</span>}
+              {!soloLectura && indexActual === i && <span style={s.chipDel} onClick={(e) => { e.stopPropagation(); eliminarProtocolo(i); }}>✕</span>}
             </button>
           ))}
-          {indexActual === -1 && <span style={{ ...s.chip, ...s.chipActive }}>Nuevo (sin guardar)</span>}
-          <span style={s.histCount}>{protocolos.length} de 10 máx.</span>
+          {!soloLectura && indexActual === -1 && <span style={{ ...s.chip, ...s.chipActive }}>Nuevo (sin guardar)</span>}
+          <span style={s.histCount}>{protocolos.length}{soloLectura ? "" : " de 10 máx."}</span>
         </div>
 
         {/* Datos del equipo (solo lectura) */}
@@ -379,6 +420,7 @@ export default function Protocolo() {
         </div>
 
         {/* Datos del servicio */}
+        <fieldset disabled={soloLectura} style={{ border: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
         <div style={s.sec}>
           <div style={s.secT}>📝 Datos del servicio</div>
           <div style={s.secB}>
@@ -541,10 +583,10 @@ export default function Protocolo() {
                 <textarea style={{ ...s.obsInp, background: "#fff8e1", borderColor: "#ffe082" }} placeholder="Observación..." value={o.obs} onChange={e => updateObs(i, "obs", e.target.value)} />
                 <textarea style={{ ...s.obsInp, background: "#fef0f0", borderColor: "#f5c4c4" }} placeholder="Causa..." value={o.causa} onChange={e => updateObs(i, "causa", e.target.value)} />
                 <textarea style={{ ...s.obsInp, background: "#e8f5e9", borderColor: "#a5d6a7" }} placeholder="Recomendación..." value={o.rec} onChange={e => updateObs(i, "rec", e.target.value)} />
-                {form.observaciones.length > 1 && <button style={s.obsDel} onClick={() => removeObs(i)}>🗑</button>}
+                {!soloLectura && form.observaciones.length > 1 && <button style={s.obsDel} onClick={() => removeObs(i)}>🗑</button>}
               </div>
             ))}
-            <button style={s.addBtn} onClick={addObs}>+ Agregar observación</button>
+            {!soloLectura && <button style={s.addBtn} onClick={addObs}>+ Agregar observación</button>}
           </div>
         </div>
 
@@ -558,9 +600,10 @@ export default function Protocolo() {
             </div>
           </div>
         </div>
+        </fieldset>
 
         <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "8px" }}>
-          <button style={s.btnSaveBig} onClick={guardar} disabled={guardando}>{guardando ? "Guardando..." : "💾 Guardar protocolo"}</button>
+          {!soloLectura && <button style={s.btnSaveBig} onClick={guardar} disabled={guardando}>{guardando ? "Guardando..." : "💾 Guardar protocolo"}</button>}
           <button style={s.btnPdfBig} onClick={exportarPDF}>📄 Descargar PDF</button>
         </div>
       </div>
