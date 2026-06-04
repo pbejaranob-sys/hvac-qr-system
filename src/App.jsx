@@ -15,6 +15,7 @@ import VistaSede from "./pages/VistaSede";
 import EditarCliente from "./pages/EditarCliente";
 import Privacidad from "./pages/Privacidad";
 import Terminos from "./pages/Terminos";
+import Protocolo from "./pages/Protocolo";
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route path="/editar-cliente/:clienteId" element={<EditarCliente />} />
         <Route path="/privacidad" element={<Privacidad />} />
         <Route path="/terminos" element={<Terminos />} />
+        <Route path="/protocolo" element={<Protocolo />} />
       </Routes>
     </BrowserRouter>
   );
