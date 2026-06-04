@@ -7,33 +7,46 @@ import jsPDF from "jspdf";
 // ============ DEFINICIÓN DE TIPOS DE PROTOCOLO ============
 // Mapea cada tipoEquipo al grupo de protocolo que le corresponde
 const GRUPO_POR_TIPO = {
-  "Split Muro": "expansion",
-  "Split Pared": "expansion",
+  // Grupo 1 → Expansión Directa
   "Split Piso Techo": "expansion",
-  "Split Techo": "expansion",
+  "Split Pared": "expansion",
   "Split Ducto": "expansion",
   "Split Fancoil": "expansion",
-  "Cassette": "expansion",
-  "Casete": "expansion",
-  "Cassete": "expansion",
+  "Split Cassete": "expansion",
   "Ventana": "expansion",
   "Autocontenido": "expansion",
   "Precisión": "expansion",
+  "VRV Evaporador": "expansion",
+  "VRV Condensador": "expansion",
+  // Compatibilidad nombres anteriores
+  "Split Muro": "expansion",
+  "Split Techo": "expansion",
+  "Cassette": "expansion",
+  "Casete": "expansion",
+  "Cassete": "expansion",
+  // Grupo 2 → Fancoil / UMA Agua Helada
+  "Fancoil AH": "fancoil",
+  "Pared AH": "fancoil",
+  "UMA AH": "fancoil",
+  "Fan Coil": "fancoil",
+  // Grupo 3 → Ventilación
   "Ventilación": "ventilacion",
   "Extractor": "ventilacion",
   "Inyector": "ventilacion",
   "Cortina de aire": "ventilacion",
-  "Fan Coil": "fancoil",
-  "Chiller": "chiller",
-  "Torre de Enfriamiento": "torre",
+  "Jetfan": "ventilacion",
+  "Presurizador": "ventilacion",
+  // Grupo 4 → En preparación
+  "Chiller": "pendiente",
+  "Torre de Enfriamiento": "pendiente",
+  "Bombas de agua": "pendiente",
 };
 
 const GRUPOS = {
   expansion: { label: "Expansión Directa (Split / VRV)", color: "#1a5fa8", icon: "❄️" },
+  fancoil: { label: "Manejadora / Fan Coil / UMA Agua Helada", color: "#185fa5", icon: "💧" },
   ventilacion: { label: "Ventilación / Extracción / Inyección", color: "#0f6e56", icon: "🌀" },
-  fancoil: { label: "Manejadora / Fan Coil Agua Helada", color: "#185fa5", icon: "💧" },
-  chiller: { label: "Chiller", color: "#534ab7", icon: "🏭" },
-  torre: { label: "Torre de Enfriamiento", color: "#993c1d", icon: "🌡️" },
+  pendiente: { label: "Protocolo en preparación", color: "#888", icon: "🔧" },
 };
 
 // ============ CÁLCULOS AUTOMÁTICOS ============
@@ -204,17 +217,37 @@ export default function Protocolo() {
     try {
       let nuevos;
       if (indexActual === -1) {
-        // Nuevo protocolo
         nuevos = [form, ...protocolos].slice(0, 10);
       } else {
-        // Editar existente
         nuevos = [...protocolos];
         nuevos[indexActual] = form;
       }
-      await updateDoc(doc(db, "equipos", equipoId), { protocolos: nuevos });
+
+      // Sincronizar observaciones, recomendaciones y estado con la ficha del equipo
+      const obsSync = form.observaciones
+        .filter(o => o.obs?.trim())
+        .map(o => ({ texto: o.obs, causa: o.causa || "", rec: o.rec || "", fecha: form.fecha, tecnico: form.tecnico }));
+
+      const recSync = form.observaciones
+        .filter(o => o.rec?.trim())
+        .map(o => o.rec);
+
+      await updateDoc(doc(db, "equipos", equipoId), {
+        protocolos: nuevos,
+        // Sincronizar con ficha
+        observacionesArray: obsSync.map(o => ({ texto: o.texto, fecha: o.fecha, tecnico: o.tecnico, causa: o.causa })),
+        observaciones: obsSync.map(o => o.texto).join("\n"),
+        recomendacionesArray: recSync,
+        recomendaciones: recSync.join("\n"),
+        estado: form.estadoFinal,
+        ultimoMantenimiento: form.fecha,
+        ultimoProtocolo: form.fecha,
+        ultimoTecnico: form.tecnico,
+      });
+
       setProtocolos(nuevos);
       setIndexActual(indexActual === -1 ? 0 : indexActual);
-      alert("Protocolo guardado correctamente");
+      alert("Protocolo guardado y ficha del equipo actualizada ✅");
     } catch (err) {
       alert("Error al guardar: " + err.message);
     }
@@ -342,6 +375,34 @@ export default function Protocolo() {
 
   if (cargando) return <div style={s.centro}>Cargando protocolo...</div>;
   if (!equipo) return <div style={s.centro}>Equipo no encontrado.</div>;
+
+  // Equipos sin protocolo definido aún
+  const grupoPendiente = GRUPO_POR_TIPO[equipo.tipoEquipo] === "pendiente" || (!GRUPO_POR_TIPO[equipo.tipoEquipo]);
+  if (grupoPendiente) {
+    return (
+      <div style={s.page}>
+        <div style={{ ...s.navbar, background: "#607d8b" }}>
+          <div>
+            <div style={s.navTitle}>🔧 Protocolo — {equipo.tipoEquipo}</div>
+            <div style={s.navSub}>{equipo.cliente} · {equipo.sede || "Sin sede"} · Piso {equipo.piso} · {equipo.ambiente}</div>
+          </div>
+          <div style={s.navBtns}>
+            <button style={s.btnBack} onClick={() => navigate(-1)}>← Volver</button>
+          </div>
+        </div>
+        <div style={s.content}>
+          <div style={{ background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "56px 40px", textAlign: "center" }}>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔧</div>
+            <div style={{ fontSize: "16px", color: "#333", fontWeight: 500, marginBottom: "8px" }}>Protocolo en preparación</div>
+            <div style={{ fontSize: "13px", color: "#888", maxWidth: "380px", margin: "0 auto" }}>
+              El protocolo de mantenimiento para <strong>{equipo.tipoEquipo}</strong> está siendo desarrollado. Estará disponible próximamente.
+            </div>
+            <div style={{ marginTop: "20px", fontSize: "11px", color: "#aaa" }}>Equipo: {equipo.marca} {equipo.modelo} · {equipo.cliente}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Cliente sin protocolos guardados
   if (soloLectura && !form) {
