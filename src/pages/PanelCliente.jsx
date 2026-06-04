@@ -169,10 +169,13 @@ export default function PanelCliente() {
 
   const getObs = (e) => {
     const arr = e.observacionesArray || [];
-    const norm = arr.map(o => typeof o === "string" ? { texto: o, fecha: "", tecnico: "" } : o);
+    const norm = arr.map(o => typeof o === "string"
+      ? { texto: o, fecha: "", tecnico: "", causa: "" }
+      : { texto: o.texto || "", fecha: o.fecha || "", tecnico: o.tecnico || "", causa: o.causa || "" }
+    );
     const filtradas = norm.filter(o => o?.texto?.trim());
     if (filtradas.length > 0) return filtradas;
-    return e.observaciones?.split(/\n|;/).map(o => ({ texto: o.trim(), fecha: "", tecnico: "" })).filter(o => o.texto) || [];
+    return e.observaciones?.split(/\n|;/).map(o => ({ texto: o.trim(), fecha: "", tecnico: "", causa: "" })).filter(o => o.texto) || [];
   };
 
   const getRec = (e) => e.recomendacionesArray?.filter(Boolean) ||
@@ -539,16 +542,43 @@ export default function PanelCliente() {
                   )}
 
                   <div style={s.modalSec}>
-                    <div style={s.modalSecTitulo}>⚠️ Observaciones</div>
-                    {getObs(modalEquipo).length > 0 ? getObs(modalEquipo).map((o, i) => (
-                      <div key={i} style={s.obsItem}>
-                        <div>{o.texto}</div>
-                        {(o.fecha||o.tecnico)&&<div style={{fontSize:"10px",color:"#888",marginTop:"3px"}}>{o.fecha}{o.fecha&&o.tecnico?" · ":""}{o.tecnico?"Técnico: "+o.tecnico:""}</div>}
-                      </div>
-                    )) : <div style={s.vaciomsg}>Sin observaciones registradas</div>}
+                    <div style={{ ...s.modalSecTitulo, display: "flex", alignItems: "center", gap: "8px" }}>
+                      ⚠️ Observación · Causa · Recomendación
+                      {modalEquipo.ultimoProtocolo && (
+                        <span style={{ fontSize: "9px", padding: "1px 6px", borderRadius: "20px", background: "#e8f5e9", color: "#2e7d32", border: "0.5px solid #a5d6a7" }}>
+                          🔄 {modalEquipo.ultimoProtocolo}
+                        </span>
+                      )}
+                    </div>
+                    {getObs(modalEquipo).length > 0 ? (
+                      <>
+                        <div style={{ display: "grid", gridTemplateColumns: "20px 1fr 1fr 1fr", gap: "6px", marginBottom: "4px" }}>
+                          <span></span>
+                          <span style={{ fontSize: "8px", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>Observación</span>
+                          <span style={{ fontSize: "8px", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>Causa</span>
+                          <span style={{ fontSize: "8px", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>Recomendación</span>
+                        </div>
+                        {getObs(modalEquipo).map((o, i) => {
+                          const recs = getRec(modalEquipo);
+                          return (
+                            <div key={i} style={{ display: "grid", gridTemplateColumns: "20px 1fr 1fr 1fr", gap: "6px", marginBottom: "7px", alignItems: "start" }}>
+                              <div style={{ fontSize: "10px", color: "#aaa", fontWeight: 700, paddingTop: "8px", textAlign: "center" }}>{i + 1}</div>
+                              <div>
+                                <div style={{ fontSize: "11px", color: "#e65100", background: "#fff8e1", padding: "6px 8px", borderRadius: "6px", border: "0.5px solid #ffa726" }}>{o.texto}</div>
+                                {(o.fecha || o.tecnico) && <div style={{ fontSize: "9px", color: "#aaa", marginTop: "2px" }}>{o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico ? "Téc: " + o.tecnico : ""}</div>}
+                              </div>
+                              <div style={{ fontSize: "11px", color: "#c62828", background: "#fef0f0", padding: "6px 8px", borderRadius: "6px", border: "0.5px solid #ef9a9a" }}>{o.causa || "—"}</div>
+                              <div style={{ fontSize: "11px", color: "#2e7d32", background: "#e8f5e9", padding: "6px 8px", borderRadius: "6px", border: "0.5px solid #66bb6a" }}>
+                                {recs[i] ? (typeof recs[i] === "string" ? recs[i] : recs[i].texto || "—") : "—"}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </>
+                    ) : <div style={s.vaciomsg}>Sin observaciones registradas</div>}
                   </div>
 
-                  <div style={s.modalSec}>
+                  <div style={{ ...s.modalSec, borderBottom: "none" }}>
                     <div style={s.modalSecTitulo}>🔧 Correctivos realizados</div>
                     {getCor(modalEquipo).length > 0 ? getCor(modalEquipo).map((c, i) => (
                       <div key={i} style={s.corItem}>
@@ -556,13 +586,6 @@ export default function PanelCliente() {
                         {c.fecha && <span style={{ fontSize: "11px", color: "#888", flexShrink: 0, marginLeft: "10px" }}>{c.fecha}</span>}
                       </div>
                     )) : <div style={s.vaciomsg}>Sin correctivos registrados</div>}
-                  </div>
-
-                  <div style={{ ...s.modalSec, borderBottom: "none" }}>
-                    <div style={s.modalSecTitulo}>💡 Recomendaciones</div>
-                    {getRec(modalEquipo).length > 0 ? getRec(modalEquipo).map((r, i) => (
-                      <div key={i} style={s.recItem}>{r}</div>
-                    )) : <div style={s.vaciomsg}>Sin recomendaciones registradas</div>}
                   </div>
                 </>
               ) : (
