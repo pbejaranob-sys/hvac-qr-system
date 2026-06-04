@@ -198,6 +198,7 @@ export default function VistaSede() {
                   <div style={{ display: "flex", gap: "4px" }}>
                     <button style={s.btnInfo} onClick={() => navigate(`/equipo/${eq.id}`)}>Info</button>
                     <button style={s.btnEditar} onClick={() => navigate(`/registrar?id=${eq.id}`)}>Editar</button>
+                    <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${eq.id}`)}>Protocolo</button>
                     <button style={s.btnEliminar} onClick={() => handleEliminar(eq.id)}>🗑</button>
                   </div>
                 </span>
@@ -241,6 +242,7 @@ const s = {
   badgeFs: { fontSize: "11px", padding: "3px 8px", borderRadius: "20px", background: "#ffebee", color: "#c62828" },
   btnInfo: { fontSize: "11px", padding: "3px 8px", background: "#1a5fa8", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" },
   btnEditar: { fontSize: "11px", padding: "3px 8px", background: "#e65100", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" },
+  btnProto: { fontSize: "11px", padding: "3px 8px", background: "#c62828", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" },
   btnEliminar: { fontSize: "11px", padding: "3px 8px", background: "#ffebee", color: "#c62828", border: "0.5px solid #ef9a9a", borderRadius: "6px", cursor: "pointer" },
   selectFiltro: { fontSize: "12px", padding: "4px 8px", border: "0.5px solid #ddd", borderRadius: "6px", background: "white", color: "#333" },
   empty: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "40px", textAlign: "center" },

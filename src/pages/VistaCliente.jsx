@@ -331,6 +331,7 @@ export default function VistaCliente() {
                               Obs <span style={{ background: abierta ? "white" : "#e65100", color: abierta ? "#e65100" : "white", borderRadius: "20px", fontSize: "9px", padding: "1px 5px", fontWeight: 700 }}>{numObs}</span> {abierta ? "▴" : "▾"}
                             </button>
                             <button style={s.btnEditar} onClick={() => navigate(`/registrar?id=${eq.id}`)}>Editar</button>
+                            <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${eq.id}`)}>Protocolo</button>
                             <button style={s.btnEliminar} onClick={() => handleEliminarEquipo(eq.id)}>🗑</button>
                           </div>
                         </span>
@@ -482,6 +483,7 @@ const s = {
   badgeFs: { fontSize: "11px", padding: "3px 8px", borderRadius: "20px", background: "#ffebee", color: "#c62828" },
   btnInfo: { fontSize: "11px", padding: "3px 8px", background: "#1a5fa8", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" },
   btnEditar: { fontSize: "11px", padding: "3px 8px", background: "#e65100", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" },
+  btnProto: { fontSize: "11px", padding: "3px 8px", background: "#c62828", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" },
   btnEliminar: { fontSize: "11px", padding: "3px 8px", background: "#ffebee", color: "#c62828", border: "0.5px solid #ef9a9a", borderRadius: "6px", cursor: "pointer" },
   btnEditarSede: { fontSize: "13px", padding: "4px 8px", background: "#e8f0fe", color: "#1a5fa8", border: "0.5px solid #c5d5e8", borderRadius: "6px", cursor: "pointer", flexShrink: 0 },
   btnEliminarSede: { fontSize: "13px", padding: "4px 8px", background: "#ffebee", color: "#c62828", border: "0.5px solid #ef9a9a", borderRadius: "6px", cursor: "pointer", flexShrink: 0 },
