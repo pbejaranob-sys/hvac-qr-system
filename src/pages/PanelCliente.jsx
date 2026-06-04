@@ -115,6 +115,7 @@ export default function PanelCliente() {
   const [cargando, setCargando] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [filtroPiso, setFiltroPiso] = useState("Todos");
+  const [filtroMes, setFiltroMes] = useState("Todos");
   const [modalEquipo, setModalEquipo] = useState(null);
   const [modalTipo, setModalTipo] = useState(null);
   const [obsAbierto, setObsAbierto] = useState(null);
@@ -183,13 +184,44 @@ export default function PanelCliente() {
     ? equipos.filter(e => e.sede === sedeActual.nombre)
     : equipos;
 
+  const fechaAMesAnio = (fecha) => {
+    if (!fecha) return null;
+    const d = new Date(fecha.includes("/") ? fecha.split("/").reverse().join("-") : fecha);
+    if (isNaN(d)) return null;
+    return d.toLocaleDateString("es-PE", { month: "short", year: "numeric" });
+  };
+  const fechaATimestamp = (fecha) => {
+    if (!fecha) return 0;
+    const d = new Date(fecha.includes("/") ? fecha.split("/").reverse().join("-") : fecha);
+    return isNaN(d) ? 0 : d.getTime();
+  };
+  const fechaColor = (fecha) => {
+    if (!fecha) return { bg: "#f5f5f5", color: "#888", border: "#e0e0e0" };
+    const meses = (Date.now() - fechaATimestamp(fecha)) / (1000 * 60 * 60 * 24 * 30);
+    if (meses <= 3) return { bg: "#e8f5e9", color: "#2e7d32", border: "#a5d6a7" };
+    if (meses <= 6) return { bg: "#e8f0fe", color: "#1a5fa8", border: "#c5d5e8" };
+    return { bg: "#ffebee", color: "#c62828", border: "#ef9a9a" };
+  };
+
+  const mesesDisponibles = ["Todos", ...new Set(
+    equiposMostrados.map(e => fechaAMesAnio(e.ultimoMantenimiento)).filter(Boolean)
+  )];
+
   const equiposFiltrados = equiposMostrados
     .filter(e => {
       const okE = filtroEstado === "Todos" || e.estado === filtroEstado;
       const okP = filtroPiso === "Todos" || (e.piso || "Sin piso") === filtroPiso;
-      return okE && okP;
+      const okM = filtroMes === "Todos" ||
+        (filtroMes === "Sin fecha" && !e.ultimoMantenimiento) ||
+        fechaAMesAnio(e.ultimoMantenimiento) === filtroMes;
+      return okE && okP && okM;
     })
-    .sort(sortPiso);
+    .sort((a, b) => {
+      const fa = fechaATimestamp(a.ultimoMantenimiento);
+      const fb = fechaATimestamp(b.ultimoMantenimiento);
+      if (fb !== fa) return fb - fa;
+      return sortPiso(a, b);
+    });
 
   const tot = equiposMostrados.length;
   const op = equiposMostrados.filter(e => e.estado === "Operativo").length;
@@ -328,18 +360,28 @@ export default function PanelCliente() {
                   <span style={{ fontSize: "14px", fontWeight: 500, color: "#222" }}>Lista de equipos</span>
                   <span style={{ fontSize: "11px", padding: "2px 8px", background: "#e8f0fe", color: "#1a5fa8", borderRadius: "20px" }}>{equiposFiltrados.length} equipo{equiposFiltrados.length !== 1 ? "s" : ""}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                   <span style={{ fontSize: "12px", color: "#888" }}>Piso:</span>
                   <select style={{ fontSize: "12px", padding: "5px 10px", borderRadius: "6px", border: "0.5px solid #ddd" }} value={filtroPiso} onChange={e => setFiltroPiso(e.target.value)}>
                     {pisos.map(p => <option key={p} value={p}>{p === "Todos" ? "Todos los pisos" : `Piso ${p}`}</option>)}
                   </select>
+                  <span style={{ fontSize: "12px", color: "#888" }}>Mant.:</span>
+                  <select style={{ fontSize: "12px", padding: "5px 10px", borderRadius: "6px", border: "0.5px solid #ddd" }} value={filtroMes} onChange={e => setFiltroMes(e.target.value)}>
+                    {mesesDisponibles.map(m => <option key={m}>{m}</option>)}
+                    <option value="Sin fecha">Sin fecha</option>
+                  </select>
+                  {filtroMes !== "Todos" && (
+                    <button onClick={() => setFiltroMes("Todos")} style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "20px", background: "#1a5fa8", color: "white", border: "none", cursor: "pointer" }}>
+                      {filtroMes} ✕
+                    </button>
+                  )}
                 </div>
               </div>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                   <thead>
                     <tr style={{ background: "#f8f9fa" }}>
-                      {["#", "Código", "Piso", "Ambiente", "Tipo equipo", "Marca/Modelo", "Estado", "Acciones"].map(h => (
+                      {["#", "Código", "Piso", "Ambiente", "Tipo equipo", "Marca/Modelo", "Estado", "Últ. mant.", "Acciones"].map(h => (
                         <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#444", borderBottom: "0.5px solid #e0e0e0", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
@@ -364,6 +406,9 @@ export default function PanelCliente() {
                               <div style={{ fontSize: "11px", color: "#888" }}>{equipo.modelo}</div>
                             </td>
                             <td style={{ padding: "10px 14px" }}>{getBadge(equipo.estado)}</td>
+                            <td style={{ padding: "10px 14px" }}>
+                              {(() => { const fc = fechaColor(equipo.ultimoMantenimiento); const ma = fechaAMesAnio(equipo.ultimoMantenimiento); return ma ? <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "10px", background: fc.bg, color: fc.color, border: `0.5px solid ${fc.border}`, whiteSpace: "nowrap" }}>{ma}</span> : <span style={{ fontSize: "10px", color: "#aaa" }}>—</span>; })()}
+                            </td>
                             <td style={{ padding: "10px 14px" }}>
                               <div style={{ display: "flex", gap: "5px" }}>
                                 <button style={s.btnInfo} onClick={() => { setModalEquipo(equipo); setModalTipo("info"); }}>Info</button>

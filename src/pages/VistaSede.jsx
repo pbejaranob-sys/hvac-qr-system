@@ -26,6 +26,7 @@ export default function VistaSede() {
   const [equipos, setEquipos] = useState([]);
   const [pisoFiltro, setPisoFiltro] = useState("Todos");
   const [estadoFiltro, setEstadoFiltro] = useState("Todos");
+  const [mesFiltro, setMesFiltro] = useState("Todos");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -59,6 +60,33 @@ export default function VistaSede() {
   const pObs = total ? Math.round((obs / total) * 100) : 0;
   const pFs = total ? Math.round((fs / total) * 100) : 0;
 
+  // Helper: convierte fecha a "Mes Año" para mostrar y filtrar
+  const fechaAMesAnio = (fecha) => {
+    if (!fecha) return null;
+    const d = new Date(fecha.includes("/") ? fecha.split("/").reverse().join("-") : fecha);
+    if (isNaN(d)) return null;
+    return d.toLocaleDateString("es-PE", { month: "short", year: "numeric" });
+  };
+
+  const fechaATimestamp = (fecha) => {
+    if (!fecha) return 0;
+    const d = new Date(fecha.includes("/") ? fecha.split("/").reverse().join("-") : fecha);
+    return isNaN(d) ? 0 : d.getTime();
+  };
+
+  const fechaColor = (fecha) => {
+    if (!fecha) return { bg: "#f5f5f5", color: "#888", border: "#e0e0e0" };
+    const meses = (Date.now() - fechaATimestamp(fecha)) / (1000 * 60 * 60 * 24 * 30);
+    if (meses <= 3) return { bg: "#e8f5e9", color: "#2e7d32", border: "#a5d6a7" };
+    if (meses <= 6) return { bg: "#e8f0fe", color: "#1a5fa8", border: "#c5d5e8" };
+    return { bg: "#ffebee", color: "#c62828", border: "#ef9a9a" };
+  };
+
+  // Meses disponibles para el filtro
+  const mesesDisponibles = ["Todos", ...new Set(
+    equipos.map(e => fechaAMesAnio(e.ultimoMantenimiento)).filter(Boolean)
+  )];
+
   const pisos = ["Todos", ...[...new Set(equipos.map(e => e.piso).filter(Boolean))].sort((a, b) => {
     const [ta, na] = parsePiso({ piso: a });
     const [tb, nb] = parsePiso({ piso: b });
@@ -72,9 +100,18 @@ export default function VistaSede() {
         (estadoFiltro === "Operativo" && e.estado === "Operativo") ||
         (estadoFiltro === "Con obs." && e.estado === "Operativo con observaciones") ||
         (estadoFiltro === "Fuera serv." && e.estado === "Fuera de servicio");
-      return pasaPiso && pasaEstado;
+      const pasaMes = mesFiltro === "Todos" ||
+        (mesFiltro === "Sin fecha" && !e.ultimoMantenimiento) ||
+        fechaAMesAnio(e.ultimoMantenimiento) === mesFiltro;
+      return pasaPiso && pasaEstado && pasaMes;
     })
-    .sort(sortPiso);
+    .sort((a, b) => {
+      // Primero por fecha más reciente, luego por piso
+      const fa = fechaATimestamp(a.ultimoMantenimiento);
+      const fb = fechaATimestamp(b.ultimoMantenimiento);
+      if (fb !== fa) return fb - fa;
+      return sortPiso(a, b);
+    });
 
   return (
     <div style={s.page}>
@@ -155,18 +192,28 @@ export default function VistaSede() {
           </div>
         ) : (
           <div style={s.tablaWrap}>
-            <div style={{ padding: "12px 16px", borderBottom: "0.5px solid #e0e0e0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ padding: "12px 16px", borderBottom: "0.5px solid #e0e0e0", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
               <span style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>
                 Lista de equipos <span style={{ fontSize: "11px", fontWeight: 400, background: "#e8f0fe", color: "#1a5fa8", padding: "2px 8px", borderRadius: "20px", marginLeft: "6px" }}>{equiposFiltrados.length} equipos</span>
               </span>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                 <span style={{ fontSize: "12px", color: "#888" }}>Piso:</span>
                 <select style={s.selectFiltro} value={pisoFiltro} onChange={e => setPisoFiltro(e.target.value)}>
                   {pisos.map(p => <option key={p}>{p}</option>)}
                 </select>
+                <span style={{ fontSize: "12px", color: "#888" }}>Mant.:</span>
+                <select style={s.selectFiltro} value={mesFiltro} onChange={e => setMesFiltro(e.target.value)}>
+                  {mesesDisponibles.map(m => <option key={m}>{m}</option>)}
+                  <option value="Sin fecha">Sin fecha</option>
+                </select>
+                {mesFiltro !== "Todos" && (
+                  <button onClick={() => setMesFiltro("Todos")} style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "20px", background: "#1a5fa8", color: "white", border: "none", cursor: "pointer" }}>
+                    {mesFiltro} ✕
+                  </button>
+                )}
               </div>
             </div>
-            <div style={s.tablaHeader}>
+            <div style={{ ...s.tablaHeader, gridTemplateColumns: "40px 80px 70px 100px 110px 130px 100px 90px 1fr" }}>
               <span style={s.thCell}>#</span>
               <span style={s.thCell}>Código</span>
               <span style={s.thCell}>Piso</span>
@@ -174,10 +221,14 @@ export default function VistaSede() {
               <span style={s.thCell}>Tipo</span>
               <span style={s.thCell}>Marca/Modelo</span>
               <span style={s.thCell}>Estado</span>
+              <span style={s.thCell}>Últ. mant.</span>
               <span style={s.thCell}>Acciones</span>
             </div>
-            {equiposFiltrados.map((eq, i) => (
-              <div key={eq.id} style={{ ...s.tablaRow, background: i % 2 === 0 ? "white" : "#f8f9fa" }}>
+            {equiposFiltrados.map((eq, i) => {
+              const fc = fechaColor(eq.ultimoMantenimiento);
+              const mesAnio = fechaAMesAnio(eq.ultimoMantenimiento);
+              return (
+              <div key={eq.id} style={{ ...s.tablaRow, gridTemplateColumns: "40px 80px 70px 100px 110px 130px 100px 90px 1fr", background: i % 2 === 0 ? "white" : "#f8f9fa" }}>
                 <span style={s.tdCell}>{i + 1}</span>
                 <span style={s.tdCell}>
                   {eq.codigo ? <span style={s.codigo}>{eq.codigo}</span> : <span style={{ color: "#aaa" }}>-</span>}
@@ -195,6 +246,11 @@ export default function VistaSede() {
                   </span>
                 </span>
                 <span style={s.tdCell}>
+                  {mesAnio
+                    ? <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "10px", background: fc.bg, color: fc.color, border: `0.5px solid ${fc.border}`, whiteSpace: "nowrap" }}>{mesAnio}</span>
+                    : <span style={{ fontSize: "10px", color: "#aaa" }}>—</span>}
+                </span>
+                <span style={s.tdCell}>
                   <div style={{ display: "flex", gap: "4px" }}>
                     <button style={s.btnInfo} onClick={() => navigate(`/equipo/${eq.id}`)}>Info</button>
                     <button style={s.btnEditar} onClick={() => navigate(`/registrar?id=${eq.id}`)}>Editar</button>
@@ -203,7 +259,8 @@ export default function VistaSede() {
                   </div>
                 </span>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

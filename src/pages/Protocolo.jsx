@@ -98,6 +98,21 @@ const protocoloVacio = (grupo) => ({
   estadoFinal: "Operativo",
 });
 
+const obsDesFicha = (data) => {
+  const arr = data.observacionesArray || [];
+  const norm = arr.map(o => typeof o === "string"
+    ? { obs: o, causa: "", rec: "" }
+    : { obs: o.texto || "", causa: o.causa || "", rec: "" }
+  ).filter(o => o.obs.trim());
+  const recs = data.recomendacionesArray?.filter(Boolean) ||
+    data.recomendaciones?.split(/\n|;/).map(r => r.trim()).filter(Boolean) || [];
+  if (norm.length > 0) {
+    recs.forEach((r, i) => { if (norm[i]) norm[i].rec = typeof r === "string" ? r : r.texto || ""; });
+    return norm;
+  }
+  return [{ obs: "", causa: "", rec: "" }];
+};
+
 // ============ CHECKLISTS POR GRUPO ============
 const CHECKLISTS = {
   expansion: {
@@ -175,8 +190,15 @@ export default function Protocolo() {
         setIndexActual(0);
       } else {
         setProtocolos([]);
-        setForm(esLectura ? null : protocoloVacio(grupo));
-        setIndexActual(-1); // -1 = nuevo sin guardar
+        if (!esLectura) {
+          const nuevo = protocoloVacio(grupo);
+          nuevo.observaciones = obsDesFicha(data);
+          nuevo.estadoFinal = data.estado || "Operativo";
+          setForm(nuevo);
+        } else {
+          setForm(null);
+        }
+        setIndexActual(-1);
       }
     }
     setCargando(false);
@@ -203,7 +225,10 @@ export default function Protocolo() {
       return;
     }
     const grupo = GRUPO_POR_TIPO[equipo.tipoEquipo] || "expansion";
-    setForm(protocoloVacio(grupo));
+    const nuevo = protocoloVacio(grupo);
+    nuevo.observaciones = obsDesFicha(equipo);
+    nuevo.estadoFinal = equipo.estado || "Operativo";
+    setForm(nuevo);
     setIndexActual(-1);
   };
 
