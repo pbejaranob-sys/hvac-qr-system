@@ -259,6 +259,80 @@ export default function PanelCliente() {
     programado: { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", label: "📆 Programado" },
   }[estado] || { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", label: "📆 Programado" });
 
+  const generarPDFFicha = (eq) => {
+    const obs = getObs(eq);
+    const rec = getRec(eq);
+    const cor = getCor(eq);
+    const cron = eq.cronograma || [];
+    const badgeColor = eq.estado === "Operativo" ? "#2e7d32" : eq.estado === "Operativo con observaciones" ? "#e65100" : "#c62828";
+    const badgeBg = eq.estado === "Operativo" ? "#e8f5e9" : eq.estado === "Operativo con observaciones" ? "#fff8e1" : "#ffebee";
+
+    const campo = (l, v) => v ? `<div style="background:#f8f9fa;border-radius:6px;padding:7px 10px;"><div style="font-size:10px;color:#888;margin-bottom:2px;">${l}</div><div style="font-size:12px;font-weight:600;color:#222;">${v}</div></div>` : "";
+    const campos = [
+      campo("Tipo equipo", eq.tipoEquipo), campo("Marca", eq.marca), campo("Modelo", eq.modelo), campo("N° Serie", eq.serie),
+      campo("Capacidad", eq.capacidad ? eq.capacidad + " BTU" : null), campo("Refrigerante", eq.tipoRefrigerante),
+      campo("Voltaje", eq.voltaje ? eq.voltaje + "V" : null), campo("Amperaje", eq.amperaje ? eq.amperaje + "A" : null),
+      campo("Fases", eq.fases), campo("Piso", eq.piso), campo("Ambiente", eq.ambiente), campo("Sede", eq.sede),
+    ].filter(Boolean).join("");
+
+    const syncBadge = eq.ultimoProtocolo ? `<span style="font-size:10px;padding:2px 8px;background:#e8f5e9;color:#2e7d32;border-radius:20px;margin-left:8px;">🔄 Sincronizado ${eq.ultimoProtocolo}</span>` : "";
+
+    const ocrHtml = obs.length > 0 ? `
+      <table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:4px;">
+        <thead><tr>
+          <th style="background:#fff3e0;color:#e65100;padding:5px 8px;text-align:left;width:5%">#</th>
+          <th style="background:#fff3e0;color:#e65100;padding:5px 8px;text-align:left;width:32%">Observación</th>
+          <th style="background:#fce4ec;color:#c62828;padding:5px 8px;text-align:left;width:32%">Causa</th>
+          <th style="background:#e8f5e9;color:#2e7d32;padding:5px 8px;text-align:left;width:31%">Recomendación</th>
+        </tr></thead>
+        <tbody>${obs.map((o, i) => `
+          <tr style="background:${i % 2 === 0 ? "white" : "#fafafa"}">
+            <td style="padding:5px 8px;border-bottom:0.5px solid #f0f0f0;color:#888">${i + 1}</td>
+            <td style="padding:5px 8px;border-bottom:0.5px solid #f0f0f0;color:#e65100;background:#fff8e1;">
+              <div>${o.texto}</div>
+              ${o.fecha || o.tecnico ? `<div style="font-size:9px;color:#aaa;margin-top:2px;">${o.fecha || ""}${o.fecha && o.tecnico ? " · " : ""}${o.tecnico ? "Téc: " + o.tecnico : ""}</div>` : ""}
+            </td>
+            <td style="padding:5px 8px;border-bottom:0.5px solid #f0f0f0;color:#c62828;background:#fef0f0;">${o.causa || "—"}</td>
+            <td style="padding:5px 8px;border-bottom:0.5px solid #f0f0f0;color:#2e7d32;background:#e8f5e9;">${rec[i] ? (typeof rec[i] === "string" ? rec[i] : rec[i].texto || "—") : "—"}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>` : `<div style="font-size:12px;color:#aaa;font-style:italic;">Sin observaciones registradas</div>`;
+
+    const cronColors = { realizado: { bg: "#e8f5e9", color: "#2e7d32", icon: "✅" }, pendiente: { bg: "#fff8e1", color: "#e65100", icon: "⏳" }, programado: { bg: "#f5f5f5", color: "#888", icon: "📆" } };
+    const cronHtml = cron.length > 0 ? `<div style="display:flex;gap:8px;flex-wrap:wrap;">${cron.map(t => { const c = cronColors[t.estado] || cronColors.programado; return `<div style="background:${c.bg};border-radius:8px;padding:10px;text-align:center;flex:1;min-width:80px;"><div style="font-size:11px;font-weight:700;color:${c.color};margin-bottom:3px;">${t.label}</div><div style="font-size:11px;color:${c.color};">${t.fecha || "Sin fecha"}</div><div style="font-size:10px;color:${c.color};margin-top:3px;">${c.icon} ${t.estado}</div></div>`; }).join("")}</div>` : "";
+
+    const corHtml = cor.length > 0 ? cor.map(c => `<div style="background:#f5f5f5;border-left:3px solid #1a5fa8;border-radius:0 6px 6px 0;padding:6px 10px;font-size:12px;margin-bottom:5px;display:flex;justify-content:space-between;"><span>${c.descripcion}</span>${c.fecha ? `<span style="font-size:10px;color:#888;">${c.fecha}</span>` : ""}</div>`).join("") : "";
+
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Ficha — ${eq.codigo || eq.marca}</title>
+    <style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:13px;color:#222;background:white;margin:0}
+    .header{background:#1a5fa8;color:white;padding:13px 20px;display:flex;justify-content:space-between;align-items:center}
+    .logo{font-size:18px;font-weight:900;letter-spacing:2px}.badge{background:${badgeBg};color:${badgeColor};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+    .sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#1a5fa8;border-left:3px solid #1a5fa8;padding-left:8px;margin:14px 0 8px}
+    .sec.obs{color:#e65100;border-color:#e65100}.campos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+    .cron{display:flex;gap:8px}.btn-print{display:block;margin:12px auto;padding:10px 24px;background:#1a5fa8;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600}
+    @media print{.btn-print{display:none!important}}</style></head><body>
+    <div class="header"><div class="logo">HVAC</div><div class="badge">${eq.estado === "Operativo con observaciones" ? "Con observaciones" : eq.estado || "Operativo"}</div></div>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    <div style="padding:0 16px 16px">
+      <div style="background:#f8f9fa;border-radius:8px;padding:12px 16px;margin:14px 0 0">
+        <div style="font-size:15px;font-weight:700;color:#1a5fa8;">${eq.marca || ""} / ${eq.modelo || ""}</div>
+        <div style="font-size:12px;color:#555;margin-top:4px;">${eq.tipoEquipo || ""} · ${eq.cliente || ""} · ${eq.sede || ""} · Piso ${eq.piso || ""} · ${eq.ambiente || ""}</div>
+      </div>
+      <div class="sec">Ficha técnica</div><div class="campos">${campos}</div>
+      <div class="sec obs">Observación · Causa · Recomendación ${syncBadge}</div>${ocrHtml}
+      ${cron.length > 0 ? `<div class="sec">Cronograma de mantenimiento</div><div class="cron">${cronHtml}</div>` : ""}
+      ${cor.length > 0 ? `<div class="sec">Correctivos realizados</div>${corHtml}` : ""}
+      <div style="border-top:0.5px solid #ddd;margin-top:16px;padding-top:10px;font-size:10px;color:#aaa;">
+        Generado: ${new Date().toLocaleDateString("es-PE")} · HVAC Sistema de Mantenimiento
+      </div>
+    </div>
+    <script>setTimeout(()=>window.print(),600);</script></body></html>`;
+
+    const win = window.open("", "_blank");
+    win.document.write(html);
+    win.document.close();
+  };
+
   if (cargando) return <div style={s.centro}>Cargando...</div>;
 
   return (
@@ -489,8 +563,10 @@ export default function PanelCliente() {
                 {modalEquipo.codigo && <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "20px", background: "#f3e5f5", color: "#6a1b9a", fontFamily: "monospace", fontWeight: 700 }}>{modalEquipo.codigo}</span>}
                 <span style={{ fontSize: "11px", padding: "3px 10px", borderRadius: "20px", background: modalEquipo.estado === "Operativo" ? "#e8f5e9" : modalEquipo.estado === "Operativo con observaciones" ? "#fff8e1" : "#ffebee", color: modalEquipo.estado === "Operativo" ? "#2e7d32" : modalEquipo.estado === "Operativo con observaciones" ? "#e65100" : "#c62828", fontWeight: 500 }}>{modalEquipo.estado === "Operativo con observaciones" ? "Con obs." : modalEquipo.estado || "Operativo"}</span>
               </div>
-              <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={() => setModalEquipo(null)}>✕</button>
-            </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <button style={{ background: "#c62828", color: "white", border: "none", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer", fontWeight: 500 }} onClick={() => generarPDFFicha(modalEquipo)}>📄 PDF</button>
+                <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={() => setModalEquipo(null)}>✕</button>
+              </div>
 
             <div style={{ overflowY: "auto", maxHeight: "65vh" }}>
               {modalTipo === "info" ? (
