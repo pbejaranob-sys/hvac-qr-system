@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { signOut, onAuthStateChanged } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import jsPDF from "jspdf";
 
 const parsePiso = (p) => {
@@ -122,6 +122,7 @@ export default function PanelCliente() {
   const [vistaActual, setVistaActual] = useState("sedes");
   const [sedeActual, setSedeActual] = useState(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -151,7 +152,20 @@ export default function PanelCliente() {
             const sSnap = await getDocs(query(collection(db, "sedes"), where("cliente", "==", empresa)));
             const listaSedes = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
             setSedes(listaSedes);
-            if (listaSedes.length === 0) setVistaActual("equipos");
+
+            // Restaurar sede si viene desde protocolo
+            const sedeParam = searchParams.get("sede");
+            if (sedeParam && listaSedes.length > 0) {
+              const sedeRestaurada = listaSedes.find(s => s.id === sedeParam);
+              if (sedeRestaurada) {
+                setSedeActual(sedeRestaurada);
+                setVistaActual("equipos");
+              } else {
+                if (listaSedes.length === 0) setVistaActual("equipos");
+              }
+            } else {
+              if (listaSedes.length === 0) setVistaActual("equipos");
+            }
           } catch {
             setSedes([]);
             setVistaActual("equipos");
@@ -423,7 +437,7 @@ export default function PanelCliente() {
                                   <span style={{ background: abierto ? "white" : "#e65100", color: abierto ? "#e65100" : "white", borderRadius: "20px", fontSize: "9px", padding: "1px 5px", fontWeight: 700, marginRight: "3px" }}>{numObs}</span>
                                   {abierto ? "▴" : "▾"}
                                 </button>
-                                <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${equipo.id}&origen=cliente`)}>Protocolo</button>
+                                <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${equipo.id}&origen=cliente${sedeActual ? `&sede=${encodeURIComponent(sedeActual.id)}` : ""}`)}>Protocolo</button>
                               </div>
                             </td>
                           </tr>
