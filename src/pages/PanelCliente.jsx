@@ -254,10 +254,10 @@ export default function PanelCliente() {
   };
 
   const getCronColor = (estado) => ({
-    realizado: { bg: "#e8f5e9", border: "#a5d6a7", color: "#2e7d32", label: "✅ Realizado" },
-    pendiente: { bg: "#fff8e1", border: "#ffe082", color: "#e65100", label: "⏳ Pendiente" },
-    programado: { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", label: "📆 Programado" },
-  }[estado] || { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", label: "📆 Programado" });
+    realizado: { bg: "#e8f5e9", border: "#a5d6a7", color: "#2e7d32", label: "Realizado" },
+    pendiente: { bg: "#fff8e1", border: "#ffe082", color: "#e65100", label: "Pendiente" },
+    programado: { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", label: "Programado" },
+  }[estado] || { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", label: "Programado" });
 
   const generarPDFFicha = (eq) => {
     const obs = getObs(eq);
@@ -298,7 +298,7 @@ export default function PanelCliente() {
         </tbody>
       </table>` : `<div style="font-size:12px;color:#aaa;font-style:italic;">Sin observaciones registradas</div>`;
 
-    const cronColors = { realizado: { bg: "#e8f5e9", color: "#2e7d32", icon: "✅" }, pendiente: { bg: "#fff8e1", color: "#e65100", icon: "⏳" }, programado: { bg: "#f5f5f5", color: "#888", icon: "📆" } };
+    const cronColors = { realizado: { bg: "#e8f5e9", color: "#2e7d32", icon: "OK" }, pendiente: { bg: "#fff8e1", color: "#e65100", icon: "Pend." }, programado: { bg: "#f5f5f5", color: "#888", icon: "Prog." } };
     const cronHtml = cron.length > 0 ? `<div style="display:flex;gap:8px;flex-wrap:wrap;">${cron.map(t => { const c = cronColors[t.estado] || cronColors.programado; return `<div style="background:${c.bg};border-radius:8px;padding:10px;text-align:center;flex:1;min-width:80px;"><div style="font-size:11px;font-weight:700;color:${c.color};margin-bottom:3px;">${t.label}</div><div style="font-size:11px;color:${c.color};">${t.fecha || "Sin fecha"}</div><div style="font-size:10px;color:${c.color};margin-top:3px;">${c.icon} ${t.estado}</div></div>`; }).join("")}</div>` : "";
 
     const corHtml = cor.length > 0 ? cor.map(c => `<div style="background:#f5f5f5;border-left:3px solid #1a5fa8;border-radius:0 6px 6px 0;padding:6px 10px;font-size:12px;margin-bottom:5px;display:flex;justify-content:space-between;"><span>${c.descripcion}</span>${c.fecha ? `<span style="font-size:10px;color:#888;">${c.fecha}</span>` : ""}</div>`).join("") : "";
@@ -567,6 +567,7 @@ export default function PanelCliente() {
                 <button style={{ background: "#c62828", color: "white", border: "none", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer", fontWeight: 500 }} onClick={() => generarPDFFicha(modalEquipo)}>📄 PDF</button>
                 <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={() => setModalEquipo(null)}>✕</button>
               </div>
+            </div>
 
             <div style={{ overflowY: "auto", maxHeight: "65vh" }}>
               {modalTipo === "info" ? (
