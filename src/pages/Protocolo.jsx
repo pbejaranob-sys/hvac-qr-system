@@ -146,6 +146,7 @@ export default function Protocolo() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const equipoId = searchParams.get("equipo");
+  const origen = searchParams.get("origen"); // "cliente" = viene de PanelCliente
   const [equipo, setEquipo] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -412,11 +413,7 @@ export default function Protocolo() {
             <div style={s.navSub}>{equipo.cliente} · {equipo.sede || "Sin sede"} · Piso {equipo.piso} · {equipo.ambiente}</div>
           </div>
           <div style={s.navBtns}>
-            <button style={s.btnBack} onClick={() => navigate(-1)}>← Volver</button>
-          </div>
-        </div>
-        <div style={s.content}>
-          <div style={{ background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "56px 40px", textAlign: "center" }}>
+            <button style={s.btnBack} onClick={() => origen === "cliente" ? navigate("/cliente") : navigate(-1)}>← Volver</button>
             <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔧</div>
             <div style={{ fontSize: "16px", color: "#333", fontWeight: 500, marginBottom: "8px" }}>Protocolo en preparación</div>
             <div style={{ fontSize: "13px", color: "#888", maxWidth: "380px", margin: "0 auto" }}>
@@ -439,7 +436,7 @@ export default function Protocolo() {
             <div style={s.navSub}>{equipo.cliente} · {equipo.sede || "Sin sede"} · {equipo.ambiente} · {equipo.marca} {equipo.modelo}</div>
           </div>
           <div style={s.navBtns}>
-            <button style={s.btnBack} onClick={() => navigate(-1)}>← Volver</button>
+            <button style={s.btnBack} onClick={() => origen === "cliente" ? navigate("/cliente") : navigate(-1)}>← Volver</button>
           </div>
         </div>
         <div style={s.content}>
@@ -467,7 +464,7 @@ export default function Protocolo() {
           <div style={s.navSub}>{equipo.cliente} · {equipo.sede || "Sin sede"} · Piso {equipo.piso} · {equipo.ambiente} · {equipo.marca} {equipo.modelo}</div>
         </div>
         <div style={s.navBtns}>
-          <button style={s.btnBack} onClick={() => navigate(-1)}>← Volver</button>
+          <button style={s.btnBack} onClick={() => origen === "cliente" ? navigate("/cliente") : navigate(-1)}>← Volver</button>
           {!soloLectura && <button style={s.btnSave} onClick={guardar} disabled={guardando}>{guardando ? "Guardando..." : "💾 Guardar"}</button>}
           <button style={s.btnPdf} onClick={exportarPDF}>📄 PDF</button>
         </div>

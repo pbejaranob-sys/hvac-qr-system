@@ -423,7 +423,7 @@ export default function PanelCliente() {
                                   <span style={{ background: abierto ? "white" : "#e65100", color: abierto ? "#e65100" : "white", borderRadius: "20px", fontSize: "9px", padding: "1px 5px", fontWeight: 700, marginRight: "3px" }}>{numObs}</span>
                                   {abierto ? "▴" : "▾"}
                                 </button>
-                                <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${equipo.id}`)}>Protocolo</button>
+                                <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${equipo.id}&origen=cliente`)}>Protocolo</button>
                               </div>
                             </td>
                           </tr>
