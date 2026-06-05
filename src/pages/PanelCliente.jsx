@@ -275,7 +275,7 @@ export default function PanelCliente() {
       campo("Fases", eq.fases), campo("Piso", eq.piso), campo("Ambiente", eq.ambiente), campo("Sede", eq.sede),
     ].filter(Boolean).join("");
 
-    const syncBadge = eq.ultimoProtocolo ? `<span style="font-size:10px;padding:2px 8px;background:#e8f5e9;color:#2e7d32;border-radius:20px;margin-left:8px;">🔄 Sincronizado ${eq.ultimoProtocolo}</span>` : "";
+    const syncBadge = eq.ultimoProtocolo ? `<span style="font-size:10px;padding:2px 8px;background:#e8f5e9;color:#2e7d32;border-radius:20px;margin-left:8px;">Sincronizado ${eq.ultimoProtocolo}</span>` : "";
 
     const ocrHtml = obs.length > 0 ? `
       <table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:4px;">
@@ -312,7 +312,7 @@ export default function PanelCliente() {
     .cron{display:flex;gap:8px}.btn-print{display:block;margin:12px auto;padding:10px 24px;background:#1a5fa8;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600}
     @media print{.btn-print{display:none!important}}</style></head><body>
     <div class="header"><div class="logo">HVAC</div><div class="badge">${eq.estado === "Operativo con observaciones" ? "Con observaciones" : eq.estado || "Operativo"}</div></div>
-    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    <button class="btn-print" onclick="window.print()">Imprimir / Guardar PDF</button>
     <div style="padding:0 16px 16px">
       <div style="background:#f8f9fa;border-radius:8px;padding:12px 16px;margin:14px 0 0">
         <div style="font-size:15px;font-weight:700;color:#1a5fa8;">${eq.marca || ""} / ${eq.modelo || ""}</div>
@@ -351,7 +351,7 @@ export default function PanelCliente() {
             <>
               <button style={s.btnBack} onClick={() => { setSedeActual(null); setVistaActual("sedes"); setFiltroEstado("Todos"); setFiltroPiso("Todos"); }}>← {usuario?.empresa}</button>
               <div style={s.divider}></div>
-              <span style={s.navTitle}>🏢 {sedeActual.nombre}</span>
+              <span style={s.navTitle}>{sedeActual.nombre}</span>
             </>
           ) : (
             <span style={s.navEmpresa}>{usuario?.empresa}</span>
@@ -388,7 +388,7 @@ export default function PanelCliente() {
               return (
                 <div key={sede.id} style={s.sedeCard}>
                   <div style={s.sedeHeader}>
-                    <div style={s.sedeIcon}>🏢</div>
+                    <div style={s.sedeIcon}></div>
                     <div>
                       <div style={s.sedeNombre}>{sede.nombre}</div>
                       <div style={s.sedeDireccion}>{sede.direccion}</div>
@@ -463,7 +463,7 @@ export default function PanelCliente() {
                   </select>
                   {filtroMes !== "Todos" && (
                     <button onClick={() => setFiltroMes("Todos")} style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "20px", background: "#1a5fa8", color: "white", border: "none", cursor: "pointer" }}>
-                      {filtroMes} ✕
+                      {filtroMes} X
                     </button>
                   )}
                 </div>
@@ -519,7 +519,7 @@ export default function PanelCliente() {
                             <tr style={{ borderBottom: "0.5px solid #f5f5f5" }}>
                               <td colSpan={8} style={{ padding: "0", background: "#fffdf5", borderTop: "2px solid #ffa726" }}>
                                 <div style={{ padding: "12px 16px" }}>
-                                  <div style={{ fontSize: "11px", fontWeight: 500, color: "#e65100", marginBottom: "8px" }}>⚠️ {numObs} observación{numObs !== 1 ? "es" : ""} — {equipo.codigo || equipo.ambiente}</div>
+                                  <div style={{ fontSize: "11px", fontWeight: 500, color: "#e65100", marginBottom: "8px" }}>{numObs} observación{numObs !== 1 ? "es" : ""} — {equipo.codigo || equipo.ambiente}</div>
                                   {numObs === 0 ? (
                                     <div style={{ fontSize: "12px", color: "#aaa", fontStyle: "italic" }}>Sin observaciones registradas</div>
                                   ) : (
@@ -558,14 +558,14 @@ export default function PanelCliente() {
             <div style={s.modalHeader}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>
-                  {modalTipo === "info" ? "📋 Ficha técnica" : "⚠️ Observaciones"}
+                  {modalTipo === "info" ? "Ficha técnica" : "Observaciones"}
                 </span>
                 {modalEquipo.codigo && <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "20px", background: "#f3e5f5", color: "#6a1b9a", fontFamily: "monospace", fontWeight: 700 }}>{modalEquipo.codigo}</span>}
                 <span style={{ fontSize: "11px", padding: "3px 10px", borderRadius: "20px", background: modalEquipo.estado === "Operativo" ? "#e8f5e9" : modalEquipo.estado === "Operativo con observaciones" ? "#fff8e1" : "#ffebee", color: modalEquipo.estado === "Operativo" ? "#2e7d32" : modalEquipo.estado === "Operativo con observaciones" ? "#e65100" : "#c62828", fontWeight: 500 }}>{modalEquipo.estado === "Operativo con observaciones" ? "Con obs." : modalEquipo.estado || "Operativo"}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <button style={{ background: "#c62828", color: "white", border: "none", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer", fontWeight: 500 }} onClick={() => generarPDFFicha(modalEquipo)}>📄 PDF</button>
-                <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={() => setModalEquipo(null)}>✕</button>
+                <button style={{ background: "#c62828", color: "white", border: "none", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer", fontWeight: 500 }} onClick={() => generarPDFFicha(modalEquipo)}>Descargar PDF</button>
+                <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={() => setModalEquipo(null)}>X</button>
               </div>
             </div>
 
@@ -573,7 +573,7 @@ export default function PanelCliente() {
               {modalTipo === "info" ? (
                 <>
                   <div style={s.modalSec}>
-                    <div style={s.modalSecTitulo}>📍 Ubicación</div>
+                    <div style={s.modalSecTitulo}>Ubicación</div>
                     <div style={s.grid3}>
                       <div style={s.campo}><span style={s.campoLabel}>Cliente</span><span style={s.campoVal}>{modalEquipo.cliente || "-"}</span></div>
                       <div style={s.campo}><span style={s.campoLabel}>Sede</span><span style={modalEquipo.sede ? s.campoVal : s.campoVacio}>{modalEquipo.sede || "Sin sede"}</span></div>
@@ -585,7 +585,7 @@ export default function PanelCliente() {
                   </div>
 
                   <div style={s.modalSec}>
-                    <div style={s.modalSecTitulo}>📋 Ficha técnica</div>
+                    <div style={s.modalSecTitulo}>Ficha técnica</div>
                     <div style={s.grid2}>
                       <div style={s.campo}><span style={s.campoLabel}>Tipo de equipo</span><span style={modalEquipo.tipoEquipo ? s.campoVal : s.campoVacio}>{modalEquipo.tipoEquipo || "Sin registrar"}</span></div>
                       <div style={s.campo}><span style={s.campoLabel}>Marca</span><span style={modalEquipo.marca ? s.campoVal : s.campoVacio}>{modalEquipo.marca || "Sin registrar"}</span></div>
@@ -597,7 +597,7 @@ export default function PanelCliente() {
                   </div>
 
                   <div style={s.modalSec}>
-                    <div style={s.modalSecTitulo}>⚡ Datos eléctricos</div>
+                    <div style={s.modalSecTitulo}>Datos eléctricos</div>
                     <div style={s.grid3}>
                       <div style={s.campo}><span style={s.campoLabel}>Voltaje</span><span style={modalEquipo.voltaje ? s.campoVal : s.campoVacio}>{modalEquipo.voltaje ? `${modalEquipo.voltaje}V` : "Sin registrar"}</span></div>
                       <div style={s.campo}><span style={s.campoLabel}>Amperaje</span><span style={modalEquipo.amperaje ? s.campoVal : s.campoVacio}>{modalEquipo.amperaje ? `${modalEquipo.amperaje}A` : "Sin registrar"}</span></div>
@@ -606,7 +606,7 @@ export default function PanelCliente() {
                   </div>
 
                   <div style={s.modalSec}>
-                    <div style={s.modalSecTitulo}>🔧 Mantenimiento</div>
+                    <div style={s.modalSecTitulo}>Mantenimiento</div>
                     <div style={s.grid2}>
                       <div style={s.campo}><span style={s.campoLabel}>Estado</span><span style={{ fontSize: "13px", fontWeight: 500, color: modalEquipo.estado === "Operativo" ? "#2e7d32" : modalEquipo.estado === "Operativo con observaciones" ? "#e65100" : "#c62828" }}>{modalEquipo.estado || "Operativo"}</span></div>
                       <div style={s.campo}><span style={s.campoLabel}>Último mantenimiento</span><span style={modalEquipo.ultimoMantenimiento ? s.campoVal : s.campoVacio}>{modalEquipo.ultimoMantenimiento || "Sin registro"}</span></div>
@@ -616,7 +616,7 @@ export default function PanelCliente() {
 
                   {modalEquipo.cronograma && modalEquipo.cronograma.length > 0 && (
                     <div style={s.modalSec}>
-                      <div style={s.modalSecTitulo}>📅 Cronograma de mantenimiento</div>
+                      <div style={s.modalSecTitulo}>Cronograma de mantenimiento</div>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "8px" }}>
                         {modalEquipo.cronograma.map((trim, i) => {
                           const col = getCronColor(trim.estado);
@@ -634,10 +634,10 @@ export default function PanelCliente() {
 
                   <div style={s.modalSec}>
                     <div style={{ ...s.modalSecTitulo, display: "flex", alignItems: "center", gap: "8px" }}>
-                      ⚠️ Observación · Causa · Recomendación
+                      Observación · Causa · Recomendación
                       {modalEquipo.ultimoProtocolo && (
                         <span style={{ fontSize: "9px", padding: "1px 6px", borderRadius: "20px", background: "#e8f5e9", color: "#2e7d32", border: "0.5px solid #a5d6a7" }}>
-                          🔄 {modalEquipo.ultimoProtocolo}
+                          {modalEquipo.ultimoProtocolo}
                         </span>
                       )}
                     </div>
@@ -670,7 +670,7 @@ export default function PanelCliente() {
                   </div>
 
                   <div style={{ ...s.modalSec, borderBottom: "none" }}>
-                    <div style={s.modalSecTitulo}>🔧 Correctivos realizados</div>
+                    <div style={s.modalSecTitulo}>Correctivos realizados</div>
                     {getCor(modalEquipo).length > 0 ? getCor(modalEquipo).map((c, i) => (
                       <div key={i} style={s.corItem}>
                         <span>{c.descripcion}</span>
@@ -681,7 +681,7 @@ export default function PanelCliente() {
                 </>
               ) : (
                 <div style={s.modalSec}>
-                  <div style={s.modalSecTitulo}>⚠️ Observaciones — {modalEquipo.codigo || modalEquipo.ambiente}</div>
+                  <div style={s.modalSecTitulo}>Observaciones — {modalEquipo.codigo || modalEquipo.ambiente}</div>
                   {getObs(modalEquipo).length > 0 ? getObs(modalEquipo).map((o, i) => (
                     <div key={i} style={s.obsItem}>
                       <div>{o.texto}</div>
