@@ -596,6 +596,12 @@ export default function Protocolo() {
               <Campo label="N° Serie" auto val={equipo.serie} />
               <Campo label="Capacidad" auto val={equipo.capacidad ? equipo.capacidad + " BTU" : ""} />
             </div>
+            <div style={{ ...s.g4, marginTop: "10px" }}>
+              <Campo label="Tipo refrigerante" auto val={equipo.tipoRefrigerante} />
+              <Campo label="Voltaje de placa" auto val={equipo.voltaje ? equipo.voltaje + "V" : ""} />
+              <Campo label="Amperaje nominal" auto val={equipo.amperaje ? equipo.amperaje + "A" : ""} />
+              <Campo label="Fases" auto val={equipo.fases} />
+            </div>
           </div>
         </div>
 
