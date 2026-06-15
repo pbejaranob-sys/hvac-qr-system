@@ -471,7 +471,7 @@ export default function Protocolo() {
       secTit("Observación · Causa · Recomendación", 230, 81, 0);
       const colW = (C - 4) / 3;
       check(6);
-      pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(180, 180, 180);
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(6.5); pdf.setTextColor(140, 140, 140);
       pdf.text("OBSERVACIÓN", M + 2, y);
       pdf.text("CAUSA", M + colW + 4, y);
       pdf.text("RECOMENDACIÓN", M + (colW + 2) * 2 + 2, y);
