@@ -322,16 +322,6 @@ export default function Protocolo() {
     pdf.text(form.estadoFinal === "Operativo con observaciones" ? "Con observaciones" : (form.estadoFinal || "Operativo"), W - M - 26, 12.5, { align: "center" });
     y = 30;
 
-    // Franja info equipo
-    pdf.setFillColor(248, 249, 250); pdf.rect(M, y, C, 14, "F");
-    pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(26, 95, 168);
-    pdf.text(`${equipo.marca || "-"} / ${equipo.modelo || "-"} — ${equipo.tipoEquipo || "-"}`, M + 3, y + 6);
-    pdf.setFont("helvetica", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(100, 100, 100);
-    pdf.text(`Cliente: ${equipo.cliente || "-"}   Sede: ${equipo.sede || "-"}   Piso: ${equipo.piso || "-"}   Ambiente: ${equipo.ambiente || "-"}   Cod: ${equipo.codigo || "-"}`, M + 3, y + 11.5);
-    pdf.setFontSize(7.5); pdf.setTextColor(150, 150, 150);
-    pdf.text(`Protocolo · ${grupo.label}`, W - M - 2, y + 6, { align: "right" });
-    y += 18;
-
     const secTit = (txt, r, g, b) => {
       check(8); pdf.setFillColor(r, g, b); pdf.rect(M, y, 3, 5, "F");
       pdf.setFont("helvetica", "bold"); pdf.setFontSize(8.5); pdf.setTextColor(r, g, b);
@@ -353,6 +343,23 @@ export default function Protocolo() {
       });
       y += rows * (cH + 2) + 2;
     };
+
+    // Franja título centrado (tipo de protocolo)
+    pdf.setFillColor(248, 249, 250); pdf.rect(M, y, C, 16, "F");
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(26, 95, 168);
+    pdf.text(`PROTOCOLO DE MANTENIMIENTO — ${grupo.label.toUpperCase()}`, W / 2, y + 6.5, { align: "center" });
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(150, 150, 150);
+    pdf.text(`${equipo.marca || "-"} / ${equipo.modelo || "-"} — ${equipo.tipoEquipo || "-"}`, W / 2, y + 12.5, { align: "center" });
+    y += 20;
+
+    // Datos del equipo (en celdas, como el formulario)
+    secTit("Datos del equipo", 26, 95, 168);
+    gridCards([
+      ["Cliente", equipo.cliente], ["Sede", equipo.sede], ["Piso", equipo.piso], ["Ambiente", equipo.ambiente],
+    ], 4, 248, 249, 250);
+    gridCards([
+      ["Marca", equipo.marca], ["Modelo", equipo.modelo], ["N° Serie", equipo.serie], ["Capacidad", equipo.capacidad ? equipo.capacidad + " BTU" : null],
+    ], 4, 248, 249, 250);
 
     // Datos de placa del equipo (de la ficha técnica registrada)
     secTit("Datos de placa del equipo", 26, 95, 168);
