@@ -470,6 +470,12 @@ export default function Protocolo() {
     if (obsValidas.length > 0) {
       secTit("Observación · Causa · Recomendación", 230, 81, 0);
       const colW = (C - 4) / 3;
+      check(6);
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(180, 180, 180);
+      pdf.text("OBSERVACIÓN", M + 2, y);
+      pdf.text("CAUSA", M + colW + 4, y);
+      pdf.text("RECOMENDACIÓN", M + (colW + 2) * 2 + 2, y);
+      y += 4;
       obsValidas.forEach((o) => {
         const linObs = pdf.splitTextToSize(o.obs || "—", colW - 4);
         const linCausa = pdf.splitTextToSize(o.causa || "—", colW - 4);
