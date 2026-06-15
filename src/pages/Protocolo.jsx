@@ -537,11 +537,26 @@ export default function Protocolo() {
 
   // Acceso público (QR escaneado): preparar y abrir el PDF automáticamente
   if (esPub) {
+    if (!form && protocolos.length === 0) {
+      return (
+        <div style={s.centro}>
+          <div style={{ fontSize: "48px", marginBottom: "16px" }}>📋</div>
+          <div style={{ fontSize: "16px", color: "#333", fontWeight: 500, marginBottom: "8px" }}>Aún no hay protocolos de mantenimiento</div>
+          <div style={{ fontSize: "13px", color: "#888" }}>{equipo.marca} {equipo.modelo} · {equipo.cliente}</div>
+          <div style={{ fontSize: "12px", color: "#aaa", marginTop: "12px" }}>El protocolo aparecerá aquí cuando el equipo técnico registre el primer mantenimiento.</div>
+        </div>
+      );
+    }
     return (
       <div style={s.centro}>
         <div style={{ fontSize: "48px", marginBottom: "16px" }}>📄</div>
         <div style={{ fontSize: "16px", color: "#333", fontWeight: 500, marginBottom: "8px" }}>Preparando protocolo en PDF...</div>
         <div style={{ fontSize: "13px", color: "#888" }}>{equipo.marca} {equipo.modelo} · {equipo.cliente}</div>
+        {pdfGenerado && (
+          <button style={{ marginTop: "16px", padding: "10px 20px", background: "#1a5fa8", color: "white", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer" }} onClick={() => exportarPDF("ver")}>
+            Si no se abrió, toca aquí para ver el PDF
+          </button>
+        )}
       </div>
     );
   }
