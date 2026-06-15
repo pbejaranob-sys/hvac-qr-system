@@ -167,6 +167,9 @@ export default function Protocolo() {
   const [indexActual, setIndexActual] = useState(0);
   const [form, setForm] = useState(null);
   const [soloLectura, setSoloLectura] = useState(false); // true = cliente (solo ve)
+  const [esPub, setEsPub] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [pdfGenerado, setPdfGenerado] = useState(false);
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (user) => {
@@ -183,12 +186,29 @@ export default function Protocolo() {
         } catch {
           esLectura = true;
         }
+        setEsPub(false);
+        setAuthChecked(true);
         setSoloLectura(esLectura);
         cargarEquipo(esLectura);
+      } else if (equipoId) {
+        // Acceso público (QR escaneado sin sesión): solo lectura, mostrar/abrir PDF
+        setEsPub(true);
+        setAuthChecked(true);
+        setSoloLectura(true);
+        cargarEquipo(true);
       }
     });
     return () => unsub();
   }, [equipoId]);
+
+  // Si es acceso público, generar y abrir el PDF automáticamente
+  useEffect(() => {
+    if (authChecked && esPub && equipo && form && !cargando && !pdfGenerado) {
+      setPdfGenerado(true);
+      exportarPDF("ver");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authChecked, esPub, equipo, form, cargando, pdfGenerado]);
 
   const cargarEquipo = async (esLectura = false) => {
     const ref = doc(db, "equipos", equipoId);
@@ -302,7 +322,7 @@ export default function Protocolo() {
     else nuevoProtocolo();
   };
 
-  const exportarPDF = async () => {
+  const exportarPDF = async (modo = "descargar") => {
     if (!equipo || !form) return;
     const grupo = GRUPOS[form.grupo];
     const pdf = new jsPDF("p", "mm", "a4");
@@ -485,7 +505,7 @@ export default function Protocolo() {
 
     // QR + pie (igual que la ficha)
     check(25);
-    const urlE = `${window.location.origin}/equipo/${equipoId}`;
+    const urlE = `${window.location.origin}/protocolo?equipo=${equipoId}`;
     const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(urlE)}`;
     const qrImg = await new Promise(res => {
       const img = new Image(); img.crossOrigin = "anonymous";
@@ -493,6 +513,9 @@ export default function Protocolo() {
       img.onerror = () => res(null); img.src = qrSrc;
     });
     if (qrImg) pdf.addImage(qrImg, "PNG", M, y, 22, 22);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(150, 150, 150);
+    pdf.text("Escanea para ver el", M + 26, y + 9);
+    pdf.text("protocolo más reciente", M + 26, y + 13);
     pdf.setFont("helvetica", "normal"); pdf.setFontSize(7.5); pdf.setTextColor(150, 150, 150);
     pdf.text("HVAC Sistema de Mantenimiento", W - M, y + 5, { align: "right" });
     pdf.text(`Generado: ${new Date().toLocaleDateString("es-PE")}`, W - M, y + 10, { align: "right" });
@@ -500,11 +523,28 @@ export default function Protocolo() {
     pdf.setFontSize(7); pdf.setTextColor(180, 180, 180);
     pdf.text(`Protocolo · ${equipo.cliente || ""} · ${equipo.codigo || equipoId.slice(0, 6).toUpperCase()}`, M, 291);
 
-    pdf.save(`protocolo-${equipo.cliente?.replace(/\s+/g, "-")}-${form.fecha}.pdf`);
+    if (modo === "ver") {
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank") || (window.location.href = url);
+    } else {
+      pdf.save(`protocolo-${equipo.cliente?.replace(/\s+/g, "-")}-${form.fecha}.pdf`);
+    }
   };
 
   if (cargando) return <div style={s.centro}>Cargando protocolo...</div>;
   if (!equipo) return <div style={s.centro}>Equipo no encontrado.</div>;
+
+  // Acceso público (QR escaneado): preparar y abrir el PDF automáticamente
+  if (esPub) {
+    return (
+      <div style={s.centro}>
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>📄</div>
+        <div style={{ fontSize: "16px", color: "#333", fontWeight: 500, marginBottom: "8px" }}>Preparando protocolo en PDF...</div>
+        <div style={{ fontSize: "13px", color: "#888" }}>{equipo.marca} {equipo.modelo} · {equipo.cliente}</div>
+      </div>
+    );
+  }
 
   // Equipos sin protocolo definido aún
   const grupoPendiente = GRUPO_POR_TIPO[equipo.tipoEquipo] === "pendiente" || (!GRUPO_POR_TIPO[equipo.tipoEquipo]);
