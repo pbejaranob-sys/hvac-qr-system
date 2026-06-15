@@ -302,112 +302,196 @@ export default function Protocolo() {
     else nuevoProtocolo();
   };
 
-  const exportarPDF = () => {
+  const exportarPDF = async () => {
     if (!equipo || !form) return;
     const grupo = GRUPOS[form.grupo];
     const pdf = new jsPDF("p", "mm", "a4");
-    const M = 12; let y = 14;
-    const W = 186;
+    const W = 210, M = 14, C = W - M * 2;
+    let y = 0;
+    const check = (h = 10) => { if (y + h > 280) { pdf.addPage(); y = 14; } };
 
-    // Encabezado
-    pdf.setFillColor(26, 95, 168); pdf.rect(0, 0, 210, 22, "F");
-    pdf.setTextColor(255, 255, 255); pdf.setFont("helvetica", "bold"); pdf.setFontSize(13);
-    pdf.text("PROTOCOLO DE MANTENIMIENTO", M, 10);
-    pdf.setFontSize(9); pdf.setFont("helvetica", "normal");
-    pdf.text(grupo.label, M, 17);
+    // Header igual que la ficha
+    pdf.setFillColor(26, 95, 168); pdf.rect(0, 0, W, 22, "F");
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(14); pdf.setTextColor(255, 255, 255);
+    pdf.text("HVAC", M, 14);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(200, 220, 255);
+    pdf.text("SISTEMA DE MANTENIMIENTO", M + 22, 14);
+    const ec = form.estadoFinal === "Operativo" ? [46, 125, 50] : form.estadoFinal === "Operativo con observaciones" ? [230, 81, 0] : [198, 40, 40];
+    pdf.setFillColor(255, 248, 225); pdf.roundedRect(W - M - 52, 7, 52, 8, 2, 2, "F");
+    pdf.setFontSize(7.5); pdf.setTextColor(...ec);
+    pdf.text(form.estadoFinal === "Operativo con observaciones" ? "Con observaciones" : (form.estadoFinal || "Operativo"), W - M - 26, 12.5, { align: "center" });
     y = 30;
 
-    const linea = (label, valor, x, ancho) => {
-      pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(110, 110, 110);
-      pdf.text(label.toUpperCase(), x, y);
-      pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(30, 30, 30);
-      pdf.text(String(valor || "—"), x, y + 4.5);
+    // Franja info equipo
+    pdf.setFillColor(248, 249, 250); pdf.rect(M, y, C, 14, "F");
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(26, 95, 168);
+    pdf.text(`${equipo.marca || "-"} / ${equipo.modelo || "-"} — ${equipo.tipoEquipo || "-"}`, M + 3, y + 6);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(100, 100, 100);
+    pdf.text(`Cliente: ${equipo.cliente || "-"}   Sede: ${equipo.sede || "-"}   Piso: ${equipo.piso || "-"}   Ambiente: ${equipo.ambiente || "-"}   Cod: ${equipo.codigo || "-"}`, M + 3, y + 11.5);
+    pdf.setFontSize(7.5); pdf.setTextColor(150, 150, 150);
+    pdf.text(`Protocolo · ${grupo.label}`, W - M - 2, y + 6, { align: "right" });
+    y += 18;
+
+    const secTit = (txt, r, g, b) => {
+      check(8); pdf.setFillColor(r, g, b); pdf.rect(M, y, 3, 5, "F");
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(8.5); pdf.setTextColor(r, g, b);
+      pdf.text(txt.toUpperCase(), M + 5, y + 4); y += 8;
     };
 
-    const titulo = (txt) => {
-      pdf.setFillColor(240, 244, 248); pdf.rect(M, y - 4, W, 6, "F");
-      pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(26, 95, 168);
-      pdf.text(txt.toUpperCase(), M + 2, y);
-      y += 8;
+    const gridCards = (items, cols, br, bg, bb) => {
+      const cW = (C - (cols - 1) * 3) / cols, cH = 12;
+      const rows = Math.ceil(items.length / cols);
+      check(rows * (cH + 2) + 2);
+      items.forEach((item, i) => {
+        const col = i % cols, row = Math.floor(i / cols);
+        const x = M + col * (cW + 3), cy = y + row * (cH + 2);
+        pdf.setFillColor(br, bg, bb); pdf.rect(x, cy, cW, cH, "F");
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(150, 150, 150);
+        pdf.text(item[0], x + 3, cy + 4);
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(8.5); pdf.setTextColor(30, 30, 30);
+        pdf.text(String(item[1] || "-"), x + 3, cy + 9);
+      });
+      y += rows * (cH + 2) + 2;
     };
 
-    // Datos del equipo
-    titulo("Datos del equipo");
-    linea("Cliente", equipo.cliente, M, 60); linea("Sede", equipo.sede, M + 62, 60); linea("Piso", equipo.piso, M + 124, 30); linea("Ambiente", equipo.ambiente, M + 150, 36);
-    y += 11;
-    linea("Marca", equipo.marca, M, 45); linea("Modelo", equipo.modelo, M + 47, 45); linea("N° Serie", equipo.serie, M + 94, 45); linea("Capacidad", equipo.capacidad ? equipo.capacidad + " BTU" : "—", M + 141, 45);
-    y += 13;
+    // Datos de placa del equipo (de la ficha técnica registrada)
+    secTit("Datos de placa del equipo", 26, 95, 168);
+    gridCards([
+      ["Tipo refrigerante", equipo.tipoRefrigerante], ["Voltaje de placa", equipo.voltaje ? equipo.voltaje + "V" : null], ["Amperaje nominal", equipo.amperaje ? equipo.amperaje + "A" : null], ["Fases", equipo.fases],
+    ], 4, 248, 249, 250);
 
     // Datos del servicio
-    titulo("Datos del servicio");
-    linea("Fecha", form.fecha, M, 45); linea("Técnico", form.tecnico, M + 47, 50); linea("Tipo servicio", form.tipoServicio, M + 99, 45); linea("N° Orden", form.ordenTrabajo, M + 146, 40);
-    y += 13;
+    secTit("Datos del servicio", 26, 95, 168);
+    gridCards([
+      ["Fecha", form.fecha], ["Técnico", form.tecnico], ["Tipo de servicio", form.tipoServicio], ["N° de orden", form.ordenTrabajo],
+    ], 4, 248, 249, 250);
 
     // Parámetros eléctricos
-    titulo("Parámetros eléctricos");
-    pdf.setFontSize(8); pdf.setTextColor(60, 60, 60); pdf.setFont("helvetica", "normal");
-    pdf.text(`Voltaje (V):  L1-L2: ${form.vL1L2 || "—"}   L2-L3: ${form.vL2L3 || "—"}   L3-L1: ${form.vL3L1 || "—"}   |  Desbalance: ${calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1) || "—"}%`, M, y); y += 5;
-    pdf.text(`Amperaje (A):  L1: ${form.aL1 || "—"}   L2: ${form.aL2 || "—"}   L3: ${form.aL3 || "—"}   |  Desbalance: ${calcDesbalance(form.aL1, form.aL2, form.aL3) || "—"}%`, M, y); y += 5;
-    pdf.text(`Megado (MΩ):  L1-T: ${form.megL1T || "—"}   L2-T: ${form.megL2T || "—"}   L3-T: ${form.megL3T || "—"}`, M, y); y += 8;
+    secTit("Parámetros eléctricos", 230, 81, 0);
+    gridCards([
+      ["Voltaje L1-L2", form.vL1L2 ? form.vL1L2 + "V" : null], ["Voltaje L2-L3", form.vL2L3 ? form.vL2L3 + "V" : null], ["Voltaje L3-L1", form.vL3L1 ? form.vL3L1 + "V" : null], ["Desbalance V", calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1) ? calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1) + "%" : null],
+      ["Amperaje L1", form.aL1 ? form.aL1 + "A" : null], ["Amperaje L2", form.aL2 ? form.aL2 + "A" : null], ["Amperaje L3", form.aL3 ? form.aL3 + "A" : null], ["Desbalance A", calcDesbalance(form.aL1, form.aL2, form.aL3) ? calcDesbalance(form.aL1, form.aL2, form.aL3) + "%" : null],
+      ["Megado L1-T", form.megL1T ? form.megL1T + " MΩ" : null], ["Megado L2-T", form.megL2T ? form.megL2T + " MΩ" : null], ["Megado L3-T", form.megL3T ? form.megL3T + " MΩ" : null],
+    ], 4, 255, 248, 240);
 
     // Parámetros específicos por grupo
     if (form.grupo === "expansion") {
-      titulo("Parámetros de refrigeración");
-      pdf.setFontSize(8); pdf.setTextColor(60, 60, 60);
-      pdf.text(`Pres. succión: ${form.presSuccion || "—"} PSI   Pres. líquido: ${form.presLiquido || "—"} PSI   Superheat: ${calcDelta(form.tSatMedida, form.tSatTabla) || "—"} °F`, M, y); y += 5;
-      pdf.text(`T° retorno aire: ${form.tRetornoEvap || "—"} °F   T° suministro: ${form.tSuministroEvap || "—"} °F   T° amb. condensador: ${form.tAmbCondensador || "—"} °F`, M, y); y += 8;
+      secTit("Parámetros de refrigeración", 26, 95, 168);
+      gridCards([
+        ["Presión succión", form.presSuccion ? form.presSuccion + " PSI" : null], ["Presión líquido", form.presLiquido ? form.presLiquido + " PSI" : null], ["Superheat", calcDelta(form.tSatMedida, form.tSatTabla) ? calcDelta(form.tSatMedida, form.tSatTabla) + " °F" : null],
+        ["T° retorno aire", form.tRetornoEvap ? form.tRetornoEvap + " °F" : null], ["T° suministro", form.tSuministroEvap ? form.tSuministroEvap + " °F" : null], ["T° amb. condensador", form.tAmbCondensador ? form.tAmbCondensador + " °F" : null],
+      ], 3, 248, 249, 250);
     } else if (form.grupo === "ventilacion") {
-      titulo("Parámetros de operación");
-      pdf.setFontSize(8); pdf.setTextColor(60, 60, 60);
-      pdf.text(`Temp. trabajo motor: ${form.tTrabajoMotor || "—"} °F   Caudal de aire: ${form.caudalAire || "—"} CFM`, M, y); y += 8;
+      secTit("Parámetros de operación", 26, 95, 168);
+      gridCards([
+        ["Temp. trabajo motor", form.tTrabajoMotor ? form.tTrabajoMotor + " °F" : null], ["Caudal de aire", form.caudalAire ? form.caudalAire + " CFM" : null],
+      ], 3, 248, 249, 250);
     } else if (form.grupo === "fancoil") {
-      titulo("Parámetros de agua y aire");
-      pdf.setFontSize(8); pdf.setTextColor(60, 60, 60);
-      pdf.text(`Agua  →  T° ent: ${form.tEntradaAgua || "—"}°F   T° sal: ${form.tSalidaAgua || "—"}°F   ∆T: ${calcDelta(form.tEntradaAgua, form.tSalidaAgua) || "—"}   Pres ent: ${form.presEntradaAgua || "—"}   Pres sal: ${form.presSalidaAgua || "—"}   ∆P: ${calcDelta(form.presEntradaAgua, form.presSalidaAgua) || "—"}`, M, y); y += 5;
-      pdf.text(`Aire  →  T° retorno: ${form.tRetornoAire || "—"}°F   T° suministro: ${form.tSuministroAire || "—"}°F   ∆T: ${calcDelta(form.tRetornoAire, form.tSuministroAire) || "—"}`, M, y); y += 8;
+      secTit("Parámetros de agua y aire", 26, 95, 168);
+      gridCards([
+        ["Agua T° entrada", form.tEntradaAgua ? form.tEntradaAgua + "°F" : null], ["Agua T° salida", form.tSalidaAgua ? form.tSalidaAgua + "°F" : null], ["Agua ΔT", calcDelta(form.tEntradaAgua, form.tSalidaAgua)],
+        ["Pres. entrada agua", form.presEntradaAgua], ["Pres. salida agua", form.presSalidaAgua], ["Agua ΔP", calcDelta(form.presEntradaAgua, form.presSalidaAgua)],
+        ["Aire T° retorno", form.tRetornoAire ? form.tRetornoAire + "°F" : null], ["Aire T° suministro", form.tSuministroAire ? form.tSuministroAire + "°F" : null], ["Aire ΔT", calcDelta(form.tRetornoAire, form.tSuministroAire)],
+      ], 3, 248, 249, 250);
     }
 
-    // Actividades
-    titulo("Actividades realizadas");
-    pdf.setFontSize(8); pdf.setTextColor(60, 60, 60);
+    // Actividades realizadas (checklist completo: todos los items, marcados y no marcados)
     const cl = CHECKLISTS[form.grupo] || {};
-    Object.entries(cl).forEach(([cat, items]) => {
-      const hechas = items.filter(it => form.actividades[it]);
-      if (hechas.length > 0) {
-        pdf.setFont("helvetica", "bold"); pdf.text(cat + ":", M, y);
-        pdf.setFont("helvetica", "normal");
-        const txt = hechas.join(", ");
-        const split = pdf.splitTextToSize(txt, W - 25);
-        pdf.text(split, M + 22, y);
-        y += split.length * 4 + 2;
-      }
-    });
-    y += 4;
+    const categorias = Object.entries(cl);
+    if (categorias.length > 0) {
+      secTit("Actividades realizadas", 46, 125, 50);
+      const cols = categorias.length;
+      const colW = (C - (cols - 1) * 4) / cols;
+      const maxItems = Math.max(...categorias.map(([, items]) => items.length));
+      const rowH = 5;
+      check(8 + maxItems * rowH + 4);
+      const yStart = y;
 
-    // Observaciones
+      categorias.forEach(([cat, items], ci) => {
+        const x = M + ci * (colW + 4);
+        // Título de categoría
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(150, 150, 150);
+        pdf.text(cat.toUpperCase(), x + colW / 2, yStart, { align: "center" });
+        pdf.setDrawColor(230, 230, 230); pdf.line(x, yStart + 1.5, x + colW, yStart + 1.5);
+
+        items.forEach((item, ii) => {
+          const iy = yStart + 6 + ii * rowH;
+          const marcado = !!form.actividades[item];
+          // Checkbox
+          if (marcado) {
+            pdf.setFillColor(232, 245, 233); pdf.setDrawColor(46, 125, 50);
+            pdf.rect(x, iy - 2.5, 3, 3, "FD");
+            pdf.setFont("helvetica", "bold"); pdf.setFontSize(6); pdf.setTextColor(46, 125, 50);
+            pdf.text("X", x + 0.6, iy - 0.3);
+          } else {
+            pdf.setDrawColor(200, 200, 200); pdf.setFillColor(255, 255, 255);
+            pdf.rect(x, iy - 2.5, 3, 3, "FD");
+          }
+          // Texto del item
+          pdf.setFont("helvetica", marcado ? "bold" : "normal"); pdf.setFontSize(7.5);
+          pdf.setTextColor(marcado ? 30 : 180, marcado ? 30 : 180, marcado ? 30 : 180);
+          const txt = pdf.splitTextToSize(item, colW - 5)[0];
+          pdf.text(txt, x + 4.5, iy);
+        });
+      });
+
+      y = yStart + 6 + maxItems * rowH + 4;
+    }
+
+    // Observaciones · Causa · Recomendación (mismo estilo que la ficha)
     const obsValidas = form.observaciones.filter(o => o.obs?.trim());
     if (obsValidas.length > 0) {
-      if (y > 250) { pdf.addPage(); y = 20; }
-      titulo("Observaciones · Causa · Recomendación");
-      obsValidas.forEach((o, i) => {
-        if (y > 270) { pdf.addPage(); y = 20; }
-        pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(30, 30, 30);
-        pdf.text(`${i + 1}. ${o.obs}`, M, y); y += 4;
-        pdf.setFont("helvetica", "normal"); pdf.setTextColor(90, 90, 90);
-        if (o.causa) { pdf.text(pdf.splitTextToSize(`Causa: ${o.causa}`, W - 4), M + 4, y); y += 4; }
-        if (o.rec) { pdf.text(pdf.splitTextToSize(`Recomendación: ${o.rec}`, W - 4), M + 4, y); y += 4; }
-        y += 2;
+      secTit("Observación · Causa · Recomendación", 230, 81, 0);
+      const colW = (C - 4) / 3;
+      obsValidas.forEach((o) => {
+        const linObs = pdf.splitTextToSize(o.obs || "—", colW - 4);
+        const linCausa = pdf.splitTextToSize(o.causa || "—", colW - 4);
+        const linRec = pdf.splitTextToSize(o.rec || "—", colW - 4);
+        const maxLines = Math.max(linObs.length, linCausa.length, linRec.length, 1);
+        const h = maxLines * 4 + 3;
+        check(h + 2);
+        pdf.setFillColor(255, 248, 225); pdf.rect(M, y, colW, h, "F");
+        pdf.setFillColor(254, 240, 240); pdf.rect(M + colW + 2, y, colW, h, "F");
+        pdf.setFillColor(232, 245, 233); pdf.rect(M + (colW + 2) * 2, y, colW, h, "F");
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(7.5);
+        pdf.setTextColor(230, 81, 0); pdf.text(linObs, M + 2, y + 5);
+        pdf.setTextColor(198, 40, 40); pdf.text(linCausa, M + colW + 4, y + 5);
+        pdf.setTextColor(46, 125, 50); pdf.text(linRec, M + (colW + 2) * 2 + 2, y + 5);
+        y += h + 2;
       });
+      y += 2;
     }
 
     // Estado final + firma
-    if (y > 250) { pdf.addPage(); y = 20; }
-    y += 4;
-    pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(60, 60, 60);
-    pdf.text(`Estado final del equipo: ${form.estadoFinal}`, M, y); y += 14;
-    pdf.setDrawColor(180, 180, 180); pdf.line(M, y, M + 60, y);
-    pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(120, 120, 120);
-    pdf.text(`Firma técnico: ${form.tecnico || ""}`, M, y + 4);
+    check(20);
+    secTit("Resultado del servicio", 26, 95, 168);
+    pdf.setFillColor(248, 249, 250); pdf.rect(M, y, C, 14, "F");
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(150, 150, 150);
+    pdf.text("ESTADO FINAL DEL EQUIPO", M + 3, y + 4);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(...ec);
+    pdf.text(form.estadoFinal === "Operativo con observaciones" ? "Operativo con observaciones" : (form.estadoFinal || "Operativo"), M + 3, y + 10);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(150, 150, 150);
+    pdf.text("TÉCNICO RESPONSABLE", M + 100, y + 4);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(30, 30, 30);
+    pdf.text(form.tecnico || "-", M + 100, y + 10);
+    y += 20;
+
+    // QR + pie (igual que la ficha)
+    check(25);
+    const urlE = `${window.location.origin}/equipo/${equipoId}`;
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(urlE)}`;
+    const qrImg = await new Promise(res => {
+      const img = new Image(); img.crossOrigin = "anonymous";
+      img.onload = () => { const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; c.getContext("2d").drawImage(img, 0, 0); res(c.toDataURL("image/png")); };
+      img.onerror = () => res(null); img.src = qrSrc;
+    });
+    if (qrImg) pdf.addImage(qrImg, "PNG", M, y, 22, 22);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(7.5); pdf.setTextColor(150, 150, 150);
+    pdf.text("HVAC Sistema de Mantenimiento", W - M, y + 5, { align: "right" });
+    pdf.text(`Generado: ${new Date().toLocaleDateString("es-PE")}`, W - M, y + 10, { align: "right" });
+    pdf.setDrawColor(220, 220, 220); pdf.line(M, 287, W - M, 287);
+    pdf.setFontSize(7); pdf.setTextColor(180, 180, 180);
+    pdf.text(`Protocolo · ${equipo.cliente || ""} · ${equipo.codigo || equipoId.slice(0, 6).toUpperCase()}`, M, 291);
 
     pdf.save(`protocolo-${equipo.cliente?.replace(/\s+/g, "-")}-${form.fecha}.pdf`);
   };
