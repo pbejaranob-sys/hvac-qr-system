@@ -92,6 +92,8 @@ const protocoloVacio = (grupo) => ({
   llaveTermo: "OK", balanceCaudal: "OK",
   // Actividades (checklist) - objeto dinámico
   actividades: {},
+  // Estatus de items (formato Carrier: OK / Observado / Falla / N/A)
+  estatusItems: {},
   // Observaciones dinámicas
   observaciones: [{ obs: "", causa: "", rec: "" }],
   // Resultado
@@ -126,9 +128,7 @@ const CHECKLISTS = {
     "Eléctrico": ["Prueba tableros de arranque", "Medición caudal de aire", "Verificación funcionamiento"],
   },
   fancoil: {
-    "Limpieza": ["Limpieza filtros de aire", "Lavado de coil", "Limpieza bandeja condensado", "Limpieza de contactos"],
-    "Mecánica": ["Lubricación chumaceras", "Templado de fajas", "Alineamiento de poleas", "Aislamiento térmico"],
-    "Eléctrico": ["Lubricación de motores", "Verificación funcionamiento"],
+    "Actividades": ["Limpieza filtros de aire", "Lavado de coil", "Limpieza bandeja condensado", "Limpieza de contactos", "Lubricación chumaceras", "Templado de fajas", "Alineamiento de poleas", "Aislamiento térmico", "Lubricación de motores"],
   },
   chiller: {
     "Limpieza": ["Condensador (aire/agua)", "Evaporador / tubos", "Ventiladores condensador", "Filtros tipo Y agua", "Gabinete general"],
@@ -141,6 +141,41 @@ const CHECKLISTS = {
     "Agua/Control": ["Válvula flotador", "Dosificación química", "Control legionella", "Conexiones eléctricas", "Prueba funcionamiento"],
   },
 };
+
+// ============ FORMATO CARRIER FAN COIL / UMA ============
+// Columna izquierda: parámetros con valor numérico (key del form, etiqueta, unidad)
+const FANCOIL_PARAMS_IZQ = [
+  { tipo: "elec3", label: "Voltaje en placa", sub: "Voltaje en marcha", unidad: "V", keys: ["vL1L2", "vL2L3", "vL3L1"], heads: ["L1-L2", "L2-L3", "L3-L1"] },
+  { tipo: "auto", label: "Desbalance de voltaje", unidad: "%", calc: "desbV" },
+  { tipo: "elec3", label: "Amperaje en placa", sub: "Amperaje en marcha", unidad: "A", keys: ["aL1", "aL2", "aL3"], heads: ["L1", "L2", "L3"] },
+  { tipo: "auto", label: "Desbalance de voltaje", unidad: "%", calc: "desbA" },
+  { tipo: "meg", label: "MEGADO", sub: "L1-T", unidad: "Ω", key: "megL1T" },
+  { tipo: "meg", label: "", sub: "L2-T", unidad: "Ω", key: "megL2T" },
+  { tipo: "meg", label: "", sub: "L3-T", unidad: "Ω", key: "megL3T" },
+  { tipo: "meg", label: "", sub: "L1-L2", unidad: "Ω", key: "megL1L2" },
+  { tipo: "meg", label: "", sub: "L2-L3", unidad: "Ω", key: "megL2L3" },
+  { tipo: "meg", label: "", sub: "L3-L1", unidad: "Ω", key: "megL3L1" },
+  { tipo: "val", label: "Temperatura de trabajo de motor", unidad: "°F", key: "tTrabajoMotor" },
+  { tipo: "val", label: "Temperatura de entrada de agua", unidad: "°F", key: "tEntradaAgua" },
+  { tipo: "val", label: "Temperatura de salida de agua", unidad: "°F", key: "tSalidaAgua" },
+  { tipo: "auto", label: "∆ Temperatura de agua", unidad: "°F", calc: "dTagua" },
+  { tipo: "val", label: "Presion de entrada de agua", unidad: "PSI", key: "presEntradaAgua" },
+  { tipo: "val", label: "Presion de salida de agua", unidad: "PSI", key: "presSalidaAgua" },
+  { tipo: "auto", label: "∆ Presion de agua", unidad: "PSI", calc: "dPagua" },
+  { tipo: "val", label: "Temperatura de retorno de aire", unidad: "°F", key: "tRetornoAire" },
+  { tipo: "val", label: "Temperatura de suministro de aire", unidad: "°F", key: "tSuministroAire" },
+  { tipo: "auto", label: "∆ Temperatura de aire", unidad: "°F", calc: "dTaire" },
+];
+// Columna derecha: ítems con Estatus (OK / Observado / Falla / N/A)
+const FANCOIL_ITEMS_DER = [
+  "Balance de caudal de aire", "Estado válvula agua helada", "Aislamiento térmico",
+  "Estado de llave termomagnética", "Estado de contactores", "Funcionamiento de dampers",
+  "Velocidad motores ventiladores", "Sensor de suministros de aire", "Sensor de diferencial de presión",
+  "Sensor de arranque y parada", "Sensor de temperatura ambiente", "Limpieza de contactos",
+  "Lubricación de motores", "Lubricación de chumaceras", "Templado de fajas",
+  "Alineamiento de poleas", "Estado de impulsor de aire", "Limpieza de filtros de aire",
+  "Limpieza bandeja de condesado", "Lavado de coil",
+];
 
 export default function Protocolo() {
   const navigate = useNavigate();
@@ -242,6 +277,10 @@ export default function Protocolo() {
 
   const setActividad = (item, val) => setForm(prev => ({
     ...prev, actividades: { ...prev.actividades, [item]: val }
+  }));
+
+  const setEstatus = (item, val) => setForm(prev => ({
+    ...prev, estatusItems: { ...(prev.estatusItems || {}), [item]: val }
   }));
 
   // Observaciones dinámicas
@@ -414,18 +453,66 @@ export default function Protocolo() {
         ["Temp. trabajo motor", form.tTrabajoMotor ? form.tTrabajoMotor + " °F" : null], ["Caudal de aire", form.caudalAire ? form.caudalAire + " CFM" : null],
       ], 3, 248, 249, 250);
     } else if (form.grupo === "fancoil") {
-      secTit("Parámetros de agua y aire", 26, 95, 168);
-      gridCards([
-        ["Agua T° entrada", form.tEntradaAgua ? form.tEntradaAgua + "°F" : null], ["Agua T° salida", form.tSalidaAgua ? form.tSalidaAgua + "°F" : null], ["Agua ΔT", calcDelta(form.tEntradaAgua, form.tSalidaAgua)],
-        ["Pres. entrada agua", form.presEntradaAgua], ["Pres. salida agua", form.presSalidaAgua], ["Agua ΔP", calcDelta(form.presEntradaAgua, form.presSalidaAgua)],
-        ["Aire T° retorno", form.tRetornoAire ? form.tRetornoAire + "°F" : null], ["Aire T° suministro", form.tSuministroAire ? form.tSuministroAire + "°F" : null], ["Aire ΔT", calcDelta(form.tRetornoAire, form.tSuministroAire)],
-      ], 3, 248, 249, 250);
+      // ===== Formato Carrier: tabla de 2 columnas =====
+      const calcVal = (calc) => {
+        if (calc === "desbV") return calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1);
+        if (calc === "desbA") return calcDesbalance(form.aL1, form.aL2, form.aL3);
+        if (calc === "dTagua") return calcDelta(form.tEntradaAgua, form.tSalidaAgua);
+        if (calc === "dPagua") return calcDelta(form.presEntradaAgua, form.presSalidaAgua);
+        if (calc === "dTaire") return calcDelta(form.tRetornoAire, form.tSuministroAire);
+        return "";
+      };
+      secTit("Parámetros", 26, 95, 168);
+      check(FANCOIL_ITEMS_DER.length * 5 + 6);
+      const yTop = y;
+      const colGap = 6;
+      const colW2 = (C - colGap) / 2;
+      const rowH = 5;
+      const izqX = M, derX = M + colW2 + colGap;
+
+      // --- Columna izquierda: parámetros numéricos ---
+      pdf.setDrawColor(210, 210, 210);
+      FANCOIL_PARAMS_IZQ.forEach((p, i) => {
+        const ry = yTop + i * rowH;
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(60, 60, 60);
+        const etiqueta = p.label || (p.sub || "");
+        pdf.text(etiqueta, izqX + 1, ry + 3);
+        // valor(es)
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(30, 30, 30);
+        let valTxt = "";
+        if (p.tipo === "elec3") {
+          valTxt = p.keys.map(k => form[k] || "—").join("  ") + " " + p.unidad;
+        } else if (p.tipo === "meg" || p.tipo === "val") {
+          valTxt = (form[p.key] || "—") + " " + p.unidad;
+        } else if (p.tipo === "auto") {
+          valTxt = (calcVal(p.calc) || "—") + " " + p.unidad;
+        }
+        pdf.text(String(valTxt), izqX + colW2 - 1, ry + 3, { align: "right" });
+        pdf.line(izqX, ry + rowH - 1, izqX + colW2, ry + rowH - 1);
+      });
+
+      // --- Columna derecha: items con estatus ---
+      FANCOIL_ITEMS_DER.forEach((item, i) => {
+        const ry = yTop + i * rowH;
+        const est = (form.estatusItems || {})[item] || "—";
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(60, 60, 60);
+        const itemTxt = pdf.splitTextToSize(item, colW2 - 22)[0];
+        pdf.text(itemTxt, derX + 1, ry + 3);
+        // estatus coloreado
+        const ec2 = est === "OK" ? [46, 125, 50] : est === "Falla" ? [198, 40, 40] : est === "Observado" ? [230, 81, 0] : [120, 120, 120];
+        pdf.setFont("helvetica", "bold"); pdf.setTextColor(...ec2);
+        pdf.text(String(est), derX + colW2 - 1, ry + 3, { align: "right" });
+        pdf.setDrawColor(210, 210, 210);
+        pdf.line(derX, ry + rowH - 1, derX + colW2, ry + rowH - 1);
+      });
+
+      y = yTop + FANCOIL_ITEMS_DER.length * rowH + 4;
     }
 
-    // Actividades realizadas (checklist completo: todos los items, marcados y no marcados)
+    // Actividades realizadas (checklist completo - solo para grupos que no usan formato Carrier)
     const cl = CHECKLISTS[form.grupo] || {};
     const categorias = Object.entries(cl);
-    if (categorias.length > 0) {
+    if (categorias.length > 0 && form.grupo !== "fancoil") {
       secTit("Actividades realizadas", 46, 125, 50);
       const cols = categorias.length;
       const colW = (C - (cols - 1) * 4) / cols;
@@ -759,52 +846,80 @@ export default function Protocolo() {
         )}
 
         {form.grupo === "fancoil" && (
-          <>
-            <div style={s.sec}>
-              <div style={s.secT}>💧 Parámetros de agua helada</div>
-              <div style={s.secB}>
-                <div style={s.g4}>
-                  <CampoInput label="T° entrada agua (°F)" val={form.tEntradaAgua} onChange={v => set("tEntradaAgua", v)} />
-                  <CampoInput label="T° salida agua (°F)" val={form.tSalidaAgua} onChange={v => set("tSalidaAgua", v)} />
-                  <Campo label="∆ Temp. agua (auto)" calc val={calcDelta(form.tEntradaAgua, form.tSalidaAgua)} />
-                  <div></div>
-                  <CampoInput label="Presión entrada (PSI)" val={form.presEntradaAgua} onChange={v => set("presEntradaAgua", v)} />
-                  <CampoInput label="Presión salida (PSI)" val={form.presSalidaAgua} onChange={v => set("presSalidaAgua", v)} />
-                  <Campo label="∆ Presión (auto)" calc val={calcDelta(form.presEntradaAgua, form.presSalidaAgua)} />
-                  <CampoSelect label="Estado válvula" val={form.estadoValvula} onChange={v => set("estadoValvula", v)} opciones={["OK", "Observado", "Falla"]} />
+          <div style={s.sec}>
+            <div style={s.secT}>💧 Parámetros — Fan Coil / UMA (formato Carrier)</div>
+            <div style={s.secB}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+
+                {/* Columna izquierda: parámetros numéricos */}
+                <div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#1a5fa8", textAlign: "center", padding: "4px", background: "#f0f4f8", borderRadius: "4px", marginBottom: "8px" }}>PARÁMETROS</div>
+
+                  <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Voltaje en marcha (V)</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                    <CampoInput label="L1-L2" val={form.vL1L2} onChange={v => set("vL1L2", v)} />
+                    <CampoInput label="L2-L3" val={form.vL2L3} onChange={v => set("vL2L3", v)} />
+                    <CampoInput label="L3-L1" val={form.vL3L1} onChange={v => set("vL3L1", v)} />
+                  </div>
+                  <Campo label="Desbalance V (auto) %" calc val={calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1)} />
+
+                  <div style={{ fontSize: "10px", color: "#888", margin: "8px 0 2px" }}>Amperaje en marcha (A)</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                    <CampoInput label="L1" val={form.aL1} onChange={v => set("aL1", v)} />
+                    <CampoInput label="L2" val={form.aL2} onChange={v => set("aL2", v)} />
+                    <CampoInput label="L3" val={form.aL3} onChange={v => set("aL3", v)} />
+                  </div>
+                  <Campo label="Desbalance A (auto) %" calc val={calcDesbalance(form.aL1, form.aL2, form.aL3)} />
+
+                  <div style={{ fontSize: "10px", color: "#888", margin: "8px 0 2px" }}>Megado (Ω)</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "4px", marginBottom: "6px" }}>
+                    <CampoInput label="L1-T" val={form.megL1T} onChange={v => set("megL1T", v)} />
+                    <CampoInput label="L2-T" val={form.megL2T} onChange={v => set("megL2T", v)} />
+                    <CampoInput label="L3-T" val={form.megL3T} onChange={v => set("megL3T", v)} />
+                    <CampoInput label="L1-L2" val={form.megL1L2} onChange={v => set("megL1L2", v)} />
+                    <CampoInput label="L2-L3" val={form.megL2L3} onChange={v => set("megL2L3", v)} />
+                    <CampoInput label="L3-L1" val={form.megL3L1} onChange={v => set("megL3L1", v)} />
+                  </div>
+
+                  <div style={{ fontSize: "10px", color: "#888", margin: "8px 0 2px" }}>Temperaturas y presiones</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "4px" }}>
+                    <CampoInput label="T° trabajo motor (°F)" val={form.tTrabajoMotor} onChange={v => set("tTrabajoMotor", v)} />
+                    <CampoInput label="T° entrada agua (°F)" val={form.tEntradaAgua} onChange={v => set("tEntradaAgua", v)} />
+                    <CampoInput label="T° salida agua (°F)" val={form.tSalidaAgua} onChange={v => set("tSalidaAgua", v)} />
+                    <Campo label="∆ Temp. agua (°F)" calc val={calcDelta(form.tEntradaAgua, form.tSalidaAgua)} />
+                    <CampoInput label="Presión entrada (PSI)" val={form.presEntradaAgua} onChange={v => set("presEntradaAgua", v)} />
+                    <CampoInput label="Presión salida (PSI)" val={form.presSalidaAgua} onChange={v => set("presSalidaAgua", v)} />
+                    <Campo label="∆ Presión agua (PSI)" calc val={calcDelta(form.presEntradaAgua, form.presSalidaAgua)} />
+                    <CampoInput label="T° retorno aire (°F)" val={form.tRetornoAire} onChange={v => set("tRetornoAire", v)} />
+                    <CampoInput label="T° suministro aire (°F)" val={form.tSuministroAire} onChange={v => set("tSuministroAire", v)} />
+                    <Campo label="∆ Temp. aire (°F)" calc val={calcDelta(form.tRetornoAire, form.tSuministroAire)} />
+                  </div>
                 </div>
+
+                {/* Columna derecha: ítems con Estatus */}
+                <div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#1a5fa8", textAlign: "center", padding: "4px", background: "#f0f4f8", borderRadius: "4px", marginBottom: "8px" }}>PARÁMETROS (ESTATUS)</div>
+                  {FANCOIL_ITEMS_DER.map(item => (
+                    <div key={item} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "3px 0", borderBottom: "0.5px solid #eee" }}>
+                      <span style={{ fontSize: "11px", color: "#333", flex: 1 }}>{item}</span>
+                      <select value={(form.estatusItems || {})[item] || ""} onChange={e => setEstatus(item, e.target.value)} disabled={soloLectura} style={{ fontSize: "11px", padding: "2px 4px", borderRadius: "4px", border: "0.5px solid #ccc", width: "100px" }}>
+                        <option value="">—</option>
+                        <option value="OK">OK</option>
+                        <option value="Observado">Observado</option>
+                        <option value="Falla">Falla</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+
               </div>
             </div>
-            <div style={s.sec}>
-              <div style={s.secT}>🌬️ Parámetros de aire</div>
-              <div style={s.secB}>
-                <div style={s.g4}>
-                  <CampoInput label="T° retorno aire (°F)" val={form.tRetornoAire} onChange={v => set("tRetornoAire", v)} />
-                  <CampoInput label="T° suministro aire (°F)" val={form.tSuministroAire} onChange={v => set("tSuministroAire", v)} />
-                  <Campo label="∆ Temp. aire (auto)" calc val={calcDelta(form.tRetornoAire, form.tSuministroAire)} />
-                  <CampoInput label="Velocidad ventiladores (RPM)" val={form.velocidadVent} onChange={v => set("velocidadVent", v)} />
-                </div>
-              </div>
-            </div>
-            <div style={s.sec}>
-              <div style={s.secT}>🎛️ Sensores y control</div>
-              <div style={s.secB}>
-                <div style={s.g4}>
-                  <CampoSelect label="Sensor arranque/parada" val={form.sensorArranque} onChange={v => set("sensorArranque", v)} opciones={["OK", "Observado", "Falla"]} />
-                  <CampoSelect label="Sensor temp. ambiente" val={form.sensorTempAmb} onChange={v => set("sensorTempAmb", v)} opciones={["OK", "Observado", "Falla"]} />
-                  <CampoSelect label="Sensor suministro aire" val={form.sensorSuministro} onChange={v => set("sensorSuministro", v)} opciones={["OK", "Observado", "Falla"]} />
-                  <CampoSelect label="Sensor dif. presión" val={form.sensorDifPresion} onChange={v => set("sensorDifPresion", v)} opciones={["OK", "Observado", "Falla"]} />
-                  <CampoSelect label="Estado contactores" val={form.estadoContactores} onChange={v => set("estadoContactores", v)} opciones={["OK", "Observado", "Falla"]} />
-                  <CampoSelect label="Estado impulsor aire" val={form.estadoImpulsor} onChange={v => set("estadoImpulsor", v)} opciones={["OK", "Observado", "Falla"]} />
-                  <CampoSelect label="Llave termomagnética" val={form.llaveTermo} onChange={v => set("llaveTermo", v)} opciones={["OK", "Observado", "Falla"]} />
-                  <CampoSelect label="Balance caudal aire" val={form.balanceCaudal} onChange={v => set("balanceCaudal", v)} opciones={["OK", "Observado", "Falla"]} />
-                </div>
-              </div>
-            </div>
-          </>
+          </div>
         )}
 
-        {/* Actividades */}
+        {/* Actividades (solo para grupos que NO usan formato Carrier de estatus) */}
+        {form.grupo !== "fancoil" && (
         <div style={s.sec}>
           <div style={s.secT}>✅ Actividades realizadas</div>
           <div style={s.secB}>
@@ -823,6 +938,7 @@ export default function Protocolo() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Observaciones dinámicas */}
         <div style={s.sec}>
