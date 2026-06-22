@@ -453,60 +453,145 @@ export default function Protocolo() {
         ["Temp. trabajo motor", form.tTrabajoMotor ? form.tTrabajoMotor + " °F" : null], ["Caudal de aire", form.caudalAire ? form.caudalAire + " CFM" : null],
       ], 3, 248, 249, 250);
     } else if (form.grupo === "fancoil") {
-      // ===== Formato Carrier: tabla de 2 columnas =====
-      const calcVal = (calc) => {
-        if (calc === "desbV") return calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1);
-        if (calc === "desbA") return calcDesbalance(form.aL1, form.aL2, form.aL3);
-        if (calc === "dTagua") return calcDelta(form.tEntradaAgua, form.tSalidaAgua);
-        if (calc === "dPagua") return calcDelta(form.presEntradaAgua, form.presSalidaAgua);
-        if (calc === "dTaire") return calcDelta(form.tRetornoAire, form.tSuministroAire);
+      // ===== FORMATO CARRIER EXACTO: tabla con bordes =====
+      const cv = (calc) => {
+        if (calc === "desbV") return calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1) || "";
+        if (calc === "desbA") return calcDesbalance(form.aL1, form.aL2, form.aL3) || "";
+        if (calc === "dTagua") return calcDelta(form.tEntradaAgua, form.tSalidaAgua) || "";
+        if (calc === "dPagua") return calcDelta(form.presEntradaAgua, form.presSalidaAgua) || "";
+        if (calc === "dTaire") return calcDelta(form.tRetornoAire, form.tSuministroAire) || "";
         return "";
       };
-      secTit("Parámetros", 26, 95, 168);
-      check(FANCOIL_ITEMS_DER.length * 5 + 6);
-      const yTop = y;
-      const colGap = 6;
-      const colW2 = (C - colGap) / 2;
-      const rowH = 5;
-      const izqX = M, derX = M + colW2 + colGap;
 
-      // --- Columna izquierda: parámetros numéricos ---
-      pdf.setDrawColor(210, 210, 210);
-      FANCOIL_PARAMS_IZQ.forEach((p, i) => {
+      // Encabezado "PARAMETROS | PARAMETROS"
+      check(6);
+      const hdrH = 6;
+      const halfC = C / 2;
+      pdf.setFillColor(230, 235, 245); pdf.rect(M, y, C, hdrH, "F");
+      pdf.setDrawColor(150, 150, 150); pdf.rect(M, y, C, hdrH);
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(7.5); pdf.setTextColor(26, 95, 168);
+      pdf.text("PARAMETROS", M + halfC / 2, y + 4, { align: "center" });
+      pdf.text("PARAMETROS", M + halfC + halfC / 2, y + 4, { align: "center" });
+      pdf.line(M + halfC, y, M + halfC, y + hdrH);
+      y += hdrH;
+
+      // Definir filas de la tabla
+      const rowH = 5.5;
+      const izqX = M;
+      const derX = M + halfC;
+      const nW = halfC * 0.42; // nombre
+      const sW = halfC * 0.18; // sub/unidad
+      const vW = halfC * 0.40; // valor(es)
+      const cNW = halfC * 0.62; // nombre derecha
+      const cEW = halfC * 0.20; // "Estatus"
+      const cVW = halfC * 0.18; // valor estatus
+
+      // Filas izquierda con sub-columna (voltaje en placa / voltaje en marcha)
+      const rowsIzq = [
+        { label: "Voltaje en placa", sub: "Voltaje en\nmarcha", unidad: "V", val: `${form.vL1L2||"—"}  ${form.vL2L3||"—"}  ${form.vL3L1||"—"}`, heads: "L1-L2  L2-L3  L3-L1" },
+        { label: "Desbalance de voltaje", unidad: "%", val: cv("desbV") },
+        { label: "Amperaje en placa", sub: "Amperaje en\nmarcha", unidad: "A", val: `${form.aL1||"—"}  ${form.aL2||"—"}  ${form.aL3||"—"}`, heads: "L1  L2  L3" },
+        { label: "Desbalance de voltaje", unidad: "%", val: cv("desbA") },
+        { label: "MEGADO", sub: "L1-T", unidad: "Ω", val: form.megL1T || "—" },
+        { label: "", sub: "L2-T", unidad: "Ω", val: form.megL2T || "—" },
+        { label: "", sub: "L3-T", unidad: "Ω", val: form.megL3T || "—" },
+        { label: "", sub: "L1-L2", unidad: "Ω", val: form.megL1L2 || "—" },
+        { label: "", sub: "L2-L3", unidad: "Ω", val: form.megL2L3 || "—" },
+        { label: "", sub: "L3-L1", unidad: "Ω", val: form.megL3L1 || "—" },
+        { label: "Temperatura de trabajo de motor", unidad: "°F", val: form.tTrabajoMotor || "—" },
+        { label: "Temperatura de entrada de agua", unidad: "°F", val: form.tEntradaAgua || "—" },
+        { label: "Temperatura de salida de agua", unidad: "°F", val: form.tSalidaAgua || "—" },
+        { label: "\u0394 Temperatura de agua", unidad: "°F", val: cv("dTagua") },
+        { label: "Presion de entrada de agua", unidad: "PSI", val: form.presEntradaAgua || "—" },
+        { label: "Presion de salida de agua", unidad: "PSI", val: form.presSalidaAgua || "—" },
+        { label: "\u0394 Presion de agua", unidad: "PSI", val: cv("dPagua") },
+        { label: "Temperatura de retorno de aire", unidad: "°F", val: form.tRetornoAire || "—" },
+        { label: "Temperatura de suministro de aire", unidad: "°F", val: form.tSuministroAire || "—" },
+        { label: "\u0394 Temperatura de aire", unidad: "°F", val: cv("dTaire") },
+      ];
+
+      const nRows = Math.max(rowsIzq.length, FANCOIL_ITEMS_DER.length);
+      check(nRows * rowH + 4);
+      const yTop = y;
+
+      // Dibujar filas
+      rowsIzq.forEach((r, i) => {
         const ry = yTop + i * rowH;
-        pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(60, 60, 60);
-        const etiqueta = p.label || (p.sub || "");
-        pdf.text(etiqueta, izqX + 1, ry + 3);
-        // valor(es)
-        pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(30, 30, 30);
-        let valTxt = "";
-        if (p.tipo === "elec3") {
-          valTxt = p.keys.map(k => form[k] || "—").join("  ") + " " + p.unidad;
-        } else if (p.tipo === "meg" || p.tipo === "val") {
-          valTxt = (form[p.key] || "—") + " " + p.unidad;
-        } else if (p.tipo === "auto") {
-          valTxt = (calcVal(p.calc) || "—") + " " + p.unidad;
+        pdf.setDrawColor(180, 180, 180);
+        pdf.rect(izqX, ry, halfC, rowH);
+
+        // Nombre
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(50, 50, 50);
+        const lbl = pdf.splitTextToSize(r.label, nW - 2)[0];
+        pdf.text(lbl, izqX + 1, ry + 3.5);
+
+        // Sub (si tiene)
+        if (r.sub) {
+          pdf.setFont("helvetica", "normal"); pdf.setFontSize(5.5); pdf.setTextColor(80, 80, 80);
+          const subLines = r.sub.split("\n");
+          subLines.forEach((sl, si) => pdf.text(sl, izqX + nW + 1, ry + 2.5 + si * 2.2));
+          // línea separadora sub
+          pdf.setDrawColor(180, 180, 180);
+          pdf.line(izqX + nW, ry, izqX + nW, ry + rowH);
         }
-        pdf.text(String(valTxt), izqX + colW2 - 1, ry + 3, { align: "right" });
-        pdf.line(izqX, ry + rowH - 1, izqX + colW2, ry + rowH - 1);
+
+        // Unidad
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(100, 100, 100);
+        const uX = r.sub ? izqX + nW + sW : izqX + nW;
+        if (r.sub) {
+          pdf.text(r.unidad, izqX + nW + sW / 2, ry + 3.5, { align: "center" });
+          pdf.line(izqX + nW + sW, ry, izqX + nW + sW, ry + rowH);
+        } else {
+          pdf.text(r.unidad, izqX + halfC - vW + 3, ry + 3.5);
+          pdf.line(izqX + halfC - vW, ry, izqX + halfC - vW, ry + rowH);
+        }
+
+        // Valor
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(6.5); pdf.setTextColor(30, 30, 30);
+        pdf.text(String(r.val), izqX + halfC - 1, ry + 3.5, { align: "right" });
+
+        // Encabezados de columnas (L1-L2 etc) si tiene heads
+        if (r.heads) {
+          pdf.setFont("helvetica", "normal"); pdf.setFontSize(5); pdf.setTextColor(120, 120, 120);
+          pdf.text(r.heads, izqX + halfC - 1, ry + 1.5, { align: "right" });
+        }
       });
 
-      // --- Columna derecha: items con estatus ---
+      // Filas derecha: items estatus
       FANCOIL_ITEMS_DER.forEach((item, i) => {
         const ry = yTop + i * rowH;
         const est = (form.estatusItems || {})[item] || "—";
-        pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(60, 60, 60);
-        const itemTxt = pdf.splitTextToSize(item, colW2 - 22)[0];
-        pdf.text(itemTxt, derX + 1, ry + 3);
-        // estatus coloreado
-        const ec2 = est === "OK" ? [46, 125, 50] : est === "Falla" ? [198, 40, 40] : est === "Observado" ? [230, 81, 0] : [120, 120, 120];
-        pdf.setFont("helvetica", "bold"); pdf.setTextColor(...ec2);
-        pdf.text(String(est), derX + colW2 - 1, ry + 3, { align: "right" });
-        pdf.setDrawColor(210, 210, 210);
-        pdf.line(derX, ry + rowH - 1, derX + colW2, ry + rowH - 1);
+        pdf.setDrawColor(180, 180, 180);
+        pdf.rect(derX, ry, halfC, rowH);
+        pdf.line(derX + cNW, ry, derX + cNW, ry + rowH);
+        pdf.line(derX + cNW + cEW, ry, derX + cNW + cEW, ry + rowH);
+
+        // Nombre item
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(50, 50, 50);
+        const itTxt = pdf.splitTextToSize(item, cNW - 2)[0];
+        pdf.text(itTxt, derX + 1, ry + 3.5);
+
+        // "Estatus" label gris
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(6); pdf.setTextColor(140, 140, 140);
+        pdf.text("Estatus", derX + cNW + cEW / 2, ry + 3.5, { align: "center" });
+
+        // Valor estatus coloreado
+        const ec = est === "OK" ? [46, 125, 50] : est === "Falla" ? [198, 40, 40] : est === "Observado" ? [230, 81, 0] : [120, 120, 120];
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(6.5); pdf.setTextColor(...ec);
+        pdf.text(String(est), derX + halfC - 1, ry + 3.5, { align: "right" });
       });
 
-      y = yTop + FANCOIL_ITEMS_DER.length * rowH + 4;
+      // Rellenar filas vacías si un lado tiene más filas que el otro
+      for (let i = rowsIzq.length; i < FANCOIL_ITEMS_DER.length; i++) {
+        const ry = yTop + i * rowH;
+        pdf.setDrawColor(180, 180, 180); pdf.rect(izqX, ry, halfC, rowH);
+      }
+      for (let i = FANCOIL_ITEMS_DER.length; i < rowsIzq.length; i++) {
+        const ry = yTop + i * rowH;
+        pdf.setDrawColor(180, 180, 180); pdf.rect(derX, ry, halfC, rowH);
+      }
+
+      y = yTop + nRows * rowH + 4;
     }
 
     // Actividades realizadas (checklist completo - solo para grupos que no usan formato Carrier)
