@@ -259,7 +259,11 @@ export default function Protocolo() {
       const historial = data.protocolos || [];
       if (historial.length > 0) {
         setProtocolos(historial);
-        setForm(historial[0]);
+        // Rellenar campos nuevos de placa si el protocolo fue guardado antes de que existieran
+        const prot = { ...historial[0] };
+        if (!prot.vPlacaL1L2 && data.voltaje) { prot.vPlacaL1L2 = data.voltaje; prot.vPlacaL2L3 = data.voltaje; prot.vPlacaL3L1 = data.voltaje; }
+        if (!prot.aPlacaL1 && data.amperaje) { prot.aPlacaL1 = data.amperaje; prot.aPlacaL2 = data.amperaje; prot.aPlacaL3 = data.amperaje; }
+        setForm(prot);
         setIndexActual(0);
       } else {
         setProtocolos([]);
