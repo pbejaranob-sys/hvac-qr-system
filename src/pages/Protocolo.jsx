@@ -74,7 +74,9 @@ const protocoloVacio = (grupo) => ({
   ordenTrabajo: "",
   // Eléctricos (comunes)
   vL1L2: "", vL2L3: "", vL3L1: "",
+  vPlacaL1L2: "", vPlacaL2L3: "", vPlacaL3L1: "",
   aL1: "", aL2: "", aL3: "",
+  aPlacaL1: "", aPlacaL2: "", aPlacaL3: "",
   megL1T: "", megL2T: "", megL3T: "",
   megL1L2: "", megL2L3: "", megL3L1: "",
   // Refrigeración (expansion)
@@ -265,6 +267,17 @@ export default function Protocolo() {
           const nuevo = protocoloVacio(grupo);
           nuevo.observaciones = obsDesFicha(data);
           nuevo.estadoFinal = data.estado || "Operativo";
+          // Auto-copiar voltaje y amperaje de placa desde la ficha del equipo
+          if (data.voltaje) {
+            nuevo.vPlacaL1L2 = data.voltaje;
+            nuevo.vPlacaL2L3 = data.voltaje;
+            nuevo.vPlacaL3L1 = data.voltaje;
+          }
+          if (data.amperaje) {
+            nuevo.aPlacaL1 = data.amperaje;
+            nuevo.aPlacaL2 = data.amperaje;
+            nuevo.aPlacaL3 = data.amperaje;
+          }
           setForm(nuevo);
         } else {
           setForm(null);
@@ -1175,11 +1188,27 @@ export default function Protocolo() {
                 </div>
               </div>
               <div>
+                <label style={s.lblRow}>Voltaje en placa (V)</label>
+                <div style={s.row3}>
+                  <input style={s.mini} placeholder="L1-L2" value={form.vPlacaL1L2} onChange={e => set("vPlacaL1L2", e.target.value)} />
+                  <input style={s.mini} placeholder="L2-L3" value={form.vPlacaL2L3} onChange={e => set("vPlacaL2L3", e.target.value)} />
+                  <input style={s.mini} placeholder="L3-L1" value={form.vPlacaL3L1} onChange={e => set("vPlacaL3L1", e.target.value)} />
+                </div>
+              </div>
+              <div>
                 <label style={s.lblRow}>Amperaje en marcha (A)</label>
                 <div style={s.row3}>
                   <input style={s.mini} placeholder="L1" value={form.aL1} onChange={e => set("aL1", e.target.value)} />
                   <input style={s.mini} placeholder="L2" value={form.aL2} onChange={e => set("aL2", e.target.value)} />
                   <input style={s.mini} placeholder="L3" value={form.aL3} onChange={e => set("aL3", e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <label style={s.lblRow}>Amperaje en placa (A)</label>
+                <div style={s.row3}>
+                  <input style={s.mini} placeholder="L1" value={form.aPlacaL1} onChange={e => set("aPlacaL1", e.target.value)} />
+                  <input style={s.mini} placeholder="L2" value={form.aPlacaL2} onChange={e => set("aPlacaL2", e.target.value)} />
+                  <input style={s.mini} placeholder="L3" value={form.aPlacaL3} onChange={e => set("aPlacaL3", e.target.value)} />
                 </div>
               </div>
               <div>
@@ -1249,6 +1278,13 @@ export default function Protocolo() {
                     <CampoInput label="L2-L3" val={form.vL2L3} onChange={v => set("vL2L3", v)} />
                     <CampoInput label="L3-L1" val={form.vL3L1} onChange={v => set("vL3L1", v)} />
                   </div>
+
+                  <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Voltaje en placa (V)</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                    <CampoInput label="L1-L2" val={form.vPlacaL1L2} onChange={v => set("vPlacaL1L2", v)} />
+                    <CampoInput label="L2-L3" val={form.vPlacaL2L3} onChange={v => set("vPlacaL2L3", v)} />
+                    <CampoInput label="L3-L1" val={form.vPlacaL3L1} onChange={v => set("vPlacaL3L1", v)} />
+                  </div>
                   <Campo label="Desbalance V (auto) %" calc val={calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1)} />
 
                   <div style={{ fontSize: "10px", color: "#888", margin: "8px 0 2px" }}>Amperaje en marcha (A)</div>
@@ -1256,6 +1292,13 @@ export default function Protocolo() {
                     <CampoInput label="L1" val={form.aL1} onChange={v => set("aL1", v)} />
                     <CampoInput label="L2" val={form.aL2} onChange={v => set("aL2", v)} />
                     <CampoInput label="L3" val={form.aL3} onChange={v => set("aL3", v)} />
+                  </div>
+
+                  <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Amperaje en placa (A)</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                    <CampoInput label="L1" val={form.aPlacaL1} onChange={v => set("aPlacaL1", v)} />
+                    <CampoInput label="L2" val={form.aPlacaL2} onChange={v => set("aPlacaL2", v)} />
+                    <CampoInput label="L3" val={form.aPlacaL3} onChange={v => set("aPlacaL3", v)} />
                   </div>
                   <Campo label="Desbalance A (auto) %" calc val={calcDesbalance(form.aL1, form.aL2, form.aL3)} />
 
