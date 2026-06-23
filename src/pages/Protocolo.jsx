@@ -1076,6 +1076,18 @@ export default function Protocolo() {
               <Campo label="Amperaje nominal" auto val={equipo.amperaje ? equipo.amperaje + "A" : ""} />
               <Campo label="Fases" auto val={equipo.fases} />
             </div>
+            {/* Campos específicos Fan Coil / UMA - solo si existen en la ficha */}
+            {(equipo.fancoilNum || equipo.contrato || equipo.modeloFaja || equipo.marcaMotor) && (
+              <div style={{ ...s.g4, marginTop: "10px" }}>
+                {equipo.fancoilNum && <Campo label="UMA / Fan Coil N°" auto val={equipo.fancoilNum} />}
+                {equipo.contrato && <Campo label="Contrato" auto val={equipo.contrato} />}
+                {equipo.modeloFaja && <Campo label="Modelo de faja" auto val={equipo.modeloFaja} />}
+                {equipo.numFajas && <Campo label="N° de fajas" auto val={equipo.numFajas} />}
+                {equipo.marcaMotor && <Campo label="Marca de motor" auto val={equipo.marcaMotor} />}
+                {equipo.modeloMotor && <Campo label="Modelo de motor" auto val={equipo.modeloMotor} />}
+                {equipo.serieMotor && <Campo label="N° serie motor" auto val={equipo.serieMotor} />}
+              </div>
+            )}
           </div>
         </div>
 
