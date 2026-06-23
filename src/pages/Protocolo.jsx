@@ -480,9 +480,9 @@ export default function Protocolo() {
     const DV = RW2 * 0.18;
 
     const rowsL = [
-      { nm: "Voltaje en placa", sub: "Voltaje en\nmarcha", un: "V", v3: [form.vPlacaL1L2||"", form.vPlacaL2L3||"", form.vPlacaL3L1||""], hds: ["L1-L2","L2-L3","L3-L1"] },
+      { nm: "Voltaje en placa", sub: "Voltaje en\nmarcha", un: "V", v3: [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""], hds: ["L1-L2","L2-L3","L3-L1"] },
       { nm: "Desbalance de voltaje", un: "%", v1: cv("desbV") },
-      { nm: "Amperaje en placa", sub: "Amperaje en\nmarcha", un: "A", v3: [form.aPlacaL1||"", form.aPlacaL2||"", form.aPlacaL3||""], hds: ["L1","L2","L3"] },
+      { nm: "Amperaje en placa", sub: "Amperaje en\nmarcha", un: "A", v3: [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""], hds: ["L1","L2","L3"] },
       { nm: "Desbalance de voltaje", un: "%", v1: cv("desbA") },
       { nm: "MEGADO", sub: "L1-T", un: "\u03A9", v1: form.megL1T || "" },
       { nm: "", sub: "L2-T", un: "\u03A9", v1: form.megL2T || "" },
@@ -762,11 +762,11 @@ export default function Protocolo() {
       const rowsL = [
         { nm: "Voltaje", tipo: "double",
           sub1: "Voltaje en\nmarcha", un: "V", v3a: [form.vL1L2, form.vL2L3, form.vL3L1], hds: ["L1-L2","L2-L3","L3-L1"],
-          sub2: "Voltaje en placa", v3b: [form.vPlacaL1L2||"", form.vPlacaL2L3||"", form.vPlacaL3L1||""] },
+          sub2: "Voltaje en placa", v3b: [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""] },
         { nm: "Desbalance de voltaje", un: "%", v1: cv("desbV") },
         { nm: "Amperaje", tipo: "double",
           sub1: "Amperaje en\nmarcha", un: "A", v3a: [form.aL1, form.aL2, form.aL3], hds: ["L1","L2","L3"],
-          sub2: "Amperaje en placa", v3b: [form.aPlacaL1||"", form.aPlacaL2||"", form.aPlacaL3||""] },
+          sub2: "Amperaje en placa", v3b: [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""] },
         { nm: "Desbalance de voltaje", un: "%", v1: cv("desbA") },
         { nm: "MEGADO", sub: "L1-T", un: "\u03A9", v1: form.megL1T || "" },
         { nm: "", sub: "L2-T", un: "\u03A9", v1: form.megL2T || "" },
@@ -1192,11 +1192,11 @@ export default function Protocolo() {
                 </div>
               </div>
               <div>
-                <label style={s.lblRow}>Voltaje en placa (V)</label>
+                <label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label>
                 <div style={s.row3}>
-                  <input style={s.mini} placeholder="L1-L2" value={form.vPlacaL1L2} onChange={e => set("vPlacaL1L2", e.target.value)} />
-                  <input style={s.mini} placeholder="L2-L3" value={form.vPlacaL2L3} onChange={e => set("vPlacaL2L3", e.target.value)} />
-                  <input style={s.mini} placeholder="L3-L1" value={form.vPlacaL3L1} onChange={e => set("vPlacaL3L1", e.target.value)} />
+                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1-L2" value={equipo?.voltaje || ""} readOnly />
+                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2-L3" value={equipo?.voltaje || ""} readOnly />
+                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3-L1" value={equipo?.voltaje || ""} readOnly />
                 </div>
               </div>
               <div>
@@ -1208,11 +1208,11 @@ export default function Protocolo() {
                 </div>
               </div>
               <div>
-                <label style={s.lblRow}>Amperaje en placa (A)</label>
+                <label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label>
                 <div style={s.row3}>
-                  <input style={s.mini} placeholder="L1" value={form.aPlacaL1} onChange={e => set("aPlacaL1", e.target.value)} />
-                  <input style={s.mini} placeholder="L2" value={form.aPlacaL2} onChange={e => set("aPlacaL2", e.target.value)} />
-                  <input style={s.mini} placeholder="L3" value={form.aPlacaL3} onChange={e => set("aPlacaL3", e.target.value)} />
+                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1" value={equipo?.amperaje || ""} readOnly />
+                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2" value={equipo?.amperaje || ""} readOnly />
+                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3" value={equipo?.amperaje || ""} readOnly />
                 </div>
               </div>
               <div>
@@ -1283,11 +1283,11 @@ export default function Protocolo() {
                     <CampoInput label="L3-L1" val={form.vL3L1} onChange={v => set("vL3L1", v)} />
                   </div>
 
-                  <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Voltaje en placa (V)</div>
+                  <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#aaa"}}>(ficha equipo)</span></div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
-                    <CampoInput label="L1-L2" val={form.vPlacaL1L2} onChange={v => set("vPlacaL1L2", v)} />
-                    <CampoInput label="L2-L3" val={form.vPlacaL2L3} onChange={v => set("vPlacaL2L3", v)} />
-                    <CampoInput label="L3-L1" val={form.vPlacaL3L1} onChange={v => set("vPlacaL3L1", v)} />
+                    <CampoInput label="L1-L2" val={equipo?.voltaje || ""} readOnly />
+                    <CampoInput label="L2-L3" val={equipo?.voltaje || ""} readOnly />
+                    <CampoInput label="L3-L1" val={equipo?.voltaje || ""} readOnly />
                   </div>
                   <Campo label="Desbalance V (auto) %" calc val={calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1)} />
 
@@ -1298,11 +1298,11 @@ export default function Protocolo() {
                     <CampoInput label="L3" val={form.aL3} onChange={v => set("aL3", v)} />
                   </div>
 
-                  <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Amperaje en placa (A)</div>
+                  <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#aaa"}}>(ficha equipo)</span></div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
-                    <CampoInput label="L1" val={form.aPlacaL1} onChange={v => set("aPlacaL1", v)} />
-                    <CampoInput label="L2" val={form.aPlacaL2} onChange={v => set("aPlacaL2", v)} />
-                    <CampoInput label="L3" val={form.aPlacaL3} onChange={v => set("aPlacaL3", v)} />
+                    <CampoInput label="L1" val={equipo?.amperaje || ""} readOnly />
+                    <CampoInput label="L2" val={equipo?.amperaje || ""} readOnly />
+                    <CampoInput label="L3" val={equipo?.amperaje || ""} readOnly />
                   </div>
                   <Campo label="Desbalance A (auto) %" calc val={calcDesbalance(form.aL1, form.aL2, form.aL3)} />
 
@@ -1423,10 +1423,10 @@ const Campo = ({ label, val, auto, calc }) => (
     <div style={auto ? s.fAuto : calc ? s.fCalc : s.fPh}>{val || "—"}</div>
   </div>
 );
-const CampoInput = ({ label, val, onChange, placeholder, type }) => (
+const CampoInput = ({ label, val, onChange, placeholder, type, readOnly }) => (
   <div style={s.f}>
     <label style={s.fLabel}>{label}</label>
-    <input style={s.fInp} type={type || "text"} value={val} placeholder={placeholder || ""} onChange={e => onChange(e.target.value)} />
+    <input style={{...s.fInp, ...(readOnly ? {background:"#f0f4f8", color:"#555", cursor:"not-allowed"} : {})}} type={type || "text"} value={val} placeholder={placeholder || ""} readOnly={readOnly} onChange={readOnly ? undefined : e => onChange(e.target.value)} />
   </div>
 );
 const CampoSelect = ({ label, val, onChange, opciones }) => (
