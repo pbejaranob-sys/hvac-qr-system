@@ -415,11 +415,11 @@ export default function Protocolo() {
     const half = C / 2;
     const infoRows = [
       ["CLIENTE", equipo.cliente || "", "MARCA DE UMA / FAN COIL", equipo.marca || ""],
-      ["CONTRATO", form.contrato || "", "MODELO DE UMA / FAN COIL", equipo.modelo || ""],
-      ["UMA / FAN COIL N\xB0", form.fancoilNum || equipo.codigo || "", "N\xB0 DE SERIE DE UMA / FAN COIL", equipo.serie || ""],
-      ["UBICACI\xD3N", (equipo.sede || "") + (equipo.piso ? " / Piso " + equipo.piso : "") + (equipo.ambiente ? " / " + equipo.ambiente : ""), "MARCA DE MOTOR", form.marcaMotor || ""],
-      ["MODELO DE FAJA", form.modeloFaja || "", "MODELO DE MOTOR", form.modeloMotor || ""],
-      ["NUMERO DE FAJAS", form.numFajas || "", "N\xB0 DE SERIE DE MOTOR", form.serieMotor || ""],
+      ["CONTRATO", equipo.contrato || form.contrato || "", "MODELO DE UMA / FAN COIL", equipo.modelo || ""],
+      ["UMA / FAN COIL N\xB0", equipo.fancoilNum || form.fancoilNum || equipo.codigo || "", "N\xB0 DE SERIE DE UMA / FAN COIL", equipo.serie || ""],
+      ["UBICACI\xD3N", (equipo.sede || "") + (equipo.piso ? " / Piso " + equipo.piso : "") + (equipo.ambiente ? " / " + equipo.ambiente : ""), "MARCA DE MOTOR", equipo.marcaMotor || form.marcaMotor || ""],
+      ["MODELO DE FAJA", equipo.modeloFaja || form.modeloFaja || "", "MODELO DE MOTOR", equipo.modeloMotor || form.modeloMotor || ""],
+      ["NUMERO DE FAJAS", equipo.numFajas || form.numFajas || "", "N\xB0 DE SERIE DE MOTOR", equipo.serieMotor || form.serieMotor || ""],
       ["TECNICO RESPONSABLE", form.tecnico || "", "FECHA", form.fecha || ""],
     ];
     const lw = C * 0.22; // ancho etiqueta
