@@ -737,10 +737,18 @@ export default function Protocolo() {
       pdf.text("PARAMETROS", LX + LW / 2, y + hH - 1.5, { align: "center" });
       pdf.text("PARAMETROS", RX + RW / 2, y + hH - 1.5, { align: "center" });
       y += hH;
+
+      // Filas con tipo "double" = nombre abarca 2 sub-filas (marcha + placa)
+      const RH1 = 5.2; // altura sub-fila normal
+      const RH2d = RH1 * 2; // altura doble (para nombre que abarca 2)
       const rowsL = [
-        { nm: "Voltaje en placa", sub: "Voltaje en\nmarcha", un: "V", v3: [form.vL1L2, form.vL2L3, form.vL3L1], hds: ["L1-L2","L2-L3","L3-L1"] },
+        { nm: "Voltaje", tipo: "double",
+          sub1: "Voltaje en\nmarcha", un: "V", v3a: [form.vL1L2, form.vL2L3, form.vL3L1], hds: ["L1-L2","L2-L3","L3-L1"],
+          sub2: "Voltaje en placa", v3b: [form.vPlacaL1L2||"", form.vPlacaL2L3||"", form.vPlacaL3L1||""] },
         { nm: "Desbalance de voltaje", un: "%", v1: cv("desbV") },
-        { nm: "Amperaje en placa", sub: "Amperaje en\nmarcha", un: "A", v3: [form.aL1, form.aL2, form.aL3], hds: ["L1","L2","L3"] },
+        { nm: "Amperaje", tipo: "double",
+          sub1: "Amperaje en\nmarcha", un: "A", v3a: [form.aL1, form.aL2, form.aL3], hds: ["L1","L2","L3"],
+          sub2: "Amperaje en placa", v3b: [form.aPlacaL1||"", form.aPlacaL2||"", form.aPlacaL3||""] },
         { nm: "Desbalance de voltaje", un: "%", v1: cv("desbA") },
         { nm: "MEGADO", sub: "L1-T", un: "\u03A9", v1: form.megL1T || "" },
         { nm: "", sub: "L2-T", un: "\u03A9", v1: form.megL2T || "" },
@@ -759,73 +767,120 @@ export default function Protocolo() {
         { nm: "Temperatura de suministro de aire", un: "\xB0F", v1: form.tSuministroAire || "" },
         { nm: "\u0394 Temperatura de aire", un: "\xB0F", v1: cv("dTaire") },
       ];
-      const nRowsF = Math.max(rowsL.length, FANCOIL_ITEMS_DER.length);
-      check(nRowsF * RH + 4);
-      const yT = y;
-      for (let i = 0; i < nRowsF; i++) {
-        const ry = yT + i * RH;
-        pdf.setDrawColor(160, 160, 160);
-        if (i < rowsL.length) {
-          const r = rowsL[i];
-          pdf.rect(LX, ry, LW, RH);
+
+      // Calcular posiciones Y de cada fila (dobles ocupan 2x altura)
+      const rowPositions = [];
+      let curY = y;
+      rowsL.forEach(r => {
+        const h = r.tipo === "double" ? RH2d : RH1;
+        rowPositions.push({ ry: curY, h });
+        curY += h;
+      });
+      const totalLH = curY - y;
+
+      // Lado derecho: altura fija RH1 para cada ítem
+      const nItemsR = FANCOIL_ITEMS_DER.length;
+      const totalRH = nItemsR * RH1;
+      const totalH = Math.max(totalLH, totalRH);
+      check(totalH + 4);
+
+      // Dibujar lado izquierdo
+      rowsL.forEach((r, i) => {
+        const { ry, h } = rowPositions[i];
+        pdf.setDrawColor(0);
+
+        if (r.tipo === "double") {
+          // Celda nombre que abarca toda la altura doble
+          pdf.rect(LX, ry, NW, h);
+          pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(0);
+          const nmTxt = pdf.splitTextToSize(r.nm, NW - 2);
+          nmTxt.forEach((l, li) => pdf.text(l, LX + 1, ry + h / 2 + li * 2.5 - (nmTxt.length - 1) * 1.2));
+
+          // Sub-fila 1 (en marcha) — parte superior
+          const ry1 = ry;
+          const h1 = RH1;
+          pdf.rect(LX + NW, ry1, SW, h1);
+          pdf.rect(LX + NW + SW, ry1, UW, h1);
+          pdf.setFont("helvetica", "normal"); pdf.setFontSize(5.5); pdf.setTextColor(50, 50, 50);
+          r.sub1.split("\n").forEach((sl, si) => pdf.text(sl, LX + NW + 1, ry1 + 2.2 + si * 2));
+          pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
+          pdf.text(r.un, LX + NW + SW + UW / 2, ry1 + 3.2, { align: "center" });
+          const vSubW = VW / 3;
+          r.hds && r.hds.forEach((h2, hi) => {
+            pdf.setFontSize(5); pdf.setTextColor(100, 100, 100);
+            pdf.text(h2, LX + NW + SW + UW + hi * vSubW + vSubW / 2, ry1 + 1.8, { align: "center" });
+          });
+          r.v3a.forEach((v, vi) => {
+            pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(0);
+            pdf.text(String(v || ""), LX + NW + SW + UW + vi * vSubW + vSubW / 2, ry1 + 4, { align: "center" });
+            pdf.rect(LX + NW + SW + UW + vi * vSubW, ry1, vSubW, h1);
+          });
+
+          // Sub-fila 2 (en placa) — parte inferior, fondo gris
+          const ry2 = ry + RH1;
+          const h2 = RH1;
+          pdf.setFillColor(245, 245, 245);
+          pdf.rect(LX + NW, ry2, SW + UW + VW, h2, "FD");
+          pdf.setFont("helvetica", "normal"); pdf.setFontSize(5.5); pdf.setTextColor(100, 100, 100);
+          pdf.text(r.sub2, LX + NW + 1, ry2 + 3.2);
+          pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
+          pdf.text(r.un, LX + NW + SW + UW / 2, ry2 + 3.2, { align: "center" });
+          r.v3b.forEach((v, vi) => {
+            pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(80, 80, 80);
+            pdf.text(String(v || ""), LX + NW + SW + UW + vi * vSubW + vSubW / 2, ry2 + 3.2, { align: "center" });
+            pdf.setDrawColor(180, 180, 180);
+            pdf.rect(LX + NW + SW + UW + vi * vSubW, ry2, vSubW, h2);
+          });
+          pdf.setDrawColor(0);
+          pdf.line(LX + NW + SW, ry2, LX + NW + SW, ry2 + h2);
+
+        } else {
+          // Fila simple
+          pdf.rect(LX, ry, LW, RH1);
           if (r.sub !== undefined) {
-            pdf.line(LX + NW, ry, LX + NW, ry + RH);
-            pdf.line(LX + NW + SW, ry, LX + NW + SW, ry + RH);
-            pdf.line(LX + NW + SW + UW, ry, LX + NW + SW + UW, ry + RH);
+            pdf.line(LX + NW, ry, LX + NW, ry + RH1);
+            pdf.line(LX + NW + SW, ry, LX + NW + SW, ry + RH1);
+            pdf.line(LX + NW + SW + UW, ry, LX + NW + SW + UW, ry + RH1);
           } else {
-            pdf.line(LX + NW + SW, ry, LX + NW + SW, ry + RH);
-            pdf.line(LX + NW + SW + UW, ry, LX + NW + SW + UW, ry + RH);
+            pdf.line(LX + NW + SW, ry, LX + NW + SW, ry + RH1);
+            pdf.line(LX + NW + SW + UW, ry, LX + NW + SW + UW, ry + RH1);
           }
-          pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
-          const nmTxt = pdf.splitTextToSize(r.nm, NW - 1.5);
-          nmTxt.forEach((line, li) => pdf.text(line, LX + 1, ry + 3.2 + li * 2.2));
+          pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(0);
+          const nmL = pdf.splitTextToSize(r.nm, NW - 1.5);
+          nmL.forEach((l, li) => pdf.text(l, LX + 1, ry + 3.2 + li * 2.2));
           if (r.sub) {
-            pdf.setFont("helvetica", "normal"); pdf.setFontSize(5.5); pdf.setTextColor(60, 60, 60);
+            pdf.setFontSize(5.5); pdf.setTextColor(60, 60, 60);
             r.sub.split("\n").forEach((sl, si) => pdf.text(sl, LX + NW + 1, ry + 2.2 + si * 2));
           }
-          pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
+          pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
           pdf.text(r.un, LX + NW + SW + UW / 2, ry + 3.2, { align: "center" });
-          if (r.v3) {
-            const vSubW = VW / 3;
-            if (r.hds) {
-              r.hds.forEach((h, hi) => {
-                pdf.setFont("helvetica", "normal"); pdf.setFontSize(5); pdf.setTextColor(100, 100, 100);
-                pdf.text(h, LX + NW + SW + UW + hi * vSubW + vSubW / 2, ry + 1.8, { align: "center" });
-              });
-            }
-            r.v3.forEach((v, vi) => {
-              pdf.setFont("helvetica", "bold"); pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
-              pdf.text(String(v || ""), LX + NW + SW + UW + vi * vSubW + vSubW / 2, ry + 4, { align: "center" });
-              if (vi < 2) pdf.line(LX + NW + SW + UW + (vi + 1) * vSubW, ry, LX + NW + SW + UW + (vi + 1) * vSubW, ry + RH);
-            });
-          } else if (r.v1 !== undefined) {
-            pdf.setFont("helvetica", "bold"); pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
+          if (r.v1 !== undefined) {
+            pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(0);
             pdf.text(String(r.v1 || ""), LX + LW - 1.5, ry + 3.2, { align: "right" });
           }
-        } else {
-          pdf.rect(LX, ry, LW, RH);
         }
-        if (i < FANCOIL_ITEMS_DER.length) {
-          const item = FANCOIL_ITEMS_DER[i];
-          const est = (form.estatusItems || {})[item] || "";
-          pdf.rect(RX, ry, RW, RH);
-          pdf.line(RX + DNW, ry, RX + DNW, ry + RH);
-          pdf.line(RX + DNW + DEW, ry, RX + DNW + DEW, ry + RH);
-          pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
-          const itTxt = pdf.splitTextToSize(item, DNW - 1.5)[0];
-          pdf.text(itTxt, RX + 1, ry + 3.2);
-          pdf.setFont("helvetica", "normal"); pdf.setFontSize(6); pdf.setTextColor(100, 100, 100);
-          pdf.text("Estatus", RX + DNW + DEW / 2, ry + 3.2, { align: "center" });
-          if (est) {
-            const ec = est === "OK" ? [46, 125, 50] : est === "Falla" ? [198, 40, 40] : est === "Observado" ? [230, 81, 0] : [80, 80, 80];
-            pdf.setFont("helvetica", "bold"); pdf.setFontSize(6.5); pdf.setTextColor(...ec);
-            pdf.text(String(est), RX + DNW + DEW + DVW / 2, ry + 3.2, { align: "center" });
-          }
-        } else {
-          pdf.rect(RX, ry, RW, RH);
+      });
+
+      // Dibujar lado derecho (filas fijas RH1)
+      FANCOIL_ITEMS_DER.forEach((item, i) => {
+        const ry = y + i * RH1;
+        const est = (form.estatusItems || {})[item] || "";
+        pdf.setDrawColor(0); pdf.rect(RX, ry, RW, RH1);
+        pdf.line(RX + DNW, ry, RX + DNW, ry + RH1);
+        pdf.line(RX + DNW + DEW, ry, RX + DNW + DEW, ry + RH1);
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(0);
+        const itTxt = pdf.splitTextToSize(item, DNW - 1.5)[0];
+        pdf.text(itTxt, RX + 1, ry + 3.2);
+        pdf.setFontSize(6); pdf.setTextColor(100, 100, 100);
+        pdf.text("Estatus", RX + DNW + DEW / 2, ry + 3.2, { align: "center" });
+        if (est) {
+          const ec = est === "OK" ? [46, 125, 50] : est === "Falla" ? [198, 40, 40] : est === "Observado" ? [230, 81, 0] : [80, 80, 80];
+          pdf.setFont("helvetica", "bold"); pdf.setFontSize(6.5); pdf.setTextColor(...ec);
+          pdf.text(String(est), RX + DNW + DEW + DVW / 2, ry + 3.2, { align: "center" });
         }
-      }
-      y = yT + nRowsF * RH + 4;
+      });
+
+      y += totalH + 4;
     }
 
     // Actividades realizadas (checklist completo - solo para grupos que no usan formato Carrier)
