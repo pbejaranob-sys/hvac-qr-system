@@ -833,7 +833,7 @@ export default function Protocolo() {
           r.sub1.split("\n").forEach((sl, si) => pdf.text(sl, LX + NW + 1, ry1 + 2.2 + si * 2));
           pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
           pdf.text(r.un, LX + NW + SW + UW / 2, ry1 + 3.2, { align: "center" });
-          const vSubW = VW / 3;
+          const vSubW = VW / r.v3a.length;
           r.hds && r.hds.forEach((h2, hi) => {
             pdf.setFontSize(5); pdf.setTextColor(100, 100, 100);
             pdf.text(h2, LX + NW + SW + UW + hi * vSubW + vSubW / 2, ry1 + 1.8, { align: "center" });
@@ -853,11 +853,12 @@ export default function Protocolo() {
           pdf.text(r.sub2, LX + NW + 1, ry2 + 3.2);
           pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
           pdf.text(r.un, LX + NW + SW + UW / 2, ry2 + 3.2, { align: "center" });
+          const vSubW2 = VW / r.v3b.length;
           r.v3b.forEach((v, vi) => {
             pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(80, 80, 80);
-            pdf.text(String(v || ""), LX + NW + SW + UW + vi * vSubW + vSubW / 2, ry2 + 3.2, { align: "center" });
+            pdf.text(String(v || ""), LX + NW + SW + UW + vi * vSubW2 + vSubW2 / 2, ry2 + 3.2, { align: "center" });
             pdf.setDrawColor(180, 180, 180);
-            pdf.rect(LX + NW + SW + UW + vi * vSubW, ry2, vSubW, h2);
+            pdf.rect(LX + NW + SW + UW + vi * vSubW2, ry2, vSubW2, h2);
           });
           pdf.setDrawColor(0);
           pdf.line(LX + NW + SW, ry2, LX + NW + SW, ry2 + h2);
