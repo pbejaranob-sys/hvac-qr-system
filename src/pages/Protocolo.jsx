@@ -90,6 +90,8 @@ const protocoloVacio = (grupo) => ({
   sensorArranque: "OK", sensorTempAmb: "OK", sensorSuministro: "OK",
   sensorDifPresion: "OK", estadoContactores: "OK", estadoImpulsor: "OK",
   llaveTermo: "OK", balanceCaudal: "OK",
+  // Campos específicos Fan Coil / UMA (formato Carrier)
+  contrato: "", modeloFaja: "", numFajas: "", marcaMotor: "", modeloMotor: "", serieMotor: "", fancoilNum: "",
   // Actividades (checklist) - objeto dinámico
   actividades: {},
   // Estatus de items (formato Carrier: OK / Observado / Falla / N/A)
@@ -414,7 +416,7 @@ export default function Protocolo() {
     const infoRows = [
       ["CLIENTE", equipo.cliente || "", "MARCA DE UMA / FAN COIL", equipo.marca || ""],
       ["CONTRATO", form.contrato || "", "MODELO DE UMA / FAN COIL", equipo.modelo || ""],
-      ["UMA / FAN COIL N\xB0", equipo.codigo || "", "N\xB0 DE SERIE DE UMA / FAN COIL", equipo.serie || ""],
+      ["UMA / FAN COIL N\xB0", form.fancoilNum || equipo.codigo || "", "N\xB0 DE SERIE DE UMA / FAN COIL", equipo.serie || ""],
       ["UBICACI\xD3N", (equipo.sede || "") + (equipo.piso ? " / Piso " + equipo.piso : "") + (equipo.ambiente ? " / " + equipo.ambiente : ""), "MARCA DE MOTOR", form.marcaMotor || ""],
       ["MODELO DE FAJA", form.modeloFaja || "", "MODELO DE MOTOR", form.modeloMotor || ""],
       ["NUMERO DE FAJAS", form.numFajas || "", "N\xB0 DE SERIE DE MOTOR", form.serieMotor || ""],
@@ -1091,8 +1093,8 @@ export default function Protocolo() {
           </div>
         </div>
 
-        {/* Parámetros eléctricos (comunes) */}
-        <div style={s.sec}>
+        {/* Parámetros eléctricos (comunes - oculto para fancoil que los incluye en su propio bloque) */}
+        {form.grupo !== "fancoil" && <div style={s.sec}>
           <div style={s.secT}>⚡ Parámetros eléctricos</div>
           <div style={s.secB}>
             <div style={s.g3}>
@@ -1129,7 +1131,7 @@ export default function Protocolo() {
               </div>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Parámetros específicos por grupo */}
         {form.grupo === "expansion" && (
@@ -1166,6 +1168,18 @@ export default function Protocolo() {
           <div style={s.sec}>
             <div style={s.secT}>💧 Parámetros — Fan Coil / UMA (formato Carrier)</div>
             <div style={s.secB}>
+
+              {/* Campos específicos Fan Coil / UMA (Carrier) */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "8px", marginBottom: "14px" }}>
+                <CampoInput label="UMA / Fan Coil N°" val={form.fancoilNum} onChange={v => set("fancoilNum", v)} />
+                <CampoInput label="Contrato" val={form.contrato} onChange={v => set("contrato", v)} />
+                <CampoInput label="Modelo de faja" val={form.modeloFaja} onChange={v => set("modeloFaja", v)} />
+                <CampoInput label="Número de fajas" val={form.numFajas} onChange={v => set("numFajas", v)} />
+                <CampoInput label="Marca de motor" val={form.marcaMotor} onChange={v => set("marcaMotor", v)} />
+                <CampoInput label="Modelo de motor" val={form.modeloMotor} onChange={v => set("modeloMotor", v)} />
+                <CampoInput label="N° serie de motor" val={form.serieMotor} onChange={v => set("serieMotor", v)} />
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
 
                 {/* Columna izquierda: parámetros numéricos */}
