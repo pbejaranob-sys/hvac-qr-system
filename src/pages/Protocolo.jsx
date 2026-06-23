@@ -1237,17 +1237,6 @@ export default function Protocolo() {
             <div style={s.secT}>💧 Parámetros — Fan Coil / UMA (formato Carrier)</div>
             <div style={s.secB}>
 
-              {/* Campos específicos Fan Coil / UMA (Carrier) */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "8px", marginBottom: "14px" }}>
-                <CampoInput label="UMA / Fan Coil N°" val={form.fancoilNum} onChange={v => set("fancoilNum", v)} />
-                <CampoInput label="Contrato" val={form.contrato} onChange={v => set("contrato", v)} />
-                <CampoInput label="Modelo de faja" val={form.modeloFaja} onChange={v => set("modeloFaja", v)} />
-                <CampoInput label="Número de fajas" val={form.numFajas} onChange={v => set("numFajas", v)} />
-                <CampoInput label="Marca de motor" val={form.marcaMotor} onChange={v => set("marcaMotor", v)} />
-                <CampoInput label="Modelo de motor" val={form.modeloMotor} onChange={v => set("modeloMotor", v)} />
-                <CampoInput label="N° serie de motor" val={form.serieMotor} onChange={v => set("serieMotor", v)} />
-              </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
 
                 {/* Columna izquierda: parámetros numéricos */}
