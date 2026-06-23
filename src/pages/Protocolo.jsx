@@ -364,6 +364,7 @@ export default function Protocolo() {
   };
 
   // ===== REPORTE CARRIER FAN COIL =====
+  // v2.1 - fancoil rowspan voltaje/amperaje placa+marcha
   const exportarPDFCarrierFancoil = async (modo = "descargar") => {
     if (!equipo || !form) return;
     const pdf = new jsPDF("p", "mm", "a4");
