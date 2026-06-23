@@ -480,9 +480,13 @@ export default function Protocolo() {
     const DV = RW2 * 0.18;
 
     const rowsL = [
-      { nm: "Voltaje en placa", sub: "Voltaje en\nmarcha", un: "V", v3: [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""], hds: ["L1-L2","L2-L3","L3-L1"] },
+      { nm: "Voltaje en placa", sub: "Voltaje en\nmarcha", un: "V",
+        v3: equipo?.fases === "Monofásico" ? [equipo?.voltaje||""] : [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""],
+        hds: equipo?.fases === "Monofásico" ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"] },
       { nm: "Desbalance de voltaje", un: "%", v1: cv("desbV") },
-      { nm: "Amperaje en placa", sub: "Amperaje en\nmarcha", un: "A", v3: [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""], hds: ["L1","L2","L3"] },
+      { nm: "Amperaje en placa", sub: "Amperaje en\nmarcha", un: "A",
+        v3: equipo?.fases === "Monofásico" ? [equipo?.amperaje||""] : [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""],
+        hds: equipo?.fases === "Monofásico" ? ["L1"] : ["L1","L2","L3"] },
       { nm: "Desbalance de voltaje", un: "%", v1: cv("desbA") },
       { nm: "MEGADO", sub: "L1-T", un: "\u03A9", v1: form.megL1T || "" },
       { nm: "", sub: "L2-T", un: "\u03A9", v1: form.megL2T || "" },
@@ -761,12 +765,18 @@ export default function Protocolo() {
       const RH2d = RH1 * 2; // altura doble (para nombre que abarca 2)
       const rowsL = [
         { nm: "Voltaje", tipo: "double",
-          sub1: "Voltaje en\nmarcha", un: "V", v3a: [form.vL1L2, form.vL2L3, form.vL3L1], hds: ["L1-L2","L2-L3","L3-L1"],
-          sub2: "Voltaje en placa", v3b: [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""] },
+          sub1: "Voltaje en\nmarcha", un: "V",
+          v3a: equipo?.fases === "Monofásico" ? [form.vL1L2] : [form.vL1L2, form.vL2L3, form.vL3L1],
+          hds: equipo?.fases === "Monofásico" ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"],
+          sub2: "Voltaje en placa",
+          v3b: equipo?.fases === "Monofásico" ? [equipo?.voltaje||""] : [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""] },
         { nm: "Desbalance de voltaje", un: "%", v1: cv("desbV") },
         { nm: "Amperaje", tipo: "double",
-          sub1: "Amperaje en\nmarcha", un: "A", v3a: [form.aL1, form.aL2, form.aL3], hds: ["L1","L2","L3"],
-          sub2: "Amperaje en placa", v3b: [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""] },
+          sub1: "Amperaje en\nmarcha", un: "A",
+          v3a: equipo?.fases === "Monofásico" ? [form.aL1] : [form.aL1, form.aL2, form.aL3],
+          hds: equipo?.fases === "Monofásico" ? ["L1"] : ["L1","L2","L3"],
+          sub2: "Amperaje en placa",
+          v3b: equipo?.fases === "Monofásico" ? [equipo?.amperaje||""] : [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""] },
         { nm: "Desbalance de voltaje", un: "%", v1: cv("desbA") },
         { nm: "MEGADO", sub: "L1-T", un: "\u03A9", v1: form.megL1T || "" },
         { nm: "", sub: "L2-T", un: "\u03A9", v1: form.megL2T || "" },
@@ -1183,36 +1193,40 @@ export default function Protocolo() {
           <div style={s.secT}>⚡ Parámetros eléctricos</div>
           <div style={s.secB}>
             <div style={s.g3}>
+              {/* Voltaje en marcha */}
               <div>
                 <label style={s.lblRow}>Voltaje en marcha (V)</label>
                 <div style={s.row3}>
                   <input style={s.mini} placeholder="L1-L2" value={form.vL1L2} onChange={e => set("vL1L2", e.target.value)} />
-                  <input style={s.mini} placeholder="L2-L3" value={form.vL2L3} onChange={e => set("vL2L3", e.target.value)} />
-                  <input style={s.mini} placeholder="L3-L1" value={form.vL3L1} onChange={e => set("vL3L1", e.target.value)} />
+                  {equipo?.fases !== "Monofásico" && <input style={s.mini} placeholder="L2-L3" value={form.vL2L3} onChange={e => set("vL2L3", e.target.value)} />}
+                  {equipo?.fases !== "Monofásico" && <input style={s.mini} placeholder="L3-L1" value={form.vL3L1} onChange={e => set("vL3L1", e.target.value)} />}
                 </div>
               </div>
+              {/* Voltaje en placa */}
               <div>
                 <label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label>
                 <div style={s.row3}>
                   <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1-L2" value={equipo?.voltaje || ""} readOnly />
-                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2-L3" value={equipo?.voltaje || ""} readOnly />
-                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3-L1" value={equipo?.voltaje || ""} readOnly />
+                  {equipo?.fases !== "Monofásico" && <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2-L3" value={equipo?.voltaje || ""} readOnly />}
+                  {equipo?.fases !== "Monofásico" && <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3-L1" value={equipo?.voltaje || ""} readOnly />}
                 </div>
               </div>
+              {/* Amperaje en marcha */}
               <div>
                 <label style={s.lblRow}>Amperaje en marcha (A)</label>
                 <div style={s.row3}>
                   <input style={s.mini} placeholder="L1" value={form.aL1} onChange={e => set("aL1", e.target.value)} />
-                  <input style={s.mini} placeholder="L2" value={form.aL2} onChange={e => set("aL2", e.target.value)} />
-                  <input style={s.mini} placeholder="L3" value={form.aL3} onChange={e => set("aL3", e.target.value)} />
+                  {equipo?.fases !== "Monofásico" && <input style={s.mini} placeholder="L2" value={form.aL2} onChange={e => set("aL2", e.target.value)} />}
+                  {equipo?.fases !== "Monofásico" && <input style={s.mini} placeholder="L3" value={form.aL3} onChange={e => set("aL3", e.target.value)} />}
                 </div>
               </div>
+              {/* Amperaje en placa */}
               <div>
                 <label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label>
                 <div style={s.row3}>
                   <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1" value={equipo?.amperaje || ""} readOnly />
-                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2" value={equipo?.amperaje || ""} readOnly />
-                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3" value={equipo?.amperaje || ""} readOnly />
+                  {equipo?.fases !== "Monofásico" && <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2" value={equipo?.amperaje || ""} readOnly />}
+                  {equipo?.fases !== "Monofásico" && <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3" value={equipo?.amperaje || ""} readOnly />}
                 </div>
               </div>
               <div>
@@ -1276,33 +1290,37 @@ export default function Protocolo() {
                 <div>
                   <div style={{ fontSize: "11px", fontWeight: 700, color: "#1a5fa8", textAlign: "center", padding: "4px", background: "#f0f4f8", borderRadius: "4px", marginBottom: "8px" }}>PARÁMETROS</div>
 
+                  {/* Voltaje en marcha */}
                   <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Voltaje en marcha (V)</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "Monofásico" ? "1fr" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
                     <CampoInput label="L1-L2" val={form.vL1L2} onChange={v => set("vL1L2", v)} />
-                    <CampoInput label="L2-L3" val={form.vL2L3} onChange={v => set("vL2L3", v)} />
-                    <CampoInput label="L3-L1" val={form.vL3L1} onChange={v => set("vL3L1", v)} />
+                    {equipo?.fases !== "Monofásico" && <CampoInput label="L2-L3" val={form.vL2L3} onChange={v => set("vL2L3", v)} />}
+                    {equipo?.fases !== "Monofásico" && <CampoInput label="L3-L1" val={form.vL3L1} onChange={v => set("vL3L1", v)} />}
                   </div>
 
+                  {/* Voltaje en placa */}
                   <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#aaa"}}>(ficha equipo)</span></div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "Monofásico" ? "1fr" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
                     <CampoInput label="L1-L2" val={equipo?.voltaje || ""} readOnly />
-                    <CampoInput label="L2-L3" val={equipo?.voltaje || ""} readOnly />
-                    <CampoInput label="L3-L1" val={equipo?.voltaje || ""} readOnly />
+                    {equipo?.fases !== "Monofásico" && <CampoInput label="L2-L3" val={equipo?.voltaje || ""} readOnly />}
+                    {equipo?.fases !== "Monofásico" && <CampoInput label="L3-L1" val={equipo?.voltaje || ""} readOnly />}
                   </div>
                   <Campo label="Desbalance V (auto) %" calc val={calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1)} />
 
+                  {/* Amperaje en marcha */}
                   <div style={{ fontSize: "10px", color: "#888", margin: "8px 0 2px" }}>Amperaje en marcha (A)</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "Monofásico" ? "1fr" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
                     <CampoInput label="L1" val={form.aL1} onChange={v => set("aL1", v)} />
-                    <CampoInput label="L2" val={form.aL2} onChange={v => set("aL2", v)} />
-                    <CampoInput label="L3" val={form.aL3} onChange={v => set("aL3", v)} />
+                    {equipo?.fases !== "Monofásico" && <CampoInput label="L2" val={form.aL2} onChange={v => set("aL2", v)} />}
+                    {equipo?.fases !== "Monofásico" && <CampoInput label="L3" val={form.aL3} onChange={v => set("aL3", v)} />}
                   </div>
 
+                  {/* Amperaje en placa */}
                   <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#aaa"}}>(ficha equipo)</span></div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "Monofásico" ? "1fr" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
                     <CampoInput label="L1" val={equipo?.amperaje || ""} readOnly />
-                    <CampoInput label="L2" val={equipo?.amperaje || ""} readOnly />
-                    <CampoInput label="L3" val={equipo?.amperaje || ""} readOnly />
+                    {equipo?.fases !== "Monofásico" && <CampoInput label="L2" val={equipo?.amperaje || ""} readOnly />}
+                    {equipo?.fases !== "Monofásico" && <CampoInput label="L3" val={equipo?.amperaje || ""} readOnly />}
                   </div>
                   <Campo label="Desbalance A (auto) %" calc val={calcDesbalance(form.aL1, form.aL2, form.aL3)} />
 
