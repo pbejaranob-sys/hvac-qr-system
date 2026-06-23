@@ -760,24 +760,23 @@ export default function Protocolo() {
       pdf.text("PARAMETROS", RX + RW / 2, y + hH - 1.5, { align: "center" });
       y += hH;
 
-      // Filas con tipo "double" = nombre abarca 2 sub-filas (marcha + placa)
-      const RH1 = 5.2; // altura sub-fila normal
-      const RH2d = RH1 * 2; // altura doble (para nombre que abarca 2)
+      // Filas electricas (marcha/placa) como filas simples separadas
+      const RH1 = 5.2; // altura de fila
       const rowsL = [
-        { nm: "Voltaje", tipo: "double",
-          sub1: "Voltaje en\nmarcha", un: "V",
-          v3a: equipo?.fases === "Monofásico" ? [form.vL1L2] : [form.vL1L2, form.vL2L3, form.vL3L1],
+        { nm: "Voltaje en marcha", tipo: "elec", un: "V",
           hds: equipo?.fases === "Monofásico" ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"],
-          sub2: "Voltaje en placa",
-          v3b: equipo?.fases === "Monofásico" ? [equipo?.voltaje||""] : [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""] },
+          v3: equipo?.fases === "Monofásico" ? [form.vL1L2] : [form.vL1L2, form.vL2L3, form.vL3L1] },
+        { nm: "Voltaje en placa", tipo: "elec", placa: true, un: "V",
+          hds: equipo?.fases === "Monofásico" ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"],
+          v3: equipo?.fases === "Monofásico" ? [equipo?.voltaje||""] : [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""] },
         { nm: "Desbalance de voltaje", un: "%", v1: cv("desbV") },
-        { nm: "Amperaje", tipo: "double",
-          sub1: "Amperaje en\nmarcha", un: "A",
-          v3a: equipo?.fases === "Monofásico" ? [form.aL1, form.aL2] : [form.aL1, form.aL2, form.aL3],
+        { nm: "Amperaje en marcha", tipo: "elec", un: "A",
           hds: equipo?.fases === "Monofásico" ? ["L1","L2"] : ["L1","L2","L3"],
-          sub2: "Amperaje en placa",
-          v3b: equipo?.fases === "Monofásico" ? [equipo?.amperaje||"", equipo?.amperaje||""] : [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""] },
-        { nm: "Desbalance de voltaje", un: "%", v1: cv("desbA") },
+          v3: equipo?.fases === "Monofásico" ? [form.aL1, form.aL2] : [form.aL1, form.aL2, form.aL3] },
+        { nm: "Amperaje en placa", tipo: "elec", placa: true, un: "A",
+          hds: equipo?.fases === "Monofásico" ? ["L1","L2"] : ["L1","L2","L3"],
+          v3: equipo?.fases === "Monofásico" ? [equipo?.amperaje||"", equipo?.amperaje||""] : [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""] },
+        { nm: "Desbalance de amperaje", un: "%", v1: cv("desbA") },
         { nm: "MEGADO", sub: "L1-T", un: "\u03A9", v1: form.megL1T || "" },
         { nm: "", sub: "L2-T", un: "\u03A9", v1: form.megL2T || "" },
         { nm: "", sub: "L3-T", un: "\u03A9", v1: form.megL3T || "" },
@@ -800,7 +799,7 @@ export default function Protocolo() {
       const rowPositions = [];
       let curY = y;
       rowsL.forEach(r => {
-        const h = r.tipo === "double" ? RH2d : RH1;
+        const h = RH1;
         rowPositions.push({ ry: curY, h });
         curY += h;
       });
@@ -817,51 +816,33 @@ export default function Protocolo() {
         const { ry, h } = rowPositions[i];
         pdf.setDrawColor(0);
 
-        if (r.tipo === "double") {
-          // Celda nombre que abarca toda la altura doble
-          pdf.rect(LX, ry, NW, h);
-          pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(0);
-          const nmTxt = pdf.splitTextToSize(r.nm, NW - 2);
-          nmTxt.forEach((l, li) => pdf.text(l, LX + 1, ry + h / 2 + li * 2.5 - (nmTxt.length - 1) * 1.2));
-
-          // Sub-fila 1 (en marcha) — parte superior
-          const ry1 = ry;
-          const h1 = RH1;
-          pdf.rect(LX + NW, ry1, SW, h1);
-          pdf.rect(LX + NW + SW, ry1, UW, h1);
-          pdf.setFont("helvetica", "normal"); pdf.setFontSize(5.5); pdf.setTextColor(50, 50, 50);
-          r.sub1.split("\n").forEach((sl, si) => pdf.text(sl, LX + NW + 1, ry1 + 2.2 + si * 2));
-          pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
-          pdf.text(r.un, LX + NW + SW + UW / 2, ry1 + 3.2, { align: "center" });
-          const vSubW = VW / r.v3a.length;
-          r.hds && r.hds.forEach((h2, hi) => {
-            pdf.setFontSize(5); pdf.setTextColor(100, 100, 100);
-            pdf.text(h2, LX + NW + SW + UW + hi * vSubW + vSubW / 2, ry1 + 1.8, { align: "center" });
-          });
-          r.v3a.forEach((v, vi) => {
-            pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(0);
-            pdf.text(String(v || ""), LX + NW + SW + UW + vi * vSubW + vSubW / 2, ry1 + 4, { align: "center" });
-            pdf.rect(LX + NW + SW + UW + vi * vSubW, ry1, vSubW, h1);
-          });
-
-          // Sub-fila 2 (en placa) — parte inferior, fondo gris
-          const ry2 = ry + RH1;
-          const h2 = RH1;
-          pdf.setFillColor(245, 245, 245);
-          pdf.rect(LX + NW, ry2, SW + UW + VW, h2, "FD");
-          pdf.setFont("helvetica", "normal"); pdf.setFontSize(5.5); pdf.setTextColor(100, 100, 100);
-          pdf.text(r.sub2, LX + NW + 1, ry2 + 3.2);
-          pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
-          pdf.text(r.un, LX + NW + SW + UW / 2, ry2 + 3.2, { align: "center" });
-          const vSubW2 = VW / r.v3b.length;
-          r.v3b.forEach((v, vi) => {
-            pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(80, 80, 80);
-            pdf.text(String(v || ""), LX + NW + SW + UW + vi * vSubW2 + vSubW2 / 2, ry2 + 3.2, { align: "center" });
-            pdf.setDrawColor(180, 180, 180);
-            pdf.rect(LX + NW + SW + UW + vi * vSubW2, ry2, vSubW2, h2);
-          });
+        if (r.tipo === "elec") {
+          // Fila simple electrica: nombre | unidad | N columnas con headers
+          // Fondo gris si es "en placa"
+          if (r.placa) {
+            pdf.setFillColor(240, 244, 248);
+            pdf.rect(LX, ry, LW, RH1, "F");
+          }
           pdf.setDrawColor(0);
-          pdf.line(LX + NW + SW, ry2, LX + NW + SW, ry2 + h2);
+          pdf.rect(LX, ry, LW, RH1);
+          pdf.line(LX + NW + SW, ry, LX + NW + SW, ry + RH1);
+          pdf.line(LX + NW + SW + UW, ry, LX + NW + SW + UW, ry + RH1);
+          pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5);
+          if (r.placa) { pdf.setTextColor(90, 90, 90); } else { pdf.setTextColor(0, 0, 0); }
+          const nmL = pdf.splitTextToSize(r.nm, NW + SW - 1.5);
+          nmL.forEach((l, li) => pdf.text(l, LX + 1, ry + 3.2 + li * 2.2));
+          pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
+          pdf.text(r.un, LX + NW + SW + UW / 2, ry + 3.2, { align: "center" });
+          const cw = VW / r.v3.length;
+          r.v3.forEach((v, vi) => {
+            const cx = LX + NW + SW + UW + vi * cw;
+            pdf.setFont("helvetica", "normal"); pdf.setFontSize(5); pdf.setTextColor(110, 110, 110);
+            pdf.text(r.hds[vi] || "", cx + cw / 2, ry + 1.8, { align: "center" });
+            pdf.setFont("helvetica", "bold"); pdf.setFontSize(7);
+            if (r.placa) { pdf.setTextColor(80, 80, 80); } else { pdf.setTextColor(0, 0, 0); }
+            pdf.text(String(v || ""), cx + cw / 2, ry + 4.2, { align: "center" });
+            if (vi > 0) { pdf.setDrawColor(0); pdf.line(cx, ry, cx, ry + RH1); }
+          });
 
         } else {
           // Fila simple
