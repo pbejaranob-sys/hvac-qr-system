@@ -476,9 +476,9 @@ export default function Protocolo() {
     const DV = RW2 * 0.18;
 
     const rowsL = [
-      { nm: "Voltaje en placa", sub: "Voltaje en\nmarcha", un: "V", v3: [form.vL1L2||"", form.vL2L3||"", form.vL3L1||""], hds: ["L1-L2","L2-L3","L3-L1"] },
+      { nm: "Voltaje en placa", sub: "Voltaje en\nmarcha", un: "V", v3: [form.vPlacaL1L2||"", form.vPlacaL2L3||"", form.vPlacaL3L1||""], hds: ["L1-L2","L2-L3","L3-L1"] },
       { nm: "Desbalance de voltaje", un: "%", v1: cv("desbV") },
-      { nm: "Amperaje en placa", sub: "Amperaje en\nmarcha", un: "A", v3: [form.aL1||"", form.aL2||"", form.aL3||""], hds: ["L1","L2","L3"] },
+      { nm: "Amperaje en placa", sub: "Amperaje en\nmarcha", un: "A", v3: [form.aPlacaL1||"", form.aPlacaL2||"", form.aPlacaL3||""], hds: ["L1","L2","L3"] },
       { nm: "Desbalance de voltaje", un: "%", v1: cv("desbA") },
       { nm: "MEGADO", sub: "L1-T", un: "\u03A9", v1: form.megL1T || "" },
       { nm: "", sub: "L2-T", un: "\u03A9", v1: form.megL2T || "" },
