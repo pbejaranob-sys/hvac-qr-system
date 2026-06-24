@@ -159,16 +159,16 @@ const FANCOIL_PARAMS_IZQ = [
   { tipo: "meg", label: "", sub: "L1-L2", unidad: "\u03A9", key: "megL1L2" },
   { tipo: "meg", label: "", sub: "L2-L3", unidad: "\u03A9", key: "megL2L3" },
   { tipo: "meg", label: "", sub: "L3-L1", unidad: "\u03A9", key: "megL3L1" },
-  { tipo: "val", label: "Temperatura de trabajo de motor", unidad: "°F", key: "tTrabajoMotor" },
-  { tipo: "val", label: "Temperatura de entrada de agua", unidad: "°F", key: "tEntradaAgua" },
-  { tipo: "val", label: "Temperatura de salida de agua", unidad: "°F", key: "tSalidaAgua" },
-  { tipo: "auto", label: "∆ Temperatura de agua", unidad: "°F", calc: "dTagua" },
+  { tipo: "val", label: "Temperatura de trabajo de motor", unidad: "°C", key: "tTrabajoMotor" },
+  { tipo: "val", label: "Temperatura de entrada de agua", unidad: "°C", key: "tEntradaAgua" },
+  { tipo: "val", label: "Temperatura de salida de agua", unidad: "°C", key: "tSalidaAgua" },
+  { tipo: "auto", label: "∆ Temperatura de agua", unidad: "°C", calc: "dTagua" },
   { tipo: "val", label: "Presion de entrada de agua", unidad: "PSI", key: "presEntradaAgua" },
   { tipo: "val", label: "Presion de salida de agua", unidad: "PSI", key: "presSalidaAgua" },
   { tipo: "auto", label: "∆ Presion de agua", unidad: "PSI", calc: "dPagua" },
-  { tipo: "val", label: "Temperatura de retorno de aire", unidad: "°F", key: "tRetornoAire" },
-  { tipo: "val", label: "Temperatura de suministro de aire", unidad: "°F", key: "tSuministroAire" },
-  { tipo: "auto", label: "∆ Temperatura de aire", unidad: "°F", calc: "dTaire" },
+  { tipo: "val", label: "Temperatura de retorno de aire", unidad: "°C", key: "tRetornoAire" },
+  { tipo: "val", label: "Temperatura de suministro de aire", unidad: "°C", key: "tSuministroAire" },
+  { tipo: "auto", label: "∆ Temperatura de aire", unidad: "°C", calc: "dTaire" },
 ];
 // Columna derecha: ítems con Estatus (OK / Observado / Falla / N/A)
 const FANCOIL_ITEMS_DER = [
@@ -501,16 +501,16 @@ export default function Protocolo() {
       { nm: "", sub: "L1-L2", un: "\u03A9", v1: form.megL1L2 || "" },
       { nm: "", sub: "L2-L3", un: "\u03A9", v1: form.megL2L3 || "" },
       { nm: "", sub: "L3-L1", un: "\u03A9", v1: form.megL3L1 || "" },
-      { nm: "Temperatura de trabajo de motor", un: "\xB0F", v1: form.tTrabajoMotor || "" },
-      { nm: "Temperatura de entrada de agua", un: "\xB0F", v1: form.tEntradaAgua || "" },
-      { nm: "Temperatura de salida de agua", un: "\xB0F", v1: form.tSalidaAgua || "" },
-      { nm: "\u0394 Temperatura de agua", un: "\xB0F", v1: cv("dTagua") },
+      { nm: "Temperatura de trabajo de motor", un: "\xB0C", v1: form.tTrabajoMotor || "" },
+      { nm: "Temperatura de entrada de agua", un: "\xB0C", v1: form.tEntradaAgua || "" },
+      { nm: "Temperatura de salida de agua", un: "\xB0C", v1: form.tSalidaAgua || "" },
+      { nm: "\u0394 Temperatura de agua", un: "\xB0C", v1: cv("dTagua") },
       { nm: "Presion de entrada de agua", un: "PSI", v1: form.presEntradaAgua || "" },
       { nm: "Presion de salida de agua", un: "PSI", v1: form.presSalidaAgua || "" },
       { nm: "\u0394 Presion de agua", un: "PSI", v1: cv("dPagua") },
-      { nm: "Temperatura de retorno de aire", un: "\xB0F", v1: form.tRetornoAire || "" },
-      { nm: "Temperatura de suministro de aire", un: "\xB0F", v1: form.tSuministroAire || "" },
-      { nm: "\u0394 Temperatura de aire", un: "\xB0F", v1: cv("dTaire") },
+      { nm: "Temperatura de retorno de aire", un: "\xB0C", v1: form.tRetornoAire || "" },
+      { nm: "Temperatura de suministro de aire", un: "\xB0C", v1: form.tSuministroAire || "" },
+      { nm: "\u0394 Temperatura de aire", un: "\xB0C", v1: cv("dTaire") },
     ];
 
     const nR = Math.max(rowsL.length, FANCOIL_ITEMS_DER.length);
@@ -733,13 +733,13 @@ export default function Protocolo() {
     if (form.grupo === "expansion") {
       secTit("Parámetros de refrigeración", 26, 95, 168);
       gridCards([
-        ["Presión succión", form.presSuccion ? form.presSuccion + " PSI" : null], ["Presión líquido", form.presLiquido ? form.presLiquido + " PSI" : null], ["Superheat", calcDelta(form.tSatMedida, form.tSatTabla) ? calcDelta(form.tSatMedida, form.tSatTabla) + " °F" : null],
-        ["T° retorno aire", form.tRetornoEvap ? form.tRetornoEvap + " °F" : null], ["T° suministro", form.tSuministroEvap ? form.tSuministroEvap + " °F" : null], ["T° amb. condensador", form.tAmbCondensador ? form.tAmbCondensador + " °F" : null],
+        ["Presión succión", form.presSuccion ? form.presSuccion + " PSI" : null], ["Presión líquido", form.presLiquido ? form.presLiquido + " PSI" : null], ["Superheat", calcDelta(form.tSatMedida, form.tSatTabla) ? calcDelta(form.tSatMedida, form.tSatTabla) + " °C" : null],
+        ["T° retorno aire", form.tRetornoEvap ? form.tRetornoEvap + " °C" : null], ["T° suministro", form.tSuministroEvap ? form.tSuministroEvap + " °C" : null], ["T° amb. condensador", form.tAmbCondensador ? form.tAmbCondensador + " °C" : null],
       ], 3, 248, 249, 250);
     } else if (form.grupo === "ventilacion") {
       secTit("Parámetros de operación", 26, 95, 168);
       gridCards([
-        ["Temp. trabajo motor", form.tTrabajoMotor ? form.tTrabajoMotor + " °F" : null], ["Caudal de aire", form.caudalAire ? form.caudalAire + " CFM" : null],
+        ["Temp. trabajo motor", form.tTrabajoMotor ? form.tTrabajoMotor + " °C" : null], ["Caudal de aire", form.caudalAire ? form.caudalAire + " CFM" : null],
       ], 3, 248, 249, 250);
     } else if (form.grupo === "fancoil") {
       // ===== REPORTE CARRIER FAN COIL: replica exacta =====
@@ -799,16 +799,16 @@ export default function Protocolo() {
         { nm: "", sub: "L1-L2", un: "\u03A9", v1: form.megL1L2 || "" },
         { nm: "", sub: "L2-L3", un: "\u03A9", v1: form.megL2L3 || "" },
         { nm: "", sub: "L3-L1", un: "\u03A9", v1: form.megL3L1 || "" },
-        { nm: "Temperatura de trabajo de motor", un: "\xB0F", v1: form.tTrabajoMotor || "" },
-        { nm: "Temperatura de entrada de agua", un: "\xB0F", v1: form.tEntradaAgua || "" },
-        { nm: "Temperatura de salida de agua", un: "\xB0F", v1: form.tSalidaAgua || "" },
-        { nm: "\u0394 Temperatura de agua", un: "\xB0F", v1: cv("dTagua") },
+        { nm: "Temperatura de trabajo de motor", un: "\xB0C", v1: form.tTrabajoMotor || "" },
+        { nm: "Temperatura de entrada de agua", un: "\xB0C", v1: form.tEntradaAgua || "" },
+        { nm: "Temperatura de salida de agua", un: "\xB0C", v1: form.tSalidaAgua || "" },
+        { nm: "\u0394 Temperatura de agua", un: "\xB0C", v1: cv("dTagua") },
         { nm: "Presion de entrada de agua", un: "PSI", v1: form.presEntradaAgua || "" },
         { nm: "Presion de salida de agua", un: "PSI", v1: form.presSalidaAgua || "" },
         { nm: "\u0394 Presion de agua", un: "PSI", v1: cv("dPagua") },
-        { nm: "Temperatura de retorno de aire", un: "\xB0F", v1: form.tRetornoAire || "" },
-        { nm: "Temperatura de suministro de aire", un: "\xB0F", v1: form.tSuministroAire || "" },
-        { nm: "\u0394 Temperatura de aire", un: "\xB0F", v1: cv("dTaire") },
+        { nm: "Temperatura de retorno de aire", un: "\xB0C", v1: form.tRetornoAire || "" },
+        { nm: "Temperatura de suministro de aire", un: "\xB0C", v1: form.tSuministroAire || "" },
+        { nm: "\u0394 Temperatura de aire", un: "\xB0C", v1: cv("dTaire") },
       ];
 
       // Calcular posiciones Y de cada fila (dobles ocupan 2x altura)
@@ -1254,12 +1254,12 @@ export default function Protocolo() {
               <div style={s.g4}>
                 <CampoInput label="Presión succión (PSI)" val={form.presSuccion} onChange={v => set("presSuccion", v)} />
                 <CampoInput label="Presión líquido (PSI)" val={form.presLiquido} onChange={v => set("presLiquido", v)} />
-                <CampoInput label="T° sat. succión medida (°F)" val={form.tSatMedida} onChange={v => set("tSatMedida", v)} />
-                <CampoInput label="T° sat. succión tabla (°F)" val={form.tSatTabla} onChange={v => set("tSatTabla", v)} />
-                <Campo label="Superheat (auto)" calc val={calcDelta(form.tSatMedida, form.tSatTabla) ? calcDelta(form.tSatMedida, form.tSatTabla) + " °F" : ""} />
-                <CampoInput label="T° retorno aire (°F)" val={form.tRetornoEvap} onChange={v => set("tRetornoEvap", v)} />
-                <CampoInput label="T° suministro aire (°F)" val={form.tSuministroEvap} onChange={v => set("tSuministroEvap", v)} />
-                <CampoInput label="T° amb. condensador (°F)" val={form.tAmbCondensador} onChange={v => set("tAmbCondensador", v)} />
+                <CampoInput label="T° sat. succión medida (°C)" val={form.tSatMedida} onChange={v => set("tSatMedida", v)} />
+                <CampoInput label="T° sat. succión tabla (°C)" val={form.tSatTabla} onChange={v => set("tSatTabla", v)} />
+                <Campo label="Superheat (auto)" calc val={calcDelta(form.tSatMedida, form.tSatTabla) ? calcDelta(form.tSatMedida, form.tSatTabla) + " °C" : ""} />
+                <CampoInput label="T° retorno aire (°C)" val={form.tRetornoEvap} onChange={v => set("tRetornoEvap", v)} />
+                <CampoInput label="T° suministro aire (°C)" val={form.tSuministroEvap} onChange={v => set("tSuministroEvap", v)} />
+                <CampoInput label="T° amb. condensador (°C)" val={form.tAmbCondensador} onChange={v => set("tAmbCondensador", v)} />
               </div>
             </div>
           </div>
@@ -1270,7 +1270,7 @@ export default function Protocolo() {
             <div style={s.secT}>🌀 Parámetros de operación</div>
             <div style={s.secB}>
               <div style={s.g4}>
-                <CampoInput label="Temp. trabajo motor (°F)" val={form.tTrabajoMotor} onChange={v => set("tTrabajoMotor", v)} />
+                <CampoInput label="Temp. trabajo motor (°C)" val={form.tTrabajoMotor} onChange={v => set("tTrabajoMotor", v)} />
                 <CampoInput label="Caudal de aire (CFM)" val={form.caudalAire} onChange={v => set("caudalAire", v)} />
               </div>
             </div>
@@ -1334,16 +1334,16 @@ export default function Protocolo() {
 
                   <div style={{ fontSize: "10px", color: "#888", margin: "8px 0 2px" }}>Temperaturas y presiones</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "4px" }}>
-                    <CampoInput label="T° trabajo motor (°F)" val={form.tTrabajoMotor} onChange={v => set("tTrabajoMotor", v)} />
-                    <CampoInput label="T° entrada agua (°F)" val={form.tEntradaAgua} onChange={v => set("tEntradaAgua", v)} />
-                    <CampoInput label="T° salida agua (°F)" val={form.tSalidaAgua} onChange={v => set("tSalidaAgua", v)} />
-                    <Campo label="∆ Temp. agua (°F)" calc val={calcDelta(form.tEntradaAgua, form.tSalidaAgua)} />
+                    <CampoInput label="T° trabajo motor (°C)" val={form.tTrabajoMotor} onChange={v => set("tTrabajoMotor", v)} />
+                    <CampoInput label="T° entrada agua (°C)" val={form.tEntradaAgua} onChange={v => set("tEntradaAgua", v)} />
+                    <CampoInput label="T° salida agua (°C)" val={form.tSalidaAgua} onChange={v => set("tSalidaAgua", v)} />
+                    <Campo label="∆ Temp. agua (°C)" calc val={calcDelta(form.tEntradaAgua, form.tSalidaAgua)} />
                     <CampoInput label="Presión entrada (PSI)" val={form.presEntradaAgua} onChange={v => set("presEntradaAgua", v)} />
                     <CampoInput label="Presión salida (PSI)" val={form.presSalidaAgua} onChange={v => set("presSalidaAgua", v)} />
                     <Campo label="∆ Presión agua (PSI)" calc val={calcDelta(form.presEntradaAgua, form.presSalidaAgua)} />
-                    <CampoInput label="T° retorno aire (°F)" val={form.tRetornoAire} onChange={v => set("tRetornoAire", v)} />
-                    <CampoInput label="T° suministro aire (°F)" val={form.tSuministroAire} onChange={v => set("tSuministroAire", v)} />
-                    <Campo label="∆ Temp. aire (°F)" calc val={calcDelta(form.tRetornoAire, form.tSuministroAire)} />
+                    <CampoInput label="T° retorno aire (°C)" val={form.tRetornoAire} onChange={v => set("tRetornoAire", v)} />
+                    <CampoInput label="T° suministro aire (°C)" val={form.tSuministroAire} onChange={v => set("tSuministroAire", v)} />
+                    <Campo label="∆ Temp. aire (°C)" calc val={calcDelta(form.tRetornoAire, form.tSuministroAire)} />
                   </div>
                 </div>
 
