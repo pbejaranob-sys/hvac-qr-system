@@ -479,15 +479,22 @@ export default function Protocolo() {
     const DE = RW2 * 0.17;
     const DV = RW2 * 0.18;
 
+    const esMono = equipo?.fases === "Monofásico";
     const rowsL = [
-      { nm: "Voltaje en placa", sub: "Voltaje en\nmarcha", un: "V",
-        v3: equipo?.fases === "Monofásico" ? [equipo?.voltaje||""] : [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""],
-        hds: equipo?.fases === "Monofásico" ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"] },
+      { nm: "Voltaje en marcha", un: "V",
+        v3: esMono ? [form.vL1L2||""] : [form.vL1L2||"", form.vL2L3||"", form.vL3L1||""],
+        hds: esMono ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"] },
+      { nm: "Voltaje en placa", placa: true, un: "V",
+        v3: esMono ? [equipo?.voltaje||""] : [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""],
+        hds: esMono ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"] },
       { nm: "Desbalance de voltaje", un: "%", v1: cv("desbV") },
-      { nm: "Amperaje en placa", sub: "Amperaje en\nmarcha", un: "A",
-        v3: equipo?.fases === "Monofásico" ? [equipo?.amperaje||"", equipo?.amperaje||""] : [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""],
-        hds: equipo?.fases === "Monofásico" ? ["L1","L2"] : ["L1","L2","L3"] },
-      { nm: "Desbalance de voltaje", un: "%", v1: cv("desbA") },
+      { nm: "Amperaje en marcha", un: "A",
+        v3: esMono ? [form.aL1||"", form.aL2||""] : [form.aL1||"", form.aL2||"", form.aL3||""],
+        hds: esMono ? ["L1","L2"] : ["L1","L2","L3"] },
+      { nm: "Amperaje en placa", placa: true, un: "A",
+        v3: esMono ? [equipo?.amperaje||"", equipo?.amperaje||""] : [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""],
+        hds: esMono ? ["L1","L2"] : ["L1","L2","L3"] },
+      { nm: "Desbalance de amperaje", un: "%", v1: cv("desbA") },
       { nm: "MEGADO", sub: "L1-T", un: "\u03A9", v1: form.megL1T || "" },
       { nm: "", sub: "L2-T", un: "\u03A9", v1: form.megL2T || "" },
       { nm: "", sub: "L3-T", un: "\u03A9", v1: form.megL3T || "" },
@@ -515,42 +522,51 @@ export default function Protocolo() {
       // -- Lado izquierdo --
       if (i < rowsL.length) {
         const r = rowsL[i];
+        // Fondo gris claro para filas "en placa"
+        if (r.placa) { pdf.setFillColor(240, 244, 248); pdf.rect(LX, ry, LW2, RH2, "F"); }
         pdf.setDrawColor(0); pdf.rect(LX, ry, LW2, RH2);
 
+        // Geometria: si la fila tiene valores pero no sub, el nombre ocupa N1+S1
+        const nameW = (r.sub === undefined && r.v3) ? (N1 + S1) : N1;
+        const valX = LX + N1 + S1 + U1;       // inicio del area de valores
+        const valTotW = V3 * 3;                // ancho total del area de valores
+        const cw = r.v3 ? valTotW / r.v3.length : valTotW; // ancho por columna (dinamico)
+
         // Separadores verticales
-        pdf.line(LX + N1, ry, LX + N1, ry + RH2);
-        if (r.sub !== undefined) pdf.line(LX + N1 + S1, ry, LX + N1 + S1, ry + RH2);
-        pdf.line(LX + N1 + S1 + U1, ry, LX + N1 + S1 + U1, ry + RH2);
+        pdf.line(LX + nameW, ry, LX + nameW, ry + RH2);
+        pdf.line(valX, ry, valX, ry + RH2);
         if (r.v3) {
-          pdf.line(LX + N1 + S1 + U1 + V3, ry, LX + N1 + S1 + U1 + V3, ry + RH2);
-          pdf.line(LX + N1 + S1 + U1 + V3 * 2, ry, LX + N1 + S1 + U1 + V3 * 2, ry + RH2);
+          for (let k = 1; k < r.v3.length; k++) {
+            pdf.line(valX + k * cw, ry, valX + k * cw, ry + RH2);
+          }
         }
 
         // Nombre
-        pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(0);
-        const nmLines = pdf.splitTextToSize(r.nm, N1 - 1.5);
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5);
+        if (r.placa) { pdf.setTextColor(90, 90, 90); } else { pdf.setTextColor(0, 0, 0); }
+        const nmLines = pdf.splitTextToSize(r.nm, nameW - 1.5);
         nmLines.forEach((l, li) => pdf.text(l, LX + 1, ry + 3.2 + li * 2.5));
 
-        // Sub (voltaje en marcha / L1-T etc)
+        // Sub (solo filas con sub explicito, ej. MEGADO)
         if (r.sub) {
-          pdf.setFontSize(5.5);
+          pdf.setFontSize(5.5); pdf.setTextColor(0);
           r.sub.split("\n").forEach((sl, si) => pdf.text(sl, LX + N1 + 0.5, ry + 2.5 + si * 2.2));
         }
 
         // Unidad
-        pdf.setFontSize(6.5);
-        const ux = LX + N1 + S1 + U1 / 2;
-        pdf.text(r.un, ux, ry + 3.5, { align: "center" });
+        pdf.setFontSize(6.5); pdf.setTextColor(20, 20, 20);
+        pdf.text(r.un, LX + N1 + S1 + U1 / 2, ry + 3.5, { align: "center" });
 
         // Valores
         if (r.v3) {
           r.hds && r.hds.forEach((h, hi) => {
-            pdf.setFontSize(5); pdf.setTextColor(80, 80, 80);
-            pdf.text(h, LX + N1 + S1 + U1 + hi * V3 + V3 / 2, ry + 1.8, { align: "center" });
+            pdf.setFont("helvetica", "normal"); pdf.setFontSize(5); pdf.setTextColor(100, 100, 100);
+            pdf.text(h, valX + hi * cw + cw / 2, ry + 1.8, { align: "center" });
           });
           r.v3.forEach((v, vi) => {
-            pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(0);
-            pdf.text(String(v), LX + N1 + S1 + U1 + vi * V3 + V3 / 2, ry + 4.2, { align: "center" });
+            pdf.setFont("helvetica", "bold"); pdf.setFontSize(7);
+            if (r.placa) { pdf.setTextColor(80, 80, 80); } else { pdf.setTextColor(0, 0, 0); }
+            pdf.text(String(v || ""), valX + vi * cw + cw / 2, ry + 4.2, { align: "center" });
           });
         } else if (r.v1 !== undefined) {
           pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(0);
