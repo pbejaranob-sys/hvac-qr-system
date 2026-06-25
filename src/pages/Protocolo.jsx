@@ -86,6 +86,7 @@ const protocoloVacio = (grupo) => ({
   condVL1L2: "", condVL2L3: "", condVL3L1: "",
   condAL1: "", condAL2: "", condAL3: "",
   condMegL1T: "", condMegL2T: "", condMegL3T: "",
+  condMegL1L2: "", condMegL2L3: "", condMegL3L1: "",
   modeloCompresor: "",
   // Ventilacion
   ventiladorNum: "", tipoVentilador: "",
@@ -582,18 +583,18 @@ export default function Protocolo() {
       { type: "estR", nm: "Descarte visual de fugas de refrigerante" },
       { type: "estR", nm: "Limpieza de serpentín condensador" },
       { type: "estR", nm: "Limpieza externa condensador" },
-      { type: "elecR", nm: "Voltaje en marcha", un: "V", vals: vVals, hds: vHds, placa: false },
+      { type: "elecR", nm: "Voltaje en marcha", un: "V", vals: condVVals, hds: vHds, placa: false },
       { type: "elecR", nm: "Voltaje en placa", un: "V", vals: vPlaca, hds: vHds, placa: true },
-      { type: "simpleR", nm: "Desbalance de voltaje", un: "%" },
-      { type: "elecR", nm: "Amperaje en marcha", un: "A", vals: aVals, hds: aHds, placa: false },
+      { type: "simpleR", nm: "Desbalance de voltaje", un: "%", val: calcDesbalance(form.condVL1L2,form.condVL2L3,form.condVL3L1)||"" },
+      { type: "elecR", nm: "Amperaje en marcha", un: "A", vals: condAVals, hds: aHds, placa: false },
       { type: "elecR", nm: "Amperaje en placa", un: "A", vals: aPlaca, hds: aHds, placa: true },
-      { type: "simpleR", nm: "Desbalance de voltaje", un: "%" },
-      { type: "simpleR", nm: "MEGADO", sub: "L1-T", un: "\u03A9" },
-      { type: "simpleR", nm: "", sub: "L2-T", un: "\u03A9" },
-      { type: "simpleR", nm: "", sub: "L3-T", un: "\u03A9" },
-      { type: "simpleR", nm: "", sub: "L1-L2", un: "\u03A9" },
-      { type: "simpleR", nm: "", sub: "L2-L3", un: "\u03A9" },
-      { type: "simpleR", nm: "", sub: "L3-L1", un: "\u03A9" },
+      { type: "simpleR", nm: "Desbalance de amperaje", un: "%", val: calcDesbalance(form.condAL1,form.condAL2,form.condAL3)||"" },
+      { type: "simpleR", nm: "MEGADO", sub: "L1-T", un: "\u03A9", val: form.condMegL1T||"" },
+      { type: "simpleR", nm: "", sub: "L2-T", un: "\u03A9", val: form.condMegL2T||"" },
+      { type: "simpleR", nm: "", sub: "L3-T", un: "\u03A9", val: form.condMegL3T||"" },
+      { type: "simpleR", nm: "", sub: "L1-L2", un: "\u03A9", val: form.condMegL1L2||"" },
+      { type: "simpleR", nm: "", sub: "L2-L3", un: "\u03A9", val: form.condMegL2L3||"" },
+      { type: "simpleR", nm: "", sub: "L3-L1", un: "\u03A9", val: form.condMegL3L1||"" },
     ];
 
     // Segunda sección: filas izquierda con parámetros refrigeración + estatus actividades der
@@ -692,6 +693,10 @@ export default function Protocolo() {
           if (rR.sub) { pdf.setFontSize(5.5); pdf.setTextColor(60); rR.sub.split("\n").forEach((sl, si) => pdf.text(sl, X + NW + 0.5, ry + 2.5 + si * 2.2)); }
           pdf.setFontSize(6.5); pdf.setTextColor(20);
           pdf.text(rR.un, X + NW + SW + UW / 2, ry + 3.5, { align: "center" });
+          if (rR.val !== undefined && rR.val !== "") {
+            pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(0);
+            pdf.text(String(rR.val), X + RW - 1, ry + 3.5, { align: "right" });
+          }
         }
       } else { pdf.setDrawColor(0); pdf.rect(RX, ry, RW, RH2); }
     }
@@ -1836,6 +1841,7 @@ export default function Protocolo() {
                 <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3}><input style={s.mini} placeholder="L1" value={form.aL1} onChange={e=>set("aL1",e.target.value)}/><input style={s.mini} placeholder="L2" value={form.aL2} onChange={e=>set("aL2",e.target.value)}/>{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L3" value={form.aL3} onChange={e=>set("aL3",e.target.value)}/>}</div></div>
                 <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>}</div></div>
               </div>
+              <div style={{marginTop:"8px"}}><label style={s.lblRow}>Megado evaporador (Ω)</label><div style={s.row3}><input style={s.mini} placeholder="L1-T" value={form.megL1T} onChange={e=>set("megL1T",e.target.value)}/><input style={s.mini} placeholder="L2-T" value={form.megL2T} onChange={e=>set("megL2T",e.target.value)}/><input style={s.mini} placeholder="L3-T" value={form.megL3T} onChange={e=>set("megL3T",e.target.value)}/></div><div style={{...s.row3,marginTop:"4px"}}><input style={s.mini} placeholder="L1-L2" value={form.megL1L2} onChange={e=>set("megL1L2",e.target.value)}/><input style={s.mini} placeholder="L2-L3" value={form.megL2L3} onChange={e=>set("megL2L3",e.target.value)}/><input style={s.mini} placeholder="L3-L1" value={form.megL3L1} onChange={e=>set("megL3L1",e.target.value)}/></div></div>
               <div style={{height:"0.5px",background:"#e0e0e0",margin:"12px 0"}}></div>
               <div style={{fontSize:"12px",fontWeight:500,color:"#085041",background:"#e1f5ee",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>Condensador</div>
               <div style={s.g4}>
@@ -1844,6 +1850,7 @@ export default function Protocolo() {
                 <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3}><input style={s.mini} placeholder="L1" value={form.condAL1} onChange={e=>set("condAL1",e.target.value)}/><input style={s.mini} placeholder="L2" value={form.condAL2} onChange={e=>set("condAL2",e.target.value)}/>{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L3" value={form.condAL3} onChange={e=>set("condAL3",e.target.value)}/>}</div></div>
                 <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>}</div></div>
               </div>
+              <div style={{marginTop:"8px"}}><label style={s.lblRow}>Megado condensador (Ω)</label><div style={s.row3}><input style={s.mini} placeholder="L1-T" value={form.condMegL1T} onChange={e=>set("condMegL1T",e.target.value)}/><input style={s.mini} placeholder="L2-T" value={form.condMegL2T} onChange={e=>set("condMegL2T",e.target.value)}/><input style={s.mini} placeholder="L3-T" value={form.condMegL3T} onChange={e=>set("condMegL3T",e.target.value)}/></div><div style={{...s.row3,marginTop:"4px"}}><input style={s.mini} placeholder="L1-L2" value={form.condMegL1L2} onChange={e=>set("condMegL1L2",e.target.value)}/><input style={s.mini} placeholder="L2-L3" value={form.condMegL2L3} onChange={e=>set("condMegL2L3",e.target.value)}/><input style={s.mini} placeholder="L3-L1" value={form.condMegL3L1} onChange={e=>set("condMegL3L1",e.target.value)}/></div></div>
               <div style={{height:"0.5px",background:"#e0e0e0",margin:"12px 0"}}></div>
               <div style={{fontSize:"12px",fontWeight:500,color:"#791f1f",background:"#fcebeb",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>Refrigeración</div>
               <div style={s.g4}>
