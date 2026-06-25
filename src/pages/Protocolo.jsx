@@ -1738,8 +1738,11 @@ export default function Protocolo() {
             <div style={{ ...s.g4, marginTop: "10px" }}>
               <Campo label="Tipo refrigerante" auto val={equipo.tipoRefrigerante} />
               <Campo label="Voltaje de placa" auto val={equipo.voltaje ? equipo.voltaje + "V" : ""} />
-              <Campo label="Amperaje nominal" auto val={equipo.amperaje ? equipo.amperaje + "A" : ""} />
+              <Campo label="Amperaje nominal (evap.)" auto val={equipo.amperaje ? equipo.amperaje + "A" : ""} />
               <Campo label="Fases" auto val={equipo.fases} />
+              {equipo.condAmperaje && <Campo label="Amperaje nominal (cond.)" auto val={equipo.condAmperaje + "A"} />}
+              {equipo.condVoltaje && <Campo label="Voltaje nominal (cond.)" auto val={equipo.condVoltaje + "V"} />}
+              {equipo.modeloCompresor && <Campo label="Modelo de compresor" auto val={equipo.modeloCompresor} />}
             </div>
             {/* Campos específicos Fan Coil / UMA - solo si existen en la ficha */}
             {(equipo.fancoilNum || equipo.contrato || equipo.modeloFaja || equipo.marcaMotor) && (
