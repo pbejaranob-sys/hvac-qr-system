@@ -34,6 +34,7 @@ export default function RegistrarEquipo() {
     cliente: clienteParam, sede: sedeParam, codigo: "", piso: "", ambiente: "", tipoEquipo: "",
     marca: "", modelo: "", serie: "", capacidad: "", tipoRefrigerante: "",
     voltaje: "", amperaje: "", fases: "Monofásico", ubicacion: "",
+    condVoltaje: "", condAmperaje: "", modeloCompresor: "",
     // Campos específicos Fan Coil / UMA
     fancoilNum: "", contrato: "", modeloFaja: "", numFajas: "", marcaMotor: "", modeloMotor: "", serieMotor: "",
     estado: "Operativo", ultimoMantenimiento: "",
@@ -63,6 +64,8 @@ export default function RegistrarEquipo() {
         modelo: data.modelo || "", serie: data.serie || "",
         capacidad: data.capacidad || "", tipoRefrigerante: data.tipoRefrigerante || "",
         voltaje: data.voltaje || "", amperaje: data.amperaje || "",
+        condVoltaje: data.condVoltaje || "", condAmperaje: data.condAmperaje || "",
+        modeloCompresor: data.modeloCompresor || "",
         fases: data.fases || "Monofásico", ubicacion: data.ubicacion || "",
         fancoilNum: data.fancoilNum || "", contrato: data.contrato || "",
         modeloFaja: data.modeloFaja || "", numFajas: data.numFajas || "",
@@ -255,7 +258,7 @@ export default function RegistrarEquipo() {
                     <label style={s.label}>Tipo de equipo</label>
                     <select style={s.input} name="tipoEquipo" value={form.tipoEquipo} onChange={handleChange}>
                       <option value="">Seleccionar...</option>
-                      <optgroup label="── Split / VRV ──">
+                      <optgroup label="── Split ──">
                         <option>Split Piso Techo</option>
                         <option>Split Pared</option>
                         <option>Split Ducto</option>
@@ -264,6 +267,8 @@ export default function RegistrarEquipo() {
                         <option>Ventana</option>
                         <option>Autocontenido</option>
                         <option>Precisión</option>
+                      </optgroup>
+                      <optgroup label="── VRV ──">
                         <option>VRV Evaporador</option>
                         <option>VRV Condensador</option>
                       </optgroup>
@@ -292,6 +297,7 @@ export default function RegistrarEquipo() {
                   <div><label style={s.label}>Modelo</label><input style={s.input} name="modelo" placeholder="FTXS35KVMA" value={form.modelo} onChange={handleChange} /></div>
                   <div><label style={s.label}>N° de Serie</label><input style={s.input} name="serie" placeholder="D4Y0041045" value={form.serie} onChange={handleChange} /></div>
                   <div><label style={s.label}>Capacidad (BTU)</label><input style={s.input} name="capacidad" placeholder="12000, 18000..." value={form.capacidad} onChange={handleChange} /></div>
+                  <div><label style={s.label}>Modelo de compresor</label><input style={s.input} name="modeloCompresor" placeholder="Modelo compresor..." value={form.modeloCompresor} onChange={handleChange} /></div>
                   <div>
                     <label style={s.label}>Tipo de refrigerante</label>
                     <select style={s.input} name="tipoRefrigerante" value={form.tipoRefrigerante} onChange={handleChange}>
@@ -306,14 +312,24 @@ export default function RegistrarEquipo() {
               <div style={s.seccion}>
                 <div style={s.secTitulo}>⚡ Datos eléctricos</div>
                 <div style={s.grid3}>
-                  <div><label style={s.label}>Voltaje (V)</label><input style={s.input} name="voltaje" placeholder="220" value={form.voltaje} onChange={handleChange} /></div>
-                  <div><label style={s.label}>Amperaje (A)</label><input style={s.input} name="amperaje" placeholder="15" value={form.amperaje} onChange={handleChange} /></div>
                   <div>
                     <label style={s.label}>Fases</label>
                     <select style={s.input} name="fases" value={form.fases} onChange={handleChange}>
                       <option>Monofásico</option><option>Trifásico</option>
                     </select>
                   </div>
+                </div>
+                {/* Evaporador */}
+                <div style={{ fontSize:"11px", fontWeight:600, color:"#0c447c", background:"#e6f1fb", padding:"5px 10px", borderRadius:"6px", margin:"10px 0 6px" }}>Evaporador</div>
+                <div style={s.grid3}>
+                  <div><label style={s.label}>Voltaje nominal (V)</label><input style={s.input} name="voltaje" placeholder="220" value={form.voltaje} onChange={handleChange} /></div>
+                  <div><label style={s.label}>Amperaje nominal (A)</label><input style={s.input} name="amperaje" placeholder="15" value={form.amperaje} onChange={handleChange} /></div>
+                </div>
+                {/* Condensador */}
+                <div style={{ fontSize:"11px", fontWeight:600, color:"#085041", background:"#e1f5ee", padding:"5px 10px", borderRadius:"6px", margin:"10px 0 6px" }}>Condensador</div>
+                <div style={s.grid3}>
+                  <div><label style={s.label}>Voltaje nominal (V)</label><input style={s.input} name="condVoltaje" placeholder="220" value={form.condVoltaje} onChange={handleChange} /></div>
+                  <div><label style={s.label}>Amperaje nominal (A)</label><input style={s.input} name="condAmperaje" placeholder="15" value={form.condAmperaje} onChange={handleChange} /></div>
                 </div>
               </div>
 
@@ -347,51 +363,6 @@ export default function RegistrarEquipo() {
                   </div>
                   <div><label style={s.label}>Fecha último mantenimiento</label><input style={s.input} type="date" name="ultimoMantenimiento" value={form.ultimoMantenimiento} onChange={handleChange} /></div>
                 </div>
-              </div>
-
-              {/* Observaciones */}
-              <div style={s.seccion}>
-                <div style={s.secTitulo}>⚠️ Observaciones</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "10px" }}>
-                  {observaciones.map((obs, i) => (
-                    <div key={i} style={{ display: "flex", gap: "8px", alignItems: "flex-start", flexWrap: "wrap" }}>
-                      <input style={{ ...s.input, flex: 2, minWidth: "180px", background: "#fff8e1", marginBottom: 0 }} placeholder="Observación..." value={obs.texto} onChange={e => updateObs(i, "texto", e.target.value)} />
-                      <input type="date" style={{ ...s.input, width: "150px", background: "#fff8e1", marginBottom: 0 }} value={obs.fecha} onChange={e => updateObs(i, "fecha", e.target.value)} />
-                      <input style={{ ...s.input, flex: 1, minWidth: "120px", background: "#fff8e1", marginBottom: 0 }} placeholder="Técnico..." value={obs.tecnico} onChange={e => updateObs(i, "tecnico", e.target.value)} />
-                      {observaciones.length > 1 && <button type="button" style={s.btnEliminar} onClick={() => removeObs(i)}>✕</button>}
-                    </div>
-                  ))}
-                </div>
-                <button type="button" style={{ ...s.btnAgregar, borderColor: "#ffa726", background: "#fff8e1", color: "#e65100" }} onClick={addObs}>+ Agregar observación</button>
-              </div>
-
-              {/* Correctivos */}
-              <div style={s.seccion}>
-                <div style={s.secTitulo}>🔧 Correctivos realizados</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "10px" }}>
-                  {correctivos.map((cor, i) => (
-                    <div key={i} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                      <input style={{ ...s.input, flex: 1, background: "#f0f4f8", marginBottom: 0 }} placeholder="Correctivo realizado..." value={cor.descripcion} onChange={e => updateCor(i, "descripcion", e.target.value)} />
-                      <input type="date" style={{ ...s.input, width: "150px", background: "#f0f4f8", marginBottom: 0 }} value={cor.fecha} onChange={e => updateCor(i, "fecha", e.target.value)} />
-                      {correctivos.length > 1 && <button type="button" style={s.btnEliminar} onClick={() => removeCor(i)}>✕</button>}
-                    </div>
-                  ))}
-                </div>
-                <button type="button" style={{ ...s.btnAgregar, borderColor: "#1a5fa8", background: "#e8f0fe", color: "#1a5fa8" }} onClick={addCor}>+ Agregar correctivo</button>
-              </div>
-
-              {/* Recomendaciones */}
-              <div style={s.seccion}>
-                <div style={s.secTitulo}>💡 Recomendaciones</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "10px" }}>
-                  {recomendaciones.map((rec, i) => (
-                    <div key={i} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                      <input style={{ ...s.input, flex: 1, background: "#e8f5e9", marginBottom: 0 }} placeholder="Recomendación..." value={rec} onChange={e => updateRec(i, e.target.value)} />
-                      {recomendaciones.length > 1 && <button type="button" style={s.btnEliminar} onClick={() => removeRec(i)}>✕</button>}
-                    </div>
-                  ))}
-                </div>
-                <button type="button" style={{ ...s.btnAgregar, borderColor: "#43a047", background: "#e8f5e9", color: "#2e7d32" }} onClick={addRec}>+ Agregar recomendación</button>
               </div>
 
               {/* Cronograma dinámico */}

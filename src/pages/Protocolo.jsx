@@ -16,8 +16,8 @@ const GRUPO_POR_TIPO = {
   "Ventana": "expansion",
   "Autocontenido": "expansion",
   "Precisión": "expansion",
-  "VRV Evaporador": "expansion",
-  "VRV Condensador": "expansion",
+  "VRV Evaporador": "vrv",
+  "VRV Condensador": "vrv",
   // Compatibilidad nombres anteriores
   "Split Muro": "expansion",
   "Split Techo": "expansion",
@@ -46,6 +46,7 @@ const GRUPOS = {
   expansion: { label: "Expansión Directa (Split / VRV)", color: "#1a5fa8", icon: "❄️" },
   fancoil: { label: "Manejadora / Fan Coil / UMA Agua Helada", color: "#185fa5", icon: "💧" },
   ventilacion: { label: "Ventilación / Extracción / Inyección", color: "#0f6e56", icon: "🌀" },
+  vrv: { label: "Sistema VRV", color: "#5c35cc", icon: "🔁" },
   pendiente: { label: "Protocolo en preparación", color: "#888", icon: "🔧" },
 };
 
