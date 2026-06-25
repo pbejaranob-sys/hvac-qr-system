@@ -83,6 +83,9 @@ const protocoloVacio = (grupo) => ({
   presSuccion: "", presLiquido: "", tSatMedida: "", tSatTabla: "",
   tRetornoEvap: "", tSuministroEvap: "", tAmbCondensador: "",
   calentadorAceite: false,
+  condVL1L2: "", condVL2L3: "", condVL3L1: "",
+  condAL1: "", condAL2: "", condAL3: "",
+  condMegL1T: "", condMegL2T: "", condMegL3T: "",
   modeloCompresor: "",
   // Ventilacion
   ventiladorNum: "", tipoVentilador: "",
@@ -1761,8 +1764,8 @@ export default function Protocolo() {
           </div>
         </div>
 
-        {/* Parámetros eléctricos (comunes - oculto para fancoil que los incluye en su propio bloque) */}
-        {form.grupo !== "fancoil" && <div style={s.sec}>
+        {/* Parámetros eléctricos (comunes - solo ventilacion) */}
+        {form.grupo !== "fancoil" && form.grupo !== "expansion" && <div style={s.sec}>
           <div style={s.secT}>⚡ Parámetros eléctricos</div>
           <div style={s.secB}>
             <div style={s.g3}>
@@ -1824,34 +1827,46 @@ export default function Protocolo() {
         {/* Parámetros específicos por grupo */}
         {form.grupo === "expansion" && (
           <div style={s.sec}>
-            <div style={s.secT}>❄️ Parámetros de refrigeración</div>
+            <div style={s.secT}>❄️ Parámetros de Expansión Directa</div>
             <div style={s.secB}>
+              <div style={{fontSize:"12px",fontWeight:500,color:"#0c447c",background:"#e6f1fb",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>Evaporador</div>
               <div style={s.g4}>
-                <CampoInput label="Presión succión (PSI)" val={form.presSuccion} onChange={v => set("presSuccion", v)} />
-                <CampoInput label="Presión líquido (PSI)" val={form.presLiquido} onChange={v => set("presLiquido", v)} />
-                <CampoInput label="T° sat. succión medida (°C)" val={form.tSatMedida} onChange={v => set("tSatMedida", v)} />
-                <CampoInput label="T° sat. succión tabla (°C)" val={form.tSatTabla} onChange={v => set("tSatTabla", v)} />
-                <Campo label="Superheat (auto)" calc val={calcDelta(form.tSatMedida, form.tSatTabla) ? calcDelta(form.tSatMedida, form.tSatTabla) + " °C" : ""} />
-                <CampoInput label="T° retorno aire (°C)" val={form.tRetornoEvap} onChange={v => set("tRetornoEvap", v)} />
-                <CampoInput label="T° suministro aire (°C)" val={form.tSuministroEvap} onChange={v => set("tSuministroEvap", v)} />
-                <CampoInput label="T° amb. condensador (°C)" val={form.tAmbCondensador} onChange={v => set("tAmbCondensador", v)} />
-                <CampoInput label="Temp. trabajo motor (°C)" val={form.tTrabajoMotor} onChange={v => set("tTrabajoMotor", v)} />
+                <div><label style={s.lblRow}>Voltaje en marcha (V)</label><div style={s.row3}><input style={s.mini} placeholder="L1-L2" value={form.vL1L2} onChange={e=>set("vL1L2",e.target.value)}/>{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L2-L3" value={form.vL2L3} onChange={e=>set("vL2L3",e.target.value)}/>}{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L3-L1" value={form.vL3L1} onChange={e=>set("vL3L1",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3}><input style={s.mini} placeholder="L1" value={form.aL1} onChange={e=>set("aL1",e.target.value)}/><input style={s.mini} placeholder="L2" value={form.aL2} onChange={e=>set("aL2",e.target.value)}/>{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L3" value={form.aL3} onChange={e=>set("aL3",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>}</div></div>
               </div>
-              <div style={{ ...s.g4, marginTop: "10px" }}>
-                <div style={{ fontSize: "11px", fontWeight: 600, color: "#1a5fa8", gridColumn: "1/-1", paddingBottom: "4px", borderBottom: "0.5px solid #eee" }}>Estatus de actividades</div>
-                {[..."Limpieza de filtros de aire,Limpieza de bandeja de drenaje,Limpieza de serpentín evaporador".split(","), ...EXPANSION_ITEMS_DER].map(item => (
-                  <div key={item} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px", padding: "3px 0", borderBottom: "0.5px solid #f0f0f0", gridColumn: "1/-1" }}>
-                    <span style={{ fontSize: "11px", color: "#333", flex: 1 }}>{item}</span>
-                    <select value={(form.estatusItems||{})[item]||""} onChange={e => setEstatus(item, e.target.value)} disabled={soloLectura} style={{ fontSize: "11px", padding: "2px 4px", borderRadius: "4px", border: "0.5px solid #ccc", width: "100px" }}>
-                      <option value="">—</option>
-                      <option value="OK">OK</option>
-                      <option value="Observado">Observado</option>
-                      <option value="Falla">Falla</option>
-                      <option value="N/A">N/A</option>
-                    </select>
-                  </div>
-                ))}
+              <div style={{height:"0.5px",background:"#e0e0e0",margin:"12px 0"}}></div>
+              <div style={{fontSize:"12px",fontWeight:500,color:"#085041",background:"#e1f5ee",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>Condensador</div>
+              <div style={s.g4}>
+                <div><label style={s.lblRow}>Voltaje en marcha (V)</label><div style={s.row3}><input style={s.mini} placeholder="L1-L2" value={form.condVL1L2} onChange={e=>set("condVL1L2",e.target.value)}/>{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L2-L3" value={form.condVL2L3} onChange={e=>set("condVL2L3",e.target.value)}/>}{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L3-L1" value={form.condVL3L1} onChange={e=>set("condVL3L1",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3}><input style={s.mini} placeholder="L1" value={form.condAL1} onChange={e=>set("condAL1",e.target.value)}/><input style={s.mini} placeholder="L2" value={form.condAL2} onChange={e=>set("condAL2",e.target.value)}/>{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L3" value={form.condAL3} onChange={e=>set("condAL3",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>}</div></div>
               </div>
+              <div style={{height:"0.5px",background:"#e0e0e0",margin:"12px 0"}}></div>
+              <div style={{fontSize:"12px",fontWeight:500,color:"#791f1f",background:"#fcebeb",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>Refrigeración</div>
+              <div style={s.g4}>
+                <CampoInput label="Presión succión (PSI)" val={form.presSuccion} onChange={v=>set("presSuccion",v)}/>
+                <CampoInput label="Presión líquido (PSI)" val={form.presLiquido} onChange={v=>set("presLiquido",v)}/>
+                <CampoInput label="T° sat. succión medida (°C)" val={form.tSatMedida} onChange={v=>set("tSatMedida",v)}/>
+                <CampoInput label="T° sat. succión tabla (°C)" val={form.tSatTabla} onChange={v=>set("tSatTabla",v)}/>
+                <Campo label="Superheat (auto)" calc val={calcDelta(form.tSatMedida,form.tSatTabla)?calcDelta(form.tSatMedida,form.tSatTabla)+" °C":""}/>
+                <CampoInput label="T° retorno aire (°C)" val={form.tRetornoEvap} onChange={v=>set("tRetornoEvap",v)}/>
+                <CampoInput label="T° suministro aire (°C)" val={form.tSuministroEvap} onChange={v=>set("tSuministroEvap",v)}/>
+                <CampoInput label="T° amb. condensador (°C)" val={form.tAmbCondensador} onChange={v=>set("tAmbCondensador",v)}/>
+                <CampoInput label="Temp. trabajo motor (°C)" val={form.tTrabajoMotor} onChange={v=>set("tTrabajoMotor",v)}/>
+              </div>
+              <div style={{height:"0.5px",background:"#e0e0e0",margin:"12px 0"}}></div>
+              <div style={{fontSize:"12px",fontWeight:500,color:"var(--color-text-secondary)",marginBottom:"8px"}}>Estatus de actividades</div>
+              {["Limpieza de filtros de aire","Limpieza de bandeja de drenaje","Limpieza de serpentín evaporador",...EXPANSION_ITEMS_DER].map(item=>(
+                <div key={item} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"4px 0",borderBottom:"0.5px solid #f0f0f0"}}>
+                  <span style={{fontSize:"11px",color:"#333",flex:1}}>{item}</span>
+                  <select value={(form.estatusItems||{})[item]||""} onChange={e=>setEstatus(item,e.target.value)} disabled={soloLectura} style={{fontSize:"11px",padding:"2px 4px",borderRadius:"4px",border:"0.5px solid #ccc",width:"100px"}}>
+                    <option value="">—</option><option value="OK">OK</option><option value="Observado">Observado</option><option value="Falla">Falla</option><option value="N/A">N/A</option>
+                  </select>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -1976,7 +1991,7 @@ export default function Protocolo() {
         )}
 
         {/* Actividades (solo para grupos que NO usan formato Carrier de estatus) */}
-        {form.grupo !== "fancoil" && (
+        {form.grupo !== "fancoil" && form.grupo !== "expansion" && (
         <div style={s.sec}>
           <div style={s.secT}>✅ Actividades realizadas</div>
           <div style={s.secB}>
