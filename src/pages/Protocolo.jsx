@@ -480,8 +480,8 @@ export default function Protocolo() {
     pdf.setFillColor(220, 220, 220);
     pdf.rect(M, y, half, pH, "FD"); pdf.rect(M + half, y, half, pH, "FD");
     pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(0);
-    pdf.text("PARAMETROS", M + half / 2, y + 3.5, { align: "center" });
-    pdf.text("PARAMETROS", M + half + half / 2, y + 3.5, { align: "center" });
+    pdf.text("PARAMETROS — EVAPORADOR", M + half / 2, y + 3.5, { align: "center" });
+    pdf.text("PARAMETROS — CONDENSADOR", M + half + half / 2, y + 3.5, { align: "center" });
     y += pH;
 
     // Proporciones tabla izquierda
@@ -604,19 +604,7 @@ export default function Protocolo() {
 
     // Segunda sección: filas izquierda con parámetros refrigeración + estatus actividades der
     const rowsIzq2 = [
-      { type: "elec", nm: "Voltaje en marcha", un: "V", vals: vVals, hds: vHds, placa: false },
-      { type: "elec", nm: "Voltaje en placa", un: "V", vals: vPlaca, hds: vHds, placa: true },
-      { type: "simple", nm: "Desbalance de voltaje", un: "%", val: cv("desbV") },
-      { type: "elec", nm: "Amperaje en marcha", un: "A", vals: aVals, hds: aHds, placa: false },
-      { type: "elec", nm: "Amperaje en placa", un: "A", vals: aPlaca, hds: aHds, placa: true },
-      { type: "simple", nm: "Desbalance de voltaje", un: "%", val: cv("desbA") },
       { type: "simple", nm: "Temperatura de motor", un: "\xB0C", val: form.tTrabajoMotor||"" },
-      { type: "simple", nm: "MEGADO", sub: "L1-T", un: "\u03A9", val: form.megL1T||"" },
-      { type: "simple", nm: "", sub: "L2-T", un: "\u03A9", val: form.megL2T||"" },
-      { type: "simple", nm: "", sub: "L3-T", un: "\u03A9", val: form.megL3T||"" },
-      { type: "simple", nm: "", sub: "L1-L2", un: "\u03A9", val: form.megL1L2||"" },
-      { type: "simple", nm: "", sub: "L2-L3", un: "\u03A9", val: form.megL2L3||"" },
-      { type: "simple", nm: "", sub: "L3-L1", un: "\u03A9", val: form.megL3L1||"" },
       { type: "estatus", nm: "Calentador de aceite", item: "Calentador de aceite" },
     ];
 
@@ -759,18 +747,20 @@ export default function Protocolo() {
     const obsValidas = form.observaciones.filter(o => o.obs?.trim());
     const numObs = Math.max(obsValidas.length, 9);
     const oH = 10, col0 = 10, col1 = 60, col2 = 60, col3 = C - col0 - col1 - col2;
-    pdf.setFillColor(240,240,240);
+    // Encabezado OCR gris claro
+    pdf.setFillColor(220, 220, 220);
     ["ITEM","OBSERVACION","CAUSA","RECOMENDACI\xD3N"].forEach((t, ti) => {
       const xc = [M, M+col0, M+col0+col1, M+col0+col1+col2][ti];
       const wc = [col0,col1,col2,col3][ti];
-      pdf.rect(xc, y, wc, oH*0.7, "FD");
-      pdf.setFont("helvetica","bold"); pdf.setFontSize(7); pdf.setTextColor(0);
+      pdf.setDrawColor(0); pdf.rect(xc, y, wc, oH*0.7, "FD");
+      pdf.setFont("helvetica","bold"); pdf.setFontSize(7); pdf.setTextColor(0,0,0);
       pdf.text(t, xc + wc/2, y + oH*0.5, { align: "center" });
     });
     y += oH * 0.7;
     for (let i = 0; i < numObs; i++) {
       const o = obsValidas[i];
-      pdf.rect(M, y, col0, oH); pdf.setFont("helvetica","normal"); pdf.setFontSize(7); pdf.setTextColor(0);
+      pdf.setDrawColor(0); pdf.setTextColor(0,0,0);
+      pdf.rect(M, y, col0, oH); pdf.setFont("helvetica","normal"); pdf.setFontSize(7);
       pdf.text(String(i+1), M+col0/2, y+6, { align: "center" });
       pdf.rect(M+col0, y, col1, oH);
       if (o?.obs) { const t = pdf.splitTextToSize(o.obs, col1-2); pdf.text(t.slice(0,3), M+col0+1, y+4); }
@@ -847,8 +837,8 @@ export default function Protocolo() {
     pdf.setFillColor(220,220,220);
     pdf.rect(M, y, half, pH, "FD"); pdf.rect(M+half, y, half, pH, "FD");
     pdf.setFont("helvetica","bold"); pdf.setFontSize(8); pdf.setTextColor(0);
-    pdf.text("PARAMETROS", M+half/2, y+3.5, {align:"center"});
-    pdf.text("PARAMETROS", M+half+half/2, y+3.5, {align:"center"});
+    pdf.text("PARAMETROS — COMPRESOR / ELÉCTRICO", M+half/2, y+3.5, {align:"center"});
+    pdf.text("PARAMETROS — REFRIGERACIÓN / ACTIVIDADES", M+half+half/2, y+3.5, {align:"center"});
     y += pH;
 
     const LW = half, RW = half, LX = M, RX = M+half;
