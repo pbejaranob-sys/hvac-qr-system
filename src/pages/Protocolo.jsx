@@ -747,12 +747,14 @@ export default function Protocolo() {
     const obsValidas = form.observaciones.filter(o => o.obs?.trim());
     const numObs = Math.max(obsValidas.length, 9);
     const oH = 10, col0 = 10, col1 = 60, col2 = 60, col3 = C - col0 - col1 - col2;
-    // Encabezado OCR gris claro
-    pdf.setFillColor(220, 220, 220);
+    // Encabezado OCR - reset completo de colores
+    pdf.setDrawColor(0); pdf.setTextColor(0, 0, 0);
     ["ITEM","OBSERVACION","CAUSA","RECOMENDACI\xD3N"].forEach((t, ti) => {
       const xc = [M, M+col0, M+col0+col1, M+col0+col1+col2][ti];
       const wc = [col0,col1,col2,col3][ti];
-      pdf.setDrawColor(0); pdf.rect(xc, y, wc, oH*0.7, "FD");
+      pdf.setFillColor(220, 220, 220);
+      pdf.setDrawColor(0);
+      pdf.rect(xc, y, wc, oH*0.7, "FD");
       pdf.setFont("helvetica","bold"); pdf.setFontSize(7); pdf.setTextColor(0,0,0);
       pdf.text(t, xc + wc/2, y + oH*0.5, { align: "center" });
     });
