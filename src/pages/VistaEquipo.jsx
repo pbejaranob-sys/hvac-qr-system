@@ -329,8 +329,6 @@ export default function VistaEquipo() {
         ["Marca", equipo.marca], ["Modelo", equipo.modelo], ["N° Serie", equipo.serie],
         ["Capacidad", equipo.capacidad ? equipo.capacidad + (esVent ? " CFM" : " BTU") : null],
       ], 4, 248, 249, 250);
-
-      secTit("Datos eléctricos", 230, 81, 0);
       gridCards([
         !esVent && ["Refrigerante", equipo.tipoRefrigerante],
         ["Voltaje de placa", equipo.voltaje ? equipo.voltaje + "V" : null],
@@ -339,14 +337,12 @@ export default function VistaEquipo() {
         equipo.condVoltaje && ["Voltaje cond.", equipo.condVoltaje + "V"],
         equipo.condAmperaje && ["Amperaje cond.", equipo.condAmperaje + "A"],
         equipo.modeloCompresor && ["Modelo compresor", equipo.modeloCompresor],
-      ].filter(Boolean), 3, 255, 248, 240);
-
+      ].filter(Boolean), 3, 248, 249, 250);
       if (equipo.contrato || equipo.modeloFaja || equipo.numFajas || equipo.marcaMotor || equipo.modeloMotor || equipo.serieMotor) {
-        secTit(esVent ? "Datos del ventilador" : "Datos Fan Coil / UMA", 15, 110, 90);
         gridCards([
           ["Contrato", equipo.contrato], ["Modelo de faja", equipo.modeloFaja], ["N° de fajas", equipo.numFajas],
           ["Marca motor", equipo.marcaMotor], ["Modelo motor", equipo.modeloMotor], ["N° serie motor", equipo.serieMotor],
-        ].filter(([, v]) => v), 3, 230, 245, 238);
+        ].filter(([, v]) => v), 3, 248, 249, 250);
       }
 
       // Observaciones con causa
