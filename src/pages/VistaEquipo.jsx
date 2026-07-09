@@ -202,12 +202,20 @@ export default function VistaEquipo() {
     const qrPx = Math.round(getQRpx()) * 2;
     const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=${qrPx}x${qrPx}&data=${encodeURIComponent(window.location.href)}`;
 
+    const esVentF = GRUPO_POR_TIPO[equipo.tipoEquipo] === "ventilacion";
     const campo = (l, v) => v ? `<div style="background:#f8f9fa;border-radius:6px;padding:7px 10px;"><div style="font-size:10px;color:#888;margin-bottom:2px;">${l}</div><div style="font-size:12px;font-weight:600;color:#222;">${v}</div></div>` : "";
     const campos = [
-      campo("Tipo equipo", equipo.tipoEquipo), campo("Marca", equipo.marca), campo("Modelo", equipo.modelo), campo("N° Serie", equipo.serie),
-      campo("Capacidad", equipo.capacidad ? equipo.capacidad + " BTU" : null), campo("Refrigerante", equipo.tipoRefrigerante),
-      campo("Voltaje", equipo.voltaje ? equipo.voltaje + "V" : null), campo("Amperaje", equipo.amperaje ? equipo.amperaje + "A" : null),
-      campo("Fases", equipo.fases), campo("Cliente", equipo.cliente), campo("Piso", equipo.piso), campo("Ambiente", equipo.ambiente),
+      campo("Cliente", equipo.cliente), campo("Sede", equipo.sede), campo("Piso", equipo.piso), campo("Ambiente", equipo.ambiente),
+      campo("Marca", equipo.marca), campo("Modelo", equipo.modelo), campo("N° Serie", equipo.serie),
+      campo("Capacidad", equipo.capacidad ? equipo.capacidad + (esVentF ? " CFM" : " BTU") : null),
+      !esVentF ? campo("Refrigerante", equipo.tipoRefrigerante) : "",
+      campo("Voltaje de placa", equipo.voltaje ? equipo.voltaje + "V" : null), campo("Amperaje nominal", equipo.amperaje ? equipo.amperaje + "A" : null),
+      campo("Fases", equipo.fases),
+      campo("Voltaje cond.", equipo.condVoltaje ? equipo.condVoltaje + "V" : null),
+      campo("Amperaje cond.", equipo.condAmperaje ? equipo.condAmperaje + "A" : null),
+      campo("Modelo compresor", equipo.modeloCompresor),
+      campo("Contrato", equipo.contrato), campo("Modelo de faja", equipo.modeloFaja), campo("N° de fajas", equipo.numFajas),
+      campo("Marca motor", equipo.marcaMotor), campo("Modelo motor", equipo.modeloMotor), campo("N° serie motor", equipo.serieMotor),
     ].filter(Boolean).join("");
 
     // Observaciones con causa en tabla
@@ -313,18 +321,33 @@ export default function VistaEquipo() {
         y += rows * (cH + 2) + 2;
       };
 
-      secTit("Ficha técnica", 26, 95, 168);
+      const esVent = GRUPO_POR_TIPO[equipo.tipoEquipo] === "ventilacion";
+
+      secTit("Datos del equipo", 26, 95, 168);
       gridCards([
-        ["Tipo equipo", equipo.tipoEquipo], ["Marca", equipo.marca], ["Modelo", equipo.modelo], ["N° Serie", equipo.serie],
-        ["Capacidad", equipo.capacidad ? equipo.capacidad + " BTU" : null], ["Refrigerante", equipo.tipoRefrigerante], ["Ambiente", equipo.ambiente], ["Piso", equipo.piso],
+        ["Cliente", equipo.cliente], ["Sede", equipo.sede], ["Piso", equipo.piso], ["Ambiente", equipo.ambiente],
+        ["Marca", equipo.marca], ["Modelo", equipo.modelo], ["N° Serie", equipo.serie],
+        ["Capacidad", equipo.capacidad ? equipo.capacidad + (esVent ? " CFM" : " BTU") : null],
       ], 4, 248, 249, 250);
 
       secTit("Datos eléctricos", 230, 81, 0);
       gridCards([
-        ["Voltaje", equipo.voltaje ? equipo.voltaje + "V" : null],
-        ["Amperaje", equipo.amperaje ? equipo.amperaje + "A" : null],
+        !esVent && ["Refrigerante", equipo.tipoRefrigerante],
+        ["Voltaje de placa", equipo.voltaje ? equipo.voltaje + "V" : null],
+        ["Amperaje nominal", equipo.amperaje ? equipo.amperaje + "A" : null],
         ["Fases", equipo.fases],
-      ], 3, 255, 248, 240);
+        equipo.condVoltaje && ["Voltaje cond.", equipo.condVoltaje + "V"],
+        equipo.condAmperaje && ["Amperaje cond.", equipo.condAmperaje + "A"],
+        equipo.modeloCompresor && ["Modelo compresor", equipo.modeloCompresor],
+      ].filter(Boolean), 3, 255, 248, 240);
+
+      if (equipo.contrato || equipo.modeloFaja || equipo.numFajas || equipo.marcaMotor || equipo.modeloMotor || equipo.serieMotor) {
+        secTit(esVent ? "Datos del ventilador" : "Datos Fan Coil / UMA", 15, 110, 90);
+        gridCards([
+          ["Contrato", equipo.contrato], ["Modelo de faja", equipo.modeloFaja], ["N° de fajas", equipo.numFajas],
+          ["Marca motor", equipo.marcaMotor], ["Modelo motor", equipo.modeloMotor], ["N° serie motor", equipo.serieMotor],
+        ].filter(([, v]) => v), 3, 230, 245, 238);
+      }
 
       // Observaciones con causa
       const obs = getObs();
