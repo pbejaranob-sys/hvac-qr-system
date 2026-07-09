@@ -5,6 +5,100 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useParams, useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 
+const GRUPO_POR_TIPO = {
+  "Fan Coil": "fancoil", "UMA": "fancoil", "Manejadora de Aire": "fancoil",
+  "Split Piso Techo": "expansion", "Split Pared": "expansion", "Split Ducto": "expansion",
+  "Split Fancoil": "expansion", "Split Cassete": "expansion", "Ventana": "expansion",
+  "Autocontenido": "expansion", "Precisión": "expansion",
+  "VRV Evaporador": "vrv", "VRV Condensador": "vrv",
+  "Fancoil AH": "fancoil", "Pared AH": "fancoil", "UMA AH": "fancoil",
+  "Ventilación": "ventilacion", "Extractor": "ventilacion", "Inyector": "ventilacion",
+  "Cortina de aire": "ventilacion", "Jetfan": "ventilacion", "Presurizador": "ventilacion",
+  "Chiller": "pendiente", "Torre de Enfriamiento": "pendiente", "Bombas de agua": "pendiente",
+};
+
+const IconoEquipo = ({ grupo }) => {
+  if (grupo === "fancoil") return (
+    <svg width="46" height="46" viewBox="0 0 100 100">
+      <rect x="8" y="18" width="84" height="26" rx="6" fill="#e6f1fb" stroke="#378add" strokeWidth="1.4"/>
+      <rect x="13" y="23" width="14" height="16" rx="3" fill="#b5d4f4" stroke="#85b7eb" strokeWidth="0.7"/>
+      <rect x="31" y="23" width="14" height="16" rx="3" fill="#b5d4f4" stroke="#85b7eb" strokeWidth="0.7"/>
+      <line x1="51" y1="22" x2="51" y2="43" stroke="#378add" strokeWidth="1"/>
+      <line x1="59" y1="22" x2="59" y2="43" stroke="#378add" strokeWidth="1"/>
+      <line x1="67" y1="22" x2="67" y2="43" stroke="#378add" strokeWidth="1"/>
+      <line x1="75" y1="22" x2="75" y2="43" stroke="#378add" strokeWidth="1"/>
+      <rect x="8" y="43" width="84" height="4" rx="2" fill="#85b7eb"/>
+      <path d="M14 60 Q22 53 30 60 Q38 67 46 60 Q54 53 62 60 Q70 67 78 60" stroke="#378add" strokeWidth="1.4" fill="none" strokeLinecap="round"/>
+      <path d="M18 70 Q26 63 34 70 Q42 77 50 70 Q58 63 66 70" stroke="#85b7eb" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <circle cx="88" cy="24" r="3" fill="#2e7d32"/>
+    </svg>
+  );
+  if (grupo === "expansion") return (
+    <svg width="46" height="46" viewBox="0 0 100 100">
+      <rect x="4" y="8" width="38" height="26" rx="5" fill="#e6f1fb" stroke="#378add" strokeWidth="1.3"/>
+      <rect x="8" y="12" width="8" height="18" rx="2" fill="#b5d4f4"/>
+      <rect x="19" y="12" width="8" height="18" rx="2" fill="#b5d4f4"/>
+      <rect x="4" y="33" width="38" height="3.5" rx="1.5" fill="#85b7eb"/>
+      <path d="M7 44 Q13 39 19 44 Q25 49 31 44" stroke="#378add" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+      <circle cx="38" cy="11" r="2.5" fill="#2e7d32"/>
+      <rect x="55" y="20" width="40" height="72" rx="6" fill="#e1f5ee" stroke="#1d9e75" strokeWidth="1.3"/>
+      <rect x="59" y="25" width="32" height="6" rx="2" fill="#9fe1cb"/>
+      <rect x="59" y="34" width="32" height="6" rx="2" fill="#9fe1cb"/>
+      <rect x="59" y="43" width="32" height="6" rx="2" fill="#9fe1cb"/>
+      <rect x="59" y="52" width="32" height="6" rx="2" fill="#5dcaa5"/>
+      <circle cx="91" cy="23" r="2.5" fill="#2e7d32"/>
+      <path d="M42 22 Q48 22 48 30 L48 56 Q48 60 55 60" stroke="#85b7eb" strokeWidth="1.2" fill="none" strokeDasharray="4,2.5"/>
+    </svg>
+  );
+  if (grupo === "ventilacion") return (
+    <svg width="46" height="46" viewBox="0 0 100 100">
+      <path d="M52 6 A36 36 0 1 1 15 42" stroke="#0f6e56" strokeWidth="3" fill="none" strokeLinecap="round" strokeDasharray="4,5"/>
+      <circle cx="50" cy="46" r="32" fill="#e1f5ee" stroke="#0f6e56" strokeWidth="2"/>
+      <g stroke="#0f6e56" strokeWidth="2" fill="#9fe1cb" strokeLinejoin="round">
+        <path d="M50 46 L50 18 Q50 14 54 14 Q58 14 58 18 L58 40 Z"/>
+        <path d="M50 46 L68 27 Q71 24 74 27 Q77 30 74 33 L58 50 Z"/>
+        <path d="M50 46 L78 46 Q82 46 82 50 Q82 54 78 54 L58 50 Z"/>
+        <path d="M50 46 L68 65 Q71 68 68 71 Q65 74 62 71 L46 54 Z"/>
+        <path d="M50 46 L50 74 Q50 78 46 78 Q42 78 42 74 L42 50 Z"/>
+        <path d="M50 46 L32 65 Q29 68 26 65 Q23 62 26 59 L42 42 Z"/>
+        <path d="M50 46 L22 46 Q18 46 18 42 Q18 38 22 38 L42 42 Z"/>
+        <path d="M50 46 L32 27 Q29 24 32 21 Q35 18 38 21 L54 38 Z"/>
+      </g>
+      <circle cx="50" cy="46" r="7" fill="#e1f5ee" stroke="#0f6e56" strokeWidth="2"/>
+      <path d="M27 78 L18 96 M73 78 L82 96" stroke="#0f6e56" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="12" y1="96" x2="88" y2="96" stroke="#0f6e56" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+  if (grupo === "vrv") return (
+    <svg width="46" height="46" viewBox="0 0 100 100">
+      <rect x="4" y="4" width="92" height="40" rx="6" fill="#faeeda" stroke="#ba7517" strokeWidth="1.4"/>
+      <rect x="8" y="9" width="11" height="30" rx="3" fill="#fac775" stroke="#ef9f27" strokeWidth="0.8"/>
+      <rect x="23" y="9" width="11" height="30" rx="3" fill="#fac775" stroke="#ef9f27" strokeWidth="0.8"/>
+      <rect x="38" y="9" width="11" height="30" rx="3" fill="#fac775" stroke="#ef9f27" strokeWidth="0.8"/>
+      <circle cx="79" cy="24" r="13" fill="#fac775" stroke="#ba7517" strokeWidth="1.2"/>
+      <circle cx="79" cy="24" r="7" fill="#ef9f27" stroke="#ba7517" strokeWidth="0.8"/>
+      <circle cx="93" cy="7" r="2.5" fill="#2e7d32"/>
+      <rect x="18" y="52" width="64" height="40" rx="6" fill="#e1f5ee" stroke="#1d9e75" strokeWidth="1.3"/>
+      <rect x="22" y="57" width="56" height="7" rx="2" fill="#9fe1cb"/>
+      <rect x="22" y="67" width="56" height="7" rx="2" fill="#9fe1cb"/>
+      <rect x="22" y="77" width="56" height="7" rx="2" fill="#5dcaa5"/>
+    </svg>
+  );
+  return (
+    <svg width="46" height="46" viewBox="0 0 100 100">
+      <rect x="6" y="4" width="88" height="46" rx="6" fill="#f0f4f8" stroke="#888" strokeWidth="1.3"/>
+      <rect x="10" y="8" width="36" height="38" rx="4" fill="#e6f1fb" stroke="#378add" strokeWidth="1"/>
+      <rect x="50" y="8" width="40" height="38" rx="4" fill="#e1f5ee" stroke="#1d9e75" strokeWidth="1"/>
+      <circle cx="46" cy="27" r="10" fill="#f0f4f8" stroke="#888" strokeWidth="1.2"/>
+      <circle cx="46" cy="27" r="5" fill="#e6f1fb" stroke="#378add" strokeWidth="1"/>
+      <rect x="14" y="56" width="72" height="16" rx="4" fill="#f5f5f5" stroke="#ccc" strokeWidth="1"/>
+      <circle cx="28" cy="64" r="5" fill="#b5d4f4" stroke="#378add" strokeWidth="0.8"/>
+      <circle cx="50" cy="64" r="5" fill="#b5d4f4" stroke="#378add" strokeWidth="0.8"/>
+      <circle cx="72" cy="64" r="5" fill="#9fe1cb" stroke="#1d9e75" strokeWidth="0.8"/>
+    </svg>
+  );
+};
+
 const getBadgeStyle = (estado) => {
   if (estado === "Operativo") return { background: "#e8f5e9", color: "#2e7d32" };
   if (estado === "Operativo con observaciones") return { background: "#fff8e1", color: "#f57f17" };
@@ -344,7 +438,7 @@ export default function VistaEquipo() {
           {/* SIDEBAR */}
           <div style={s.sidebar}>
             <div style={s.sCard}>
-              <div style={s.iconWrap}>❄️</div>
+              <div style={s.iconWrap}><IconoEquipo grupo={GRUPO_POR_TIPO[equipo.tipoEquipo] || "pendiente"} /></div>
               <div style={s.sNombre}>{equipo.marca || "-"} / {equipo.modelo || "-"}</div>
               <span style={s.sTipo}>{equipo.tipoEquipo || "-"}</span>
             </div>
@@ -376,24 +470,38 @@ export default function VistaEquipo() {
           <div style={s.main}>
 
             <div style={s.sec}>
-              <div style={s.secT}>📋 Ficha técnica</div>
+              <div style={s.secT}>📋 Datos del equipo</div>
               <div style={s.g4}>
-                {[["Tipo equipo", equipo.tipoEquipo], ["Marca", equipo.marca], ["Modelo", equipo.modelo], ["N° Serie", equipo.serie],
-                  ["Capacidad", equipo.capacidad ? equipo.capacidad + " BTU" : null], ["Refrigerante", equipo.tipoRefrigerante], ["Ambiente", equipo.ambiente], ["Piso", equipo.piso]
+                {[["Cliente", equipo.cliente], ["Sede", equipo.sede], ["Piso", equipo.piso], ["Ambiente", equipo.ambiente],
+                  ["Marca", equipo.marca], ["Modelo", equipo.modelo], ["N° Serie", equipo.serie],
+                  ["Capacidad", equipo.capacidad ? equipo.capacidad + (GRUPO_POR_TIPO[equipo.tipoEquipo] === "ventilacion" ? " CFM" : " BTU") : null],
                 ].map(([l, v]) => (
                   <div key={l}><div style={s.fl}>{l}</div><div style={s.fv}>{v || "-"}</div></div>
                 ))}
               </div>
-            </div>
-
-            <div style={s.sec}>
-              <div style={s.secT}>⚡ Datos eléctricos</div>
-              <div style={s.g3}>
-                {[["Voltaje", equipo.voltaje ? equipo.voltaje + "V" : null], ["Amperaje", equipo.amperaje ? equipo.amperaje + "A" : null], ["Fases", equipo.fases]
-                ].map(([l, v]) => (
+              <div style={{ ...s.g4, marginTop: "10px" }}>
+                {[
+                  GRUPO_POR_TIPO[equipo.tipoEquipo] !== "ventilacion" && ["Refrigerante", equipo.tipoRefrigerante],
+                  ["Voltaje de placa", equipo.voltaje ? equipo.voltaje + "V" : null],
+                  ["Amperaje nominal", equipo.amperaje ? equipo.amperaje + "A" : null],
+                  ["Fases", equipo.fases],
+                  equipo.condVoltaje && ["Voltaje cond.", equipo.condVoltaje + "V"],
+                  equipo.condAmperaje && ["Amperaje cond.", equipo.condAmperaje + "A"],
+                  equipo.modeloCompresor && ["Modelo compresor", equipo.modeloCompresor],
+                ].filter(Boolean).map(([l, v]) => (
                   <div key={l}><div style={s.fl}>{l}</div><div style={s.fv}>{v || "-"}</div></div>
                 ))}
               </div>
+              {(equipo.contrato || equipo.modeloFaja || equipo.numFajas || equipo.marcaMotor || equipo.modeloMotor || equipo.serieMotor) && (
+                <div style={{ ...s.g4, marginTop: "10px" }}>
+                  {[
+                    ["Contrato", equipo.contrato], ["Modelo de faja", equipo.modeloFaja], ["N° de fajas", equipo.numFajas],
+                    ["Marca motor", equipo.marcaMotor], ["Modelo motor", equipo.modeloMotor], ["N° serie motor", equipo.serieMotor],
+                  ].filter(([, v]) => v).map(([l, v]) => (
+                    <div key={l}><div style={s.fl}>{l}</div><div style={s.fv}>{v}</div></div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Observaciones en formato columnas */}
@@ -530,7 +638,7 @@ const s = {
   layout: { display: "flex", gap: "16px", alignItems: "flex-start" },
   sidebar: { width: "185px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "10px" },
   sCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "12px 14px" },
-  iconWrap: { width: "50px", height: "50px", borderRadius: "12px", background: "#e8f0fe", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", fontSize: "26px" },
+  iconWrap: { width: "60px", height: "60px", borderRadius: "12px", background: "#f8f9fa", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" },
   sNombre: { fontSize: "13px", fontWeight: 500, color: "#222", textAlign: "center", marginBottom: "5px" },
   sTipo: { fontSize: "10px", padding: "2px 8px", background: "#e8f0fe", color: "#1a5fa8", borderRadius: "20px", display: "inline-block" },
   sLbl: { fontSize: "10px", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" },
