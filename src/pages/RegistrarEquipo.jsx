@@ -327,15 +327,15 @@ export default function RegistrarEquipo() {
                 </div>
               </div>
 
-              {/* Datos específicos Fan Coil / UMA - solo para esos tipos */}
-              {["Fan Coil","UMA","Manejadora de Aire","Fancoil AH","UMA AH"].some(t => (form.tipoEquipo||"").toLowerCase().includes(t.toLowerCase().split(" ")[0])) && (
+              {/* Datos contrato + faja + motor - Fan Coil/UMA y Ventilación */}
+              {(["Fan Coil","UMA","Manejadora de Aire","Fancoil AH","UMA AH"].some(t => (form.tipoEquipo||"").toLowerCase().includes(t.toLowerCase().split(" ")[0])) || esVentilacion) && (
               <div style={s.seccion}>
-                <div style={s.secTitulo}>💧 Datos Fan Coil / UMA</div>
+                <div style={s.secTitulo}>{esVentilacion ? "🌀 Datos del ventilador / motor" : "💧 Datos Fan Coil / UMA"}</div>
                 <div style={s.grid3}>
-                  <div><label style={s.label}>UMA / Fan Coil N°</label><input style={s.input} name="fancoilNum" placeholder="FC-01..." value={form.fancoilNum} onChange={handleChange} /></div>
                   <div><label style={s.label}>Contrato</label><input style={s.input} name="contrato" placeholder="N° de contrato" value={form.contrato} onChange={handleChange} /></div>
-                  <div><label style={s.label}>Modelo de faja</label><input style={s.input} name="modeloFaja" placeholder="Modelo..." value={form.modeloFaja} onChange={handleChange} /></div>
-                  <div><label style={s.label}>Número de fajas</label><input style={s.input} name="numFajas" placeholder="2..." value={form.numFajas} onChange={handleChange} /></div>
+                  {!esVentilacion && <div><label style={s.label}>UMA / Fan Coil N°</label><input style={s.input} name="fancoilNum" placeholder="FC-01..." value={form.fancoilNum} onChange={handleChange} /></div>}
+                  <div><label style={s.label}>Modelo de faja</label><input style={s.input} name="modeloFaja" placeholder="A65, B78..." value={form.modeloFaja} onChange={handleChange} /></div>
+                  <div><label style={s.label}>Número de fajas</label><input style={s.input} name="numFajas" placeholder="1, 2..." value={form.numFajas} onChange={handleChange} /></div>
                   <div><label style={s.label}>Marca de motor</label><input style={s.input} name="marcaMotor" placeholder="WEG, Siemens..." value={form.marcaMotor} onChange={handleChange} /></div>
                   <div><label style={s.label}>Modelo de motor</label><input style={s.input} name="modeloMotor" placeholder="Modelo motor..." value={form.modeloMotor} onChange={handleChange} /></div>
                   <div><label style={s.label}>N° serie de motor</label><input style={s.input} name="serieMotor" placeholder="Serie motor..." value={form.serieMotor} onChange={handleChange} /></div>

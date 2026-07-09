@@ -822,7 +822,7 @@ export default function Protocolo() {
     const infoRows = [
       ["CLIENTE", equipo.cliente||"", "MARCA DE VENTILADOR", equipo.marca||""],
       ["CONTRATO", equipo.contrato||form.contrato||"", "MODELO DE VENTILADOR", equipo.modelo||""],
-      ["VENTILADOR N\xB0", equipo.fancoilNum||equipo.codigo||"", "N\xB0 DE SERIE DE VENTILADOR", equipo.serie||""],
+      ["VENTILADOR N\xB0", equipo.codigo||equipo.fancoilNum||"", "N\xB0 DE SERIE DE VENTILADOR", equipo.serie||""],
       ["TIPO DE VENTILADOR", equipo.tipoEquipo||"", "MARCA DE MOTOR", equipo.marcaMotor||form.marcaMotor||""],
       ["MODELO DE FAJA", equipo.modeloFaja||form.modeloFaja||"", "MODELO DE MOTOR", equipo.modeloMotor||form.modeloMotor||""],
       ["NUMERO DE FAJAS", equipo.numFajas||form.numFajas||"", "N\xB0 DE SERIE DE MOTOR", equipo.serieMotor||form.serieMotor||""],
@@ -1729,12 +1729,12 @@ export default function Protocolo() {
               <Campo label="Marca" auto val={equipo.marca} />
               <Campo label="Modelo" auto val={equipo.modelo} />
               <Campo label="N° Serie" auto val={equipo.serie} />
-              <Campo label="Capacidad" auto val={equipo.capacidad ? equipo.capacidad + " BTU" : ""} />
+              <Campo label="Capacidad" auto val={equipo.capacidad ? equipo.capacidad + (form.grupo === "ventilacion" ? " CFM" : " BTU") : ""} />
             </div>
             <div style={{ ...s.g4, marginTop: "10px" }}>
-              <Campo label="Tipo refrigerante" auto val={equipo.tipoRefrigerante} />
+              {form.grupo !== "ventilacion" && <Campo label="Tipo refrigerante" auto val={equipo.tipoRefrigerante} />}
               <Campo label="Voltaje de placa" auto val={equipo.voltaje ? equipo.voltaje + "V" : ""} />
-              <Campo label="Amperaje nominal (evap.)" auto val={equipo.amperaje ? equipo.amperaje + "A" : ""} />
+              <Campo label="Amperaje nominal" auto val={equipo.amperaje ? equipo.amperaje + "A" : ""} />
               <Campo label="Fases" auto val={equipo.fases} />
               {equipo.condAmperaje && <Campo label="Amperaje nominal (cond.)" auto val={equipo.condAmperaje + "A"} />}
               {equipo.condVoltaje && <Campo label="Voltaje nominal (cond.)" auto val={equipo.condVoltaje + "V"} />}
@@ -2002,7 +2002,7 @@ export default function Protocolo() {
         )}
 
         {/* Actividades (solo para grupos que NO usan formato Carrier de estatus) */}
-        {form.grupo !== "fancoil" && form.grupo !== "expansion" && (
+        {form.grupo !== "fancoil" && form.grupo !== "expansion" && form.grupo !== "ventilacion" && (
         <div style={s.sec}>
           <div style={s.secT}>✅ Actividades realizadas</div>
           <div style={s.secB}>
