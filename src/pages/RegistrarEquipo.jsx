@@ -167,6 +167,8 @@ export default function RegistrarEquipo() {
 
   const gridCols = cronograma.length <= 2 ? "1fr 1fr" : cronograma.length <= 4 ? `repeat(${cronograma.length}, 1fr)` : "repeat(4, 1fr)";
 
+  const esVentilacion = ["Ventilación","Extractor","Inyector","Cortina de aire","Jetfan","Presurizador"].includes(form.tipoEquipo);
+
   return (
     <div style={s.page}>
       <div style={s.navbar}>
@@ -296,15 +298,15 @@ export default function RegistrarEquipo() {
                   <div><label style={s.label}>Marca</label><input style={s.input} name="marca" placeholder="Daikin, LG, Midea..." value={form.marca} onChange={handleChange} required /></div>
                   <div><label style={s.label}>Modelo</label><input style={s.input} name="modelo" placeholder="FTXS35KVMA" value={form.modelo} onChange={handleChange} /></div>
                   <div><label style={s.label}>N° de Serie</label><input style={s.input} name="serie" placeholder="D4Y0041045" value={form.serie} onChange={handleChange} /></div>
-                  <div><label style={s.label}>Capacidad (BTU)</label><input style={s.input} name="capacidad" placeholder="12000, 18000..." value={form.capacidad} onChange={handleChange} /></div>
-                  <div><label style={s.label}>Modelo de compresor</label><input style={s.input} name="modeloCompresor" placeholder="Modelo compresor..." value={form.modeloCompresor} onChange={handleChange} /></div>
-                  <div>
+                  <div><label style={s.label}>Capacidad ({esVentilacion ? "CFM" : "BTU"})</label><input style={s.input} name="capacidad" placeholder={esVentilacion ? "500, 1000..." : "12000, 18000..."} value={form.capacidad} onChange={handleChange} /></div>
+                  {!esVentilacion && <div><label style={s.label}>Modelo de compresor</label><input style={s.input} name="modeloCompresor" placeholder="Modelo compresor..." value={form.modeloCompresor} onChange={handleChange} /></div>}
+                  {!esVentilacion && <div>
                     <label style={s.label}>Tipo de refrigerante</label>
                     <select style={s.input} name="tipoRefrigerante" value={form.tipoRefrigerante} onChange={handleChange}>
                       <option value="">Seleccionar...</option>
                       {["R-22","R-410A","R-32","R-407C","R-134A","Otro"].map(r => <option key={r}>{r}</option>)}
                     </select>
-                  </div>
+                  </div>}
                 </div>
               </div>
 
@@ -318,18 +320,10 @@ export default function RegistrarEquipo() {
                       <option>Monofásico</option><option>Trifásico</option>
                     </select>
                   </div>
-                </div>
-                {/* Evaporador */}
-                <div style={{ fontSize:"11px", fontWeight:600, color:"#0c447c", background:"#e6f1fb", padding:"5px 10px", borderRadius:"6px", margin:"10px 0 6px" }}>Evaporador</div>
-                <div style={s.grid3}>
                   <div><label style={s.label}>Voltaje nominal (V)</label><input style={s.input} name="voltaje" placeholder="220" value={form.voltaje} onChange={handleChange} /></div>
                   <div><label style={s.label}>Amperaje nominal (A)</label><input style={s.input} name="amperaje" placeholder="15" value={form.amperaje} onChange={handleChange} /></div>
-                </div>
-                {/* Condensador */}
-                <div style={{ fontSize:"11px", fontWeight:600, color:"#085041", background:"#e1f5ee", padding:"5px 10px", borderRadius:"6px", margin:"10px 0 6px" }}>Condensador</div>
-                <div style={s.grid3}>
-                  <div><label style={s.label}>Voltaje nominal (V)</label><input style={s.input} name="condVoltaje" placeholder="220" value={form.condVoltaje} onChange={handleChange} /></div>
-                  <div><label style={s.label}>Amperaje nominal (A)</label><input style={s.input} name="condAmperaje" placeholder="15" value={form.condAmperaje} onChange={handleChange} /></div>
+                  {!esVentilacion && <div><label style={s.label}>Voltaje condensador (V)</label><input style={s.input} name="condVoltaje" placeholder="220" value={form.condVoltaje} onChange={handleChange} /></div>}
+                  {!esVentilacion && <div><label style={s.label}>Amperaje condensador (A)</label><input style={s.input} name="condAmperaje" placeholder="15" value={form.condAmperaje} onChange={handleChange} /></div>}
                 </div>
               </div>
 
