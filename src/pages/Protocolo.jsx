@@ -1739,6 +1739,7 @@ export default function Protocolo() {
               {equipo.condAmperaje && <Campo label="Amperaje nominal (cond.)" auto val={equipo.condAmperaje + "A"} />}
               {equipo.condVoltaje && <Campo label="Voltaje nominal (cond.)" auto val={equipo.condVoltaje + "V"} />}
               {equipo.modeloCompresor && <Campo label="Modelo de compresor" auto val={equipo.modeloCompresor} />}
+              {form.grupo === "ventilacion" && equipo.codigo && <Campo label="Ventilador N°" auto val={equipo.codigo} />}
             </div>
             {/* Campos específicos Fan Coil / UMA - solo si existen en la ficha */}
             {(equipo.fancoilNum || equipo.contrato || equipo.modeloFaja || equipo.marcaMotor) && (

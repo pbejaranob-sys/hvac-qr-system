@@ -249,12 +249,13 @@ export default function RegistrarEquipo() {
                   <div><label style={s.label}>Código del equipo</label><input style={s.input} name="codigo" placeholder="SP-01..." value={form.codigo} onChange={handleChange} /></div>
                   <div><label style={s.label}>Piso</label><input style={s.input} name="piso" placeholder="1, 2, Sótano..." value={form.piso} onChange={handleChange} /></div>
                   <div><label style={s.label}>Ambiente</label><input style={s.input} name="ambiente" placeholder="Oficina, Comedor..." value={form.ambiente} onChange={handleChange} /></div>
+                  <div><label style={s.label}>Contrato</label><input style={s.input} name="contrato" placeholder="N° de contrato" value={form.contrato} onChange={handleChange} /></div>
                 </div>
               </div>
 
               {/* Ficha técnica */}
               <div style={s.seccion}>
-                <div style={s.secTitulo}>📋 Ficha técnica</div>
+                <div style={s.secTitulo}>{esVentilacion ? "🌀 Datos del ventilador" : "📋 Ficha técnica"}</div>
                 <div style={s.grid2}>
                   <div>
                     <label style={s.label}>Tipo de equipo</label>
@@ -330,9 +331,9 @@ export default function RegistrarEquipo() {
               {/* Datos contrato + faja + motor - Fan Coil/UMA y Ventilación */}
               {(["Fan Coil","UMA","Manejadora de Aire","Fancoil AH","UMA AH"].some(t => (form.tipoEquipo||"").toLowerCase().includes(t.toLowerCase().split(" ")[0])) || esVentilacion) && (
               <div style={s.seccion}>
-                <div style={s.secTitulo}>{esVentilacion ? "🌀 Datos del ventilador / motor" : "💧 Datos Fan Coil / UMA"}</div>
+                <div style={s.secTitulo}>{esVentilacion ? "⚙️ Datos de motor" : "💧 Datos Fan Coil / UMA"}</div>
                 <div style={s.grid3}>
-                  <div><label style={s.label}>Contrato</label><input style={s.input} name="contrato" placeholder="N° de contrato" value={form.contrato} onChange={handleChange} /></div>
+                  {!esVentilacion && <div><label style={s.label}>Contrato</label><input style={s.input} name="contrato" placeholder="N° de contrato" value={form.contrato} onChange={handleChange} /></div>}
                   {!esVentilacion && <div><label style={s.label}>UMA / Fan Coil N°</label><input style={s.input} name="fancoilNum" placeholder="FC-01..." value={form.fancoilNum} onChange={handleChange} /></div>}
                   <div><label style={s.label}>Modelo de faja</label><input style={s.input} name="modeloFaja" placeholder="A65, B78..." value={form.modeloFaja} onChange={handleChange} /></div>
                   <div><label style={s.label}>Número de fajas</label><input style={s.input} name="numFajas" placeholder="1, 2..." value={form.numFajas} onChange={handleChange} /></div>
