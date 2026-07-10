@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { db } from "../firebase";
-import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 // Flujo público al escanear el QR de un equipo: elegir Cliente o Técnico,
 // validar código de acceso, y mostrar el menú correspondiente.
@@ -21,36 +21,20 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
     setPantalla("codigo");
   };
 
+  // Códigos de acceso universales: 0001 para clientes, 1001 para técnicos.
+  const CODIGO_CLIENTE = "0001";
+  const CODIGO_TECNICO = "1001";
+
   const validarCodigo = async () => {
     setError("");
     if (!codigo.trim()) { setError("Ingresa un código."); return; }
     setValidando(true);
-    try {
-      if (tipo === "cliente") {
-        // El código de acceso del cliente es el N° de contrato del equipo.
-        const esperado = (equipo.contrato || "").trim();
-        if (!esperado) {
-          // Sin contrato configurado: no bloquear, dejar pasar.
-          setPantalla("menu");
-        } else if (codigo.trim() === esperado) {
-          setPantalla("menu");
-        } else {
-          setError("Código incorrecto.");
-        }
-      } else {
-        // Técnico: se valida contra la colección "tecnicos" (campo "codigo").
-        const q = query(collection(db, "tecnicos"), where("codigo", "==", codigo.trim()));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          const t = snap.docs[0].data();
-          setNombreTecnico(t.nombre || "Técnico");
-          setPantalla("menu");
-        } else {
-          setError("Código de técnico no válido.");
-        }
-      }
-    } catch (e) {
-      setError("Error al validar. Intenta de nuevo.");
+    const esperado = tipo === "cliente" ? CODIGO_CLIENTE : CODIGO_TECNICO;
+    if (codigo.trim() === esperado) {
+      if (tipo === "tecnico") setNombreTecnico("Técnico");
+      setPantalla("menu");
+    } else {
+      setError("Código incorrecto.");
     }
     setValidando(false);
   };
