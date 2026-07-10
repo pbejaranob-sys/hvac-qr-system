@@ -522,7 +522,7 @@ export default function PanelCliente() {
                             </td>
                             <td style={{ padding: "10px 14px" }}>
                               <div style={{ display: "flex", gap: "5px" }}>
-                                <button style={s.btnInfo} onClick={() => { setModalEquipo(equipo); setModalTipo("info"); }}>Info</button>
+                                <button style={s.btnInfo} onClick={() => window.open(`/equipo/${equipo.id}?noqr=1`, "_blank")}>Info</button>
                                 <button
                                   style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "5px", cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap", border: `0.5px solid ${abierto ? "#ffa726" : "#ddd"}`, background: abierto ? "#e65100" : "#fff8e1", color: abierto ? "white" : "#e65100", opacity: numObs === 0 ? 0.45 : 1 }}
                                   onClick={() => setObsAbierto(abierto ? null : equipo.id)}
@@ -537,7 +537,7 @@ export default function PanelCliente() {
                           </tr>
                           {abierto && (
                             <tr style={{ borderBottom: "0.5px solid #f5f5f5" }}>
-                              <td colSpan={8} style={{ padding: "0", background: "#fffdf5", borderTop: "2px solid #ffa726" }}>
+                              <td colSpan={9} style={{ padding: "0", background: "white", borderTop: "2px solid #ffa726" }}>
                                 <div style={{ padding: "12px 16px" }}>
                                   <div style={{ fontSize: "11px", fontWeight: 500, color: "#e65100", marginBottom: "8px" }}>{numObs} observación{numObs !== 1 ? "es" : ""} — {equipo.codigo || equipo.ambiente}</div>
                                   {numObs === 0 ? (
