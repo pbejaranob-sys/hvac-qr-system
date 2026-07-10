@@ -236,6 +236,8 @@ export default function PanelCliente() {
       return okE && okP && okT && okM;
     })
     .sort((a, b) => {
+      const todosFiltrosVacios = filtroPiso === "Todos" && filtroTipoEquipo === "Todos" && filtroMes === "Todos";
+      if (todosFiltrosVacios) return sortPiso(a, b);
       const fa = fechaATimestamp(a.ultimoMantenimiento);
       const fb = fechaATimestamp(b.ultimoMantenimiento);
       if (fb !== fa) return fb - fa;
