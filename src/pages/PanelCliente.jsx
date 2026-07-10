@@ -209,7 +209,7 @@ export default function PanelCliente() {
   const [vistaActual, setVistaActual] = useState("sedes");
   const [sedeActual, setSedeActual] = useState(null);
   const [averias, setAverias] = useState([]);
-  const [detalleAveria, setDetalleAveria] = useState(null); // avería mostrada dentro del modal de ficha
+  const [detalleAveria, setDetalleAveria] = useState(null); // avería mostrada en su modal propio
   const [listaEmergenciaSede, setListaEmergenciaSede] = useState(null); // averías activas cuando hay 2+
   const [historialAverias, setHistorialAverias] = useState(null); // null = aún no cargado
   const [historialAbierto, setHistorialAbierto] = useState(false);
@@ -284,15 +284,12 @@ export default function PanelCliente() {
 
   // ---- Averías / emergencias ----
   const abrirDetalleAveria = (averia) => {
-    const equipo = equipos.find(e => e.id === averia.equipoId);
-    if (equipo) {
-      setModalEquipo(equipo);
-      setModalTipo("info");
-    }
     setDetalleAveria(averia);
     setListaEmergenciaSede(null);
     setHistorialAbierto(false);
   };
+
+  const cerrarDetalleAveria = () => setDetalleAveria(null);
 
   const abrirEmergencias = (lista) => {
     if (lista.length === 0) return;
@@ -308,7 +305,6 @@ export default function PanelCliente() {
   const cerrarModalEquipo = () => {
     setModalEquipo(null);
     setModalTipo(null);
-    setDetalleAveria(null);
   };
 
   const marcarAveriaAtendida = async (averiaId) => {
@@ -320,7 +316,7 @@ export default function PanelCliente() {
       if (averiaAtendida && historialAverias !== null) {
         setHistorialAverias(prev => [{ ...averiaAtendida, atendida: true, atendidaEn: { toDate: () => new Date() } }, ...prev]);
       }
-      cerrarModalEquipo();
+      cerrarDetalleAveria();
     } catch (e) {
       console.error("Error marcando avería como atendida:", e);
     }
@@ -599,9 +595,7 @@ export default function PanelCliente() {
                         onClick={() => averiasSede.length > 0 && abrirEmergenciasSede(sede)}
                       >
                         <div style={{ ...s.miniNum, color: averiasSede.length > 0 ? "#c62828" : "#aaa" }}>{averiasSede.length}</div>
-                        <div style={{ ...s.miniLabel, color: averiasSede.length > 0 ? "#c62828" : "#aaa", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
-                          <i className="ti ti-alert-triangle" style={{ fontSize: "10px" }} aria-hidden="true"></i>Emergencia
-                        </div>
+                        <div style={{ ...s.miniLabel, color: averiasSede.length > 0 ? "#c62828" : "#aaa" }}>⚠ Emergencia</div>
                       </div>
                       <div
                         style={{ fontSize: "9px", color: averiasSede.length > 0 ? "#c62828" : "#999", textAlign: "center", marginTop: "3px", textDecoration: "underline", cursor: "pointer" }}
@@ -821,32 +815,27 @@ export default function PanelCliente() {
       {/* Modal lista de emergencias activas (2 o más averías) */}
       {listaEmergenciaSede && (
         <div style={s.modalOverlay} onClick={() => setListaEmergenciaSede(null)}>
-          <div style={{ ...s.modalCard, maxWidth: "420px" }} onClick={e => e.stopPropagation()}>
-            <div style={s.modalHeader}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <i className="ti ti-alert-triangle" style={{ color: "#c62828" }} aria-hidden="true"></i>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>Equipos con emergencia</span>
-                <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "20px", background: "#ffebee", color: "#c62828", fontWeight: 700 }}>{listaEmergenciaSede.length}</span>
-              </div>
-              <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={() => setListaEmergenciaSede(null)}>X</button>
+          <div style={s.averiaListaCard} onClick={e => e.stopPropagation()}>
+            <div style={s.averiaListaHeader}>
+              <span style={{ fontSize: "15px" }}>⚠</span>
+              <span style={s.averiaListaTitulo}>Equipos con emergencia</span>
+              <span style={s.badgeEmergenciaCount}>{listaEmergenciaSede.length}</span>
+              <button style={s.btnCerrarX} onClick={() => setListaEmergenciaSede(null)}>✕</button>
             </div>
-            <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "60vh", overflowY: "auto" }}>
+            <div style={s.averiaListaBody}>
               {listaEmergenciaSede.map(a => {
                 const eq = equipos.find(e => e.id === a.equipoId);
                 return (
-                  <div
-                    key={a.id}
-                    onClick={() => abrirDetalleAveria(a)}
-                    style={{ border: "0.5px solid #e0e0e0", borderRadius: "8px", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
-                  >
+                  <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.averiaListaItem}>
                     <div>
-                      <div style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
-                      <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
+                      <div style={s.averiaListaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
+                      <div style={s.averiaListaItemMeta}>
                         {a.piso ? `Piso ${a.piso}` : ""}{eq?.serie ? ` · Serie ${eq.serie}` : ""}
                       </div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: "11px", color: "#c62828" }}>{a.fecha?.toDate ? a.fecha.toDate().toLocaleString("es-PE") : ""}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={s.averiaListaItemFecha}>{a.fecha?.toDate ? a.fecha.toDate().toLocaleString("es-PE") : ""}</span>
+                      <span style={s.averiaListaChevron}>›</span>
                     </div>
                   </div>
                 );
@@ -859,17 +848,13 @@ export default function PanelCliente() {
       {/* Modal historial de averías atendidas */}
       {historialAbierto && (
         <div style={s.modalOverlay} onClick={() => setHistorialAbierto(false)}>
-          <div style={{ ...s.modalCard, maxWidth: "460px" }} onClick={e => e.stopPropagation()}>
-            <div style={s.modalHeader}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <i className="ti ti-history" aria-hidden="true" style={{ color: "#555" }}></i>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>
-                  Historial de averías{historialSedeFiltro ? ` — ${historialSedeFiltro.nombre}` : ""}
-                </span>
-              </div>
-              <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={() => setHistorialAbierto(false)}>X</button>
+          <div style={{ ...s.averiaListaCard, border: "0.5px solid #e0e0e0" }} onClick={e => e.stopPropagation()}>
+            <div style={{ ...s.averiaListaHeader, color: "#555" }}>
+              <span style={{ fontSize: "15px" }}>🕘</span>
+              <span style={s.averiaListaTitulo}>Historial de averías{historialSedeFiltro ? ` — ${historialSedeFiltro.nombre}` : ""}</span>
+              <button style={s.btnCerrarX} onClick={() => setHistorialAbierto(false)}>✕</button>
             </div>
-            <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "60vh", overflowY: "auto" }}>
+            <div style={s.averiaListaBody}>
               {cargandoHistorial ? (
                 <div style={{ fontSize: "12px", color: "#888", textAlign: "center", padding: "20px 0" }}>Cargando historial...</div>
               ) : historialFiltrado.length === 0 ? (
@@ -880,21 +865,14 @@ export default function PanelCliente() {
                   .map(a => {
                     const eq = equipos.find(e => e.id === a.equipoId);
                     return (
-                      <div
-                        key={a.id}
-                        onClick={() => abrirDetalleAveria(a)}
-                        style={{ border: "0.5px solid #e0e0e0", borderRadius: "8px", padding: "10px 12px", cursor: "pointer" }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                          <div>
-                            <div style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
-                            <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>{a.sede ? `${a.sede} · ` : ""}{a.piso ? `Piso ${a.piso}` : ""}</div>
-                          </div>
-                          <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "20px", background: "#e8f5e9", color: "#2e7d32", whiteSpace: "nowrap" }}>Atendida</span>
+                      <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.averiaListaItem}>
+                        <div>
+                          <div style={s.averiaListaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
+                          <div style={s.averiaListaItemMeta}>{a.sede ? `${a.sede} · ` : ""}{a.piso ? `Piso ${a.piso}` : ""}</div>
                         </div>
-                        <div style={{ fontSize: "12px", color: "#555", margin: "6px 0 4px" }}>{a.mensaje}</div>
-                        <div style={{ fontSize: "10px", color: "#999" }}>
-                          Reportada: {a.fecha?.toDate ? a.fecha.toDate().toLocaleString("es-PE") : "-"} · Atendida: {a.atendidaEn?.toDate ? a.atendidaEn.toDate().toLocaleString("es-PE") : "-"}
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={s.badgeAtendidaChip}>Atendida</span>
+                          <span style={s.averiaListaChevron}>›</span>
                         </div>
                       </div>
                     );
@@ -904,7 +882,69 @@ export default function PanelCliente() {
         </div>
       )}
 
-      {/* Modal ficha técnica (también usado para detalle de avería, activa o del historial) */}
+      {/* Modal compacto de detalle de avería (activa o del historial) */}
+      {detalleAveria && (() => {
+        const eq = equipos.find(e => e.id === detalleAveria.equipoId);
+        const numObsAbiertas = eq ? getObs(eq).length : 0;
+        const atendida = !!detalleAveria.atendida;
+        return (
+          <div style={s.modalOverlay} onClick={cerrarDetalleAveria}>
+            <div style={{ ...s.averiaCard, border: atendida ? "0.5px solid #a5d6a7" : "0.5px solid #ef9a9a" }} onClick={e => e.stopPropagation()}>
+              <div style={s.averiaHeaderRow}>
+                <div>
+                  <div style={s.averiaTitulo}>{eq?.tipoEquipo || "Equipo"} — {(detalleAveria.ambiente || eq?.ambiente || "").toString().toLowerCase()}</div>
+                  <div style={s.averiaSub}>Piso {detalleAveria.piso || eq?.piso || "-"} · {eq?.marca || "-"} · {eq?.modelo || detalleAveria.equipoCodigo || "-"}</div>
+                </div>
+                <span style={atendida ? s.badgeAtendida : s.badgeEmergencia}>{atendida ? "Atendida" : "Con emergencia"}</span>
+              </div>
+
+              <div style={s.averiaTabla}>
+                <div style={s.averiaFila}><span style={s.averiaLabel}>N° de serie</span><span style={s.averiaValor}>{eq?.serie || "-"}</span></div>
+                <div style={s.averiaFila}><span style={s.averiaLabel}>Estado</span><span style={s.averiaValor}>{eq?.estado || "-"}</span></div>
+                <div style={s.averiaFila}><span style={s.averiaLabel}>Últ. mantenimiento</span><span style={s.averiaValor}>{eq?.ultimoMantenimiento || "Sin registro"}</span></div>
+                <div style={s.averiaFila}><span style={s.averiaLabel}>Observaciones abiertas</span><span style={s.averiaValor}>{numObsAbiertas}</span></div>
+              </div>
+
+              <div style={s.averiaDivider}></div>
+
+              <div style={{ ...s.averiaMsgLabel, color: atendida ? "#2e7d32" : "#c62828" }}>
+                {atendida ? "✓ Avería atendida" : "⚠ Mensaje de emergencia"}
+              </div>
+              <div style={{ ...s.averiaMsgBox, background: atendida ? "#e8f5e9" : "#fde8e8" }}>
+                <div style={s.averiaMsgTxt}>{detalleAveria.mensaje}</div>
+                <div style={{ ...s.averiaMsgFecha, color: atendida ? "#2e7d32" : "#c62828" }}>
+                  🕐 {detalleAveria.fecha?.toDate ? detalleAveria.fecha.toDate().toLocaleString("es-PE") : ""}
+                </div>
+              </div>
+
+              {atendida ? (
+                <div style={s.averiaAtendidaTxt}>
+                  ✓ Atendida: {detalleAveria.atendidaEn?.toDate ? detalleAveria.atendidaEn.toDate().toLocaleString("es-PE") : "-"}
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
+                    {eq && (
+                      <button
+                        style={s.btnVerProtocolo}
+                        onClick={() => navigate(`/protocolo?equipo=${eq.id}&origen=cliente${sedeActual ? `&sede=${encodeURIComponent(sedeActual.id)}` : ""}`)}
+                      >
+                        Ver protocolo
+                      </button>
+                    )}
+                    <button style={s.btnMarcarAtendida} onClick={() => marcarAveriaAtendida(detalleAveria.id)}>
+                      Marcar como atendida
+                    </button>
+                  </div>
+                  <div style={s.averiaCaption}>No se elimina: pasa a historial de averías atendidas y deja de contar en el badge de emergencia.</div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Modal ficha técnica completa (botón "Info" de la tabla de equipos) */}
       {modalEquipo && (
         <div style={s.modalOverlay} onClick={cerrarModalEquipo}>
           <div style={s.modalCard} onClick={e => e.stopPropagation()}>
@@ -923,34 +963,6 @@ export default function PanelCliente() {
             </div>
 
             <div style={{ overflowY: "auto", maxHeight: "65vh" }}>
-              {/* Bloque de emergencia/historial, solo si el modal se abrió desde una avería */}
-              {detalleAveria && (
-                <div style={{ padding: "14px 20px", background: detalleAveria.atendida ? "#e8f5e9" : "#fef0f0", borderBottom: `0.5px solid ${detalleAveria.atendida ? "#a5d6a7" : "#f0997b"}` }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-                    <i className={detalleAveria.atendida ? "ti ti-circle-check" : "ti ti-alert-triangle"} style={{ color: detalleAveria.atendida ? "#2e7d32" : "#c62828", fontSize: "15px" }} aria-hidden="true"></i>
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: detalleAveria.atendida ? "#2e7d32" : "#c62828" }}>
-                      {detalleAveria.atendida ? "Avería atendida" : "Mensaje de emergencia"}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: "13px", color: "#333", marginBottom: "6px" }}>{detalleAveria.mensaje}</div>
-                  <div style={{ fontSize: "11px", color: detalleAveria.atendida ? "#2e7d32" : "#791f1f", marginBottom: detalleAveria.atendida ? 0 : "10px" }}>
-                    Reportado por {detalleAveria.tipoReportante || "-"}{detalleAveria.nombreReportante ? ` (${detalleAveria.nombreReportante})` : ""} · {detalleAveria.fecha?.toDate ? detalleAveria.fecha.toDate().toLocaleString("es-PE") : ""}
-                  </div>
-                  {detalleAveria.atendida ? (
-                    <div style={{ fontSize: "11px", color: "#2e7d32", marginTop: "4px" }}>
-                      ✓ Atendida: {detalleAveria.atendidaEn?.toDate ? detalleAveria.atendidaEn.toDate().toLocaleString("es-PE") : "-"}
-                    </div>
-                  ) : (
-                    <button
-                      style={{ width: "100%", padding: "9px", borderRadius: "8px", border: "none", background: "#c62828", color: "white", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
-                      onClick={() => marcarAveriaAtendida(detalleAveria.id)}
-                    >
-                      Marcar como atendida
-                    </button>
-                  )}
-                </div>
-              )}
-
               {modalTipo === "info" ? (
                 <>
                   <div style={s.modalSec}>
@@ -1131,4 +1143,39 @@ const s = {
   vaciomsg: { fontSize: "12px", color: "#aaa", fontStyle: "italic", textAlign: "center", padding: "6px 0" },
   vacio: { textAlign: "center", padding: "3rem", background: "white", borderRadius: "12px", color: "#888", border: "0.5px solid #e0e0e0" },
   centro: { textAlign: "center", padding: "3rem", fontSize: "16px", color: "#888" },
+
+  // ---- Modal compacto de detalle de avería (estilo mockup) ----
+  averiaCard: { background: "white", borderRadius: "12px", width: "100%", maxWidth: "420px", padding: "20px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" },
+  averiaHeaderRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px", gap: "10px" },
+  averiaTitulo: { fontSize: "15px", fontWeight: 600, color: "#1a1a1a" },
+  averiaSub: { fontSize: "13px", color: "#888", marginTop: "3px" },
+  badgeEmergencia: { fontSize: "11px", padding: "4px 10px", background: "#fde8e8", color: "#c62828", borderRadius: "20px", fontWeight: 500, whiteSpace: "nowrap" },
+  badgeAtendida: { fontSize: "11px", padding: "4px 10px", background: "#e8f5e9", color: "#2e7d32", borderRadius: "20px", fontWeight: 500, whiteSpace: "nowrap" },
+  averiaTabla: { display: "flex", flexDirection: "column", gap: "8px", marginBottom: "14px" },
+  averiaFila: { display: "flex", justifyContent: "space-between", alignItems: "center" },
+  averiaLabel: { fontSize: "13px", color: "#888" },
+  averiaValor: { fontSize: "13px", color: "#222", fontWeight: 500 },
+  averiaDivider: { height: "0.5px", background: "#eee", margin: "2px 0 14px" },
+  averiaMsgLabel: { fontSize: "13px", fontWeight: 600, marginBottom: "8px" },
+  averiaMsgBox: { borderRadius: "8px", padding: "12px 14px" },
+  averiaMsgTxt: { fontSize: "14px", color: "#333", marginBottom: "6px", lineHeight: 1.4 },
+  averiaMsgFecha: { fontSize: "11px" },
+  averiaAtendidaTxt: { fontSize: "12px", color: "#2e7d32", fontWeight: 500, marginTop: "10px" },
+  btnVerProtocolo: { flex: 1, padding: "10px", borderRadius: "8px", border: "0.5px solid #ddd", background: "white", color: "#333", fontSize: "13px", fontWeight: 500, cursor: "pointer" },
+  btnMarcarAtendida: { flex: 1, padding: "10px", borderRadius: "8px", border: "none", background: "#c62828", color: "white", fontSize: "13px", fontWeight: 600, cursor: "pointer" },
+  averiaCaption: { fontSize: "11px", color: "#999", textAlign: "center", marginTop: "10px" },
+
+  // ---- Modal lista (emergencias activas / historial) estilo mockup ----
+  averiaListaCard: { background: "white", borderRadius: "12px", width: "100%", maxWidth: "420px", border: "0.5px solid #ef9a9a", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", overflow: "hidden" },
+  averiaListaHeader: { display: "flex", alignItems: "center", gap: "8px", padding: "16px 18px", borderBottom: "0.5px solid #f0f0f0", color: "#c62828" },
+  averiaListaTitulo: { fontSize: "14px", fontWeight: 600, color: "#222", flex: 1 },
+  badgeEmergenciaCount: { fontSize: "11px", padding: "2px 9px", borderRadius: "20px", background: "#fde8e8", color: "#c62828", fontWeight: 700 },
+  btnCerrarX: { background: "none", border: "none", fontSize: "16px", cursor: "pointer", color: "#999", padding: 0, marginLeft: "4px" },
+  averiaListaBody: { padding: "12px 14px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "60vh", overflowY: "auto" },
+  averiaListaItem: { border: "0.5px solid #eee", borderRadius: "8px", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" },
+  averiaListaItemNombre: { fontSize: "14px", fontWeight: 600, color: "#1a1a1a" },
+  averiaListaItemMeta: { fontSize: "12px", color: "#999", marginTop: "3px" },
+  averiaListaItemFecha: { fontSize: "12px", color: "#c62828" },
+  averiaListaChevron: { fontSize: "18px", color: "#ccc" },
+  badgeAtendidaChip: { fontSize: "10px", padding: "2px 8px", borderRadius: "20px", background: "#e8f5e9", color: "#2e7d32", fontWeight: 500, whiteSpace: "nowrap" },
 };
