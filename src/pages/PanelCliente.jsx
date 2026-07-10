@@ -115,6 +115,7 @@ export default function PanelCliente() {
   const [cargando, setCargando] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [filtroPiso, setFiltroPiso] = useState("Todos");
+  const [filtroTipoEquipo, setFiltroTipoEquipo] = useState("Todos");
   const [filtroMes, setFiltroMes] = useState("Todos");
   const [modalEquipo, setModalEquipo] = useState(null);
   const [modalTipo, setModalTipo] = useState(null);
@@ -228,10 +229,11 @@ export default function PanelCliente() {
     .filter(e => {
       const okE = filtroEstado === "Todos" || e.estado === filtroEstado;
       const okP = filtroPiso === "Todos" || (e.piso || "Sin piso") === filtroPiso;
+      const okT = filtroTipoEquipo === "Todos" || (e.tipoEquipo || "Sin tipo") === filtroTipoEquipo;
       const okM = filtroMes === "Todos" ||
         (filtroMes === "Sin fecha" && !e.ultimoMantenimiento) ||
         fechaAMesAnio(e.ultimoMantenimiento) === filtroMes;
-      return okE && okP && okM;
+      return okE && okP && okT && okM;
     })
     .sort((a, b) => {
       const fa = fechaATimestamp(a.ultimoMantenimiento);
@@ -246,11 +248,12 @@ export default function PanelCliente() {
   const fs = equiposMostrados.filter(e => e.estado === "Fuera de servicio").length;
 
   const pisos = ["Todos", ...[...new Set(equiposMostrados.map(e => e.piso).filter(Boolean))].sort(ordenarPisos)];
+  const tiposEquipo = ["Todos", ...[...new Set(equiposMostrados.map(e => e.tipoEquipo).filter(Boolean))].sort()];
 
   const getBadge = (estado) => {
     const map = { "Operativo": { bg: "#e8f5e9", color: "#2e7d32" }, "Operativo con observaciones": { bg: "#fff8e1", color: "#e65100" }, "Fuera de servicio": { bg: "#ffebee", color: "#c62828" } };
     const st = map[estado] || map["Operativo"];
-    return <span style={{ fontSize: "11px", padding: "3px 10px", background: st.bg, color: st.color, borderRadius: "20px", fontWeight: 500 }}>{estado === "Operativo con observaciones" ? "Con obs." : estado || "Operativo"}</span>;
+    return <span style={{ fontSize: "11px", padding: "3px 10px", background: st.bg, color: st.color, borderRadius: "20px", fontWeight: 500, whiteSpace: "nowrap", display: "inline-block" }}>{estado === "Operativo con observaciones" ? "Con obs." : estado || "Operativo"}</span>;
   };
 
   const getCronColor = (estado) => ({
@@ -476,7 +479,11 @@ export default function PanelCliente() {
                   <select style={{ fontSize: "12px", padding: "5px 10px", borderRadius: "6px", border: "0.5px solid #ddd" }} value={filtroPiso} onChange={e => setFiltroPiso(e.target.value)}>
                     {pisos.map(p => <option key={p} value={p}>{p === "Todos" ? "Todos los pisos" : `Piso ${p}`}</option>)}
                   </select>
-                  <span style={{ fontSize: "12px", color: "#888" }}>Mant.:</span>
+                  <span style={{ fontSize: "12px", color: "#888" }}>Equipo:</span>
+                  <select style={{ fontSize: "12px", padding: "5px 10px", borderRadius: "6px", border: "0.5px solid #ddd" }} value={filtroTipoEquipo} onChange={e => setFiltroTipoEquipo(e.target.value)}>
+                    {tiposEquipo.map(t => <option key={t} value={t}>{t === "Todos" ? "Todos los equipos" : t}</option>)}
+                  </select>
+                  <span style={{ fontSize: "12px", color: "#888" }}>Periodo:</span>
                   <select style={{ fontSize: "12px", padding: "5px 10px", borderRadius: "6px", border: "0.5px solid #ddd" }} value={filtroMes} onChange={e => setFiltroMes(e.target.value)}>
                     {mesesDisponibles.map(m => <option key={m}>{m}</option>)}
                     <option value="Sin fecha">Sin fecha</option>
@@ -516,7 +523,7 @@ export default function PanelCliente() {
                               <div style={{ fontWeight: 500, color: "#222" }}>{equipo.marca || "-"}</div>
                               <div style={{ fontSize: "11px", color: "#888" }}>{equipo.modelo}</div>
                             </td>
-                            <td style={{ padding: "10px 14px" }}>{getBadge(equipo.estado)}</td>
+                            <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>{getBadge(equipo.estado)}</td>
                             <td style={{ padding: "10px 14px" }}>
                               {(() => { const fc = fechaColor(equipo.ultimoMantenimiento); const ma = fechaAMesAnio(equipo.ultimoMantenimiento); return ma ? <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "10px", background: fc.bg, color: fc.color, border: `0.5px solid ${fc.border}`, whiteSpace: "nowrap" }}>{ma}</span> : <span style={{ fontSize: "10px", color: "#aaa" }}>—</span>; })()}
                             </td>
