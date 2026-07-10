@@ -543,17 +543,27 @@ export default function PanelCliente() {
                                   {numObs === 0 ? (
                                     <div style={{ fontSize: "12px", color: "#aaa", fontStyle: "italic" }}>Sin observaciones registradas</div>
                                   ) : (
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                      {obsArr.filter(o => o.texto?.trim()).map((o, idx) => (
-                                        <div key={idx} style={{ background: "white", border: "0.5px solid #ffe082", borderLeft: "3px solid #ffa726", borderRadius: "8px", padding: "8px 12px" }}>
-                                          <div style={{ fontSize: "12px", color: "#333", lineHeight: 1.5 }}>{o.texto}</div>
-                                          <div style={{ fontSize: "10px", color: "#888", marginTop: "3px" }}>
-                                            {o.fecha && <span>{o.fecha}</span>}
-                                            {o.fecha && o.tecnico && <span> · </span>}
-                                            {o.tecnico && <span>Técnico: {o.tecnico}</span>}
+                                    <div>
+                                      <div style={{ display: "grid", gridTemplateColumns: "28px 1fr 1fr 1fr", gap: "10px", padding: "0 2px 6px", fontSize: "10px", color: "#999", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                                        <span></span><span>Observación</span><span>Causa</span><span>Recomendación</span>
+                                      </div>
+                                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                        {(() => { const recArr = getRec(equipo); return obsArr.filter(o => o.texto?.trim()).map((o, idx) => (
+                                          <div key={idx} style={{ display: "grid", gridTemplateColumns: "28px 1fr 1fr 1fr", gap: "10px", alignItems: "start" }}>
+                                            <div style={{ fontSize: "11px", color: "#aaa", paddingTop: "10px", textAlign: "center" }}>{idx + 1}</div>
+                                            <div style={{ background: "#fff8e1", border: "0.5px solid #ffe082", borderRadius: "8px", padding: "9px 11px" }}>
+                                              <div style={{ fontSize: "12px", color: "#333", lineHeight: 1.4 }}>{o.texto}</div>
+                                              {(o.fecha || o.tecnico) && (
+                                                <div style={{ fontSize: "10px", color: "#aaa", marginTop: "4px" }}>
+                                                  {o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico ? o.tecnico : ""}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div style={{ background: "#fef0f0", border: "0.5px solid #f0997b", borderRadius: "8px", padding: "9px 11px", fontSize: "12px", color: "#712b13" }}>{o.causa || "—"}</div>
+                                            <div style={{ background: "#e8f5e9", border: "0.5px solid #97c459", borderRadius: "8px", padding: "9px 11px", fontSize: "12px", color: "#27500a" }}>{recArr[idx] ? (typeof recArr[idx] === "string" ? recArr[idx] : recArr[idx].texto || "—") : "—"}</div>
                                           </div>
-                                        </div>
-                                      ))}
+                                        )); })()}
+                                      </div>
                                     </div>
                                   )}
                                 </div>

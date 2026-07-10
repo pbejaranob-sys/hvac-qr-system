@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import jsPDF from "jspdf";
 
 const GRUPO_POR_TIPO = {
@@ -108,6 +108,8 @@ const getBadgeStyle = (estado) => {
 export default function VistaEquipo() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sinQR = searchParams.get("noqr") === "1";
   const [equipo, setEquipo] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [tamanoQR, setTamanoQR] = useState("2x2");
@@ -605,6 +607,7 @@ export default function VistaEquipo() {
             </div>
 
             {/* QR */}
+            {!sinQR && (
             <div style={s.sec}>
               <div style={s.secT}>📱 Código QR</div>
               <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -644,6 +647,7 @@ export default function VistaEquipo() {
                 </div>
               </div>
             </div>
+            )}
 
           </div>
         </div>
