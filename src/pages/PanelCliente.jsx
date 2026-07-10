@@ -471,10 +471,10 @@ export default function PanelCliente() {
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           {vistaActual === "equipos" && (
             <>
-              <button style={s.btnExcel} onClick={() => exportarExcel(usuario?.empresa, equiposMostrados)}>
+              <button style={s.btnExcel} onClick={() => exportarExcel(usuario?.empresa, equiposFiltrados)}>
                 <i className="ti ti-file-spreadsheet" aria-hidden="true"></i> Excel
               </button>
-              <button style={s.btnPdf} onClick={() => exportarPDF(usuario?.empresa, sedeActual?.nombre, equiposMostrados)}>
+              <button style={s.btnPdf} onClick={() => exportarPDF(usuario?.empresa, sedeActual?.nombre, equiposFiltrados)}>
                 <i className="ti ti-file-type-pdf" aria-hidden="true"></i> PDF
               </button>
             </>
