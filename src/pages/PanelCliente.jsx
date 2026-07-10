@@ -210,6 +210,8 @@ export default function PanelCliente() {
   const [sedeActual, setSedeActual] = useState(null);
   const [averias, setAverias] = useState([]);
   const [averiasAbierto, setAveriasAbierto] = useState(false);
+  const [detalleAveria, setDetalleAveria] = useState(null); // avería mostrada dentro del modal de ficha
+  const [listaEmergenciaSede, setListaEmergenciaSede] = useState(null); // averías de una sede cuando hay 2+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -276,6 +278,44 @@ export default function PanelCliente() {
   }, []);
 
   const handleLogout = async () => { await signOut(auth); navigate("/"); };
+
+  // ---- Averías / emergencias por sede ----
+  const abrirDetalleAveria = (averia) => {
+    const equipo = equipos.find(e => e.id === averia.equipoId);
+    if (equipo) {
+      setModalEquipo(equipo);
+      setModalTipo("info");
+    }
+    setDetalleAveria(averia);
+    setListaEmergenciaSede(null);
+  };
+
+  const abrirEmergenciasSede = (sede) => {
+    const averiasSede = averias.filter(a => a.sede === sede.nombre);
+    if (averiasSede.length === 0) return;
+    if (averiasSede.length === 1) {
+      abrirDetalleAveria(averiasSede[0]);
+    } else {
+      setListaEmergenciaSede(averiasSede);
+    }
+  };
+
+  const cerrarModalEquipo = () => {
+    setModalEquipo(null);
+    setModalTipo(null);
+    setDetalleAveria(null);
+  };
+
+  const marcarAveriaAtendida = async (averiaId) => {
+    try {
+      const { doc, updateDoc, serverTimestamp } = await import("firebase/firestore");
+      await updateDoc(doc(db, "averias", averiaId), { atendida: true, atendidaEn: serverTimestamp() });
+      setAverias(prev => prev.filter(a => a.id !== averiaId));
+      cerrarModalEquipo();
+    } catch (e) {
+      console.error("Error marcando avería como atendida:", e);
+    }
+  };
 
   const getObs = (e) => {
     const arr = e.observacionesArray || [];
@@ -493,7 +533,11 @@ export default function PanelCliente() {
               <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: "360px", maxHeight: "420px", overflowY: "auto", background: "white", border: "0.5px solid #ddd", borderRadius: "10px", boxShadow: "0 8px 24px rgba(0,0,0,0.15)", zIndex: 10, padding: "8px" }}>
                 <div style={{ fontSize: "12px", fontWeight: 600, color: "#791f1f", padding: "6px 8px" }}>Averías reportadas</div>
                 {averias.map(a => (
-                  <div key={a.id} style={{ padding: "10px", borderRadius: "8px", background: "#fafafa", marginBottom: "6px" }}>
+                  <div
+                    key={a.id}
+                    style={{ padding: "10px", borderRadius: "8px", background: "#fafafa", marginBottom: "6px", cursor: "pointer" }}
+                    onClick={() => { setAveriasAbierto(false); abrirDetalleAveria(a); }}
+                  >
                     <div style={{ fontSize: "12px", fontWeight: 600, color: "#222" }}>
                       {a.equipoCodigo && <span style={{ fontFamily: "monospace", background: "#f3e5f5", color: "#6a1b9a", padding: "1px 5px", borderRadius: "4px", marginRight: "6px" }}>{a.equipoCodigo}</span>}
                       {a.ambiente || "-"} {a.piso ? `· Piso ${a.piso}` : ""}
@@ -534,6 +578,7 @@ export default function PanelCliente() {
               const pOpS = totS ? Math.round(opS / totS * 100) : 0;
               const pObsS = totS ? Math.round(obsS / totS * 100) : 0;
               const pFsS = totS ? Math.round(fsS / totS * 100) : 0;
+              const averiasSede = averias.filter(a => a.sede === sede.nombre);
               return (
                 <div key={sede.id} style={s.sedeCard}>
                   <div style={s.sedeHeader}>
@@ -547,6 +592,15 @@ export default function PanelCliente() {
                     <div style={{ ...s.mini, background: "#e8f5e9" }}><div style={{ ...s.miniNum, color: "#2e7d32" }}>{opS}</div><div style={{ ...s.miniLabel, color: "#2e7d32" }}>Operativo</div></div>
                     <div style={{ ...s.mini, background: "#fff8e1" }}><div style={{ ...s.miniNum, color: "#e65100" }}>{obsS}</div><div style={{ ...s.miniLabel, color: "#e65100" }}>Con obs.</div></div>
                     <div style={{ ...s.mini, background: fsS > 0 ? "#ffebee" : "#f5f5f5" }}><div style={{ ...s.miniNum, color: fsS > 0 ? "#c62828" : "#aaa" }}>{fsS}</div><div style={{ ...s.miniLabel, color: fsS > 0 ? "#c62828" : "#aaa" }}>Fuera serv.</div></div>
+                    <div
+                      style={{ ...s.mini, background: averiasSede.length > 0 ? "#fef0f0" : "#f5f5f5", border: averiasSede.length > 0 ? "0.5px solid #f0997b" : "none", cursor: averiasSede.length > 0 ? "pointer" : "default" }}
+                      onClick={() => abrirEmergenciasSede(sede)}
+                    >
+                      <div style={{ ...s.miniNum, color: averiasSede.length > 0 ? "#c62828" : "#aaa" }}>{averiasSede.length}</div>
+                      <div style={{ ...s.miniLabel, color: averiasSede.length > 0 ? "#c62828" : "#aaa", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+                        <i className="ti ti-alert-triangle" style={{ fontSize: "10px" }} aria-hidden="true"></i>Emergencia
+                      </div>
+                    </div>
                   </div>
                   <div style={s.barraWrap}>
                     <div style={s.barra}>
@@ -743,9 +797,47 @@ export default function PanelCliente() {
         )}
       </div>
 
-      {/* Modal ficha técnica */}
+      {/* Modal lista de emergencias de una sede (2 o más averías) */}
+      {listaEmergenciaSede && (
+        <div style={s.modalOverlay} onClick={() => setListaEmergenciaSede(null)}>
+          <div style={{ ...s.modalCard, maxWidth: "420px" }} onClick={e => e.stopPropagation()}>
+            <div style={s.modalHeader}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <i className="ti ti-alert-triangle" style={{ color: "#c62828" }} aria-hidden="true"></i>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>Equipos con emergencia</span>
+                <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "20px", background: "#ffebee", color: "#c62828", fontWeight: 700 }}>{listaEmergenciaSede.length}</span>
+              </div>
+              <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={() => setListaEmergenciaSede(null)}>X</button>
+            </div>
+            <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "60vh", overflowY: "auto" }}>
+              {listaEmergenciaSede.map(a => {
+                const eq = equipos.find(e => e.id === a.equipoId);
+                return (
+                  <div
+                    key={a.id}
+                    onClick={() => abrirDetalleAveria(a)}
+                    style={{ border: "0.5px solid #e0e0e0", borderRadius: "8px", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                  >
+                    <div>
+                      <div style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
+                      <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
+                        {a.piso ? `Piso ${a.piso}` : ""}{eq?.serie ? ` · Serie ${eq.serie}` : ""}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: "11px", color: "#c62828" }}>{a.fecha?.toDate ? a.fecha.toDate().toLocaleString("es-PE") : ""}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal ficha técnica (también usado para detalle de avería/emergencia) */}
       {modalEquipo && (
-        <div style={s.modalOverlay} onClick={() => setModalEquipo(null)}>
+        <div style={s.modalOverlay} onClick={cerrarModalEquipo}>
           <div style={s.modalCard} onClick={e => e.stopPropagation()}>
             <div style={s.modalHeader}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -757,11 +849,34 @@ export default function PanelCliente() {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <button style={{ background: "#c62828", color: "white", border: "none", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer", fontWeight: 500 }} onClick={() => generarPDFFicha(modalEquipo)}>Descargar PDF</button>
-                <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={() => setModalEquipo(null)}>X</button>
+                <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={cerrarModalEquipo}>X</button>
               </div>
             </div>
 
             <div style={{ overflowY: "auto", maxHeight: "65vh" }}>
+              {/* Bloque de emergencia, solo si el modal se abrió desde una avería */}
+              {detalleAveria && (
+                <div style={{ padding: "14px 20px", background: "#fef0f0", borderBottom: "0.5px solid #f0997b" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                    <i className="ti ti-alert-triangle" style={{ color: "#c62828", fontSize: "15px" }} aria-hidden="true"></i>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#c62828" }}>Mensaje de emergencia</span>
+                  </div>
+                  <div style={{ fontSize: "13px", color: "#333", marginBottom: "6px" }}>{detalleAveria.mensaje}</div>
+                  <div style={{ fontSize: "11px", color: "#791f1f", marginBottom: "10px" }}>
+                    Reportado por {detalleAveria.tipoReportante || "-"}{detalleAveria.nombreReportante ? ` (${detalleAveria.nombreReportante})` : ""} · {detalleAveria.fecha?.toDate ? detalleAveria.fecha.toDate().toLocaleString("es-PE") : ""}
+                  </div>
+                  <button
+                    style={{ width: "100%", padding: "9px", borderRadius: "8px", border: "none", background: "#c62828", color: "white", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
+                    onClick={() => marcarAveriaAtendida(detalleAveria.id)}
+                  >
+                    Marcar como atendida
+                  </button>
+                  <div style={{ fontSize: "10px", color: "#a32d2d", textAlign: "center", marginTop: "6px" }}>
+                    No se elimina: queda en el historial del equipo y deja de contar como emergencia activa.
+                  </div>
+                </div>
+              )}
+
               {modalTipo === "info" ? (
                 <>
                   <div style={s.modalSec}>
@@ -911,7 +1026,7 @@ const s = {
   sedeIcon: { width: "32px", height: "32px", borderRadius: "8px", background: "#e8f0fe", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" },
   sedeNombre: { fontSize: "13px", fontWeight: 500, color: "#222" },
   sedeDireccion: { fontSize: "11px", color: "#888", marginTop: "2px" },
-  miniStats: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "6px", padding: "10px 14px" },
+  miniStats: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "6px", padding: "10px 14px" },
   mini: { textAlign: "center", padding: "6px", borderRadius: "8px" },
   miniNum: { fontSize: "16px", fontWeight: 500 },
   miniLabel: { fontSize: "10px", marginTop: "1px" },
