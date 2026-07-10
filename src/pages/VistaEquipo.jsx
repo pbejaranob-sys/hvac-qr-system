@@ -204,19 +204,26 @@ export default function VistaEquipo() {
 
     const esVentF = GRUPO_POR_TIPO[equipo.tipoEquipo] === "ventilacion";
     const campo = (l, v) => v ? `<div style="background:#f8f9fa;border-radius:6px;padding:7px 10px;"><div style="font-size:10px;color:#888;margin-bottom:2px;">${l}</div><div style="font-size:12px;font-weight:600;color:#222;">${v}</div></div>` : "";
-    const campos = [
+    const filaGen = [
       campo("Cliente", equipo.cliente), campo("Sede", equipo.sede), campo("Piso", equipo.piso), campo("Ambiente", equipo.ambiente),
       campo("Marca", equipo.marca), campo("Modelo", equipo.modelo), campo("N° Serie", equipo.serie),
       campo("Capacidad", equipo.capacidad ? equipo.capacidad + (esVentF ? " CFM" : " BTU") : null),
+    ].filter(Boolean).join("");
+    const filaElec = [
       !esVentF ? campo("Refrigerante", equipo.tipoRefrigerante) : "",
       campo("Voltaje de placa", equipo.voltaje ? equipo.voltaje + "V" : null), campo("Amperaje nominal", equipo.amperaje ? equipo.amperaje + "A" : null),
       campo("Fases", equipo.fases),
       campo("Voltaje cond.", equipo.condVoltaje ? equipo.condVoltaje + "V" : null),
       campo("Amperaje cond.", equipo.condAmperaje ? equipo.condAmperaje + "A" : null),
       campo("Modelo compresor", equipo.modeloCompresor),
+    ].filter(Boolean).join("");
+    const filaMotor = [
       campo("Contrato", equipo.contrato), campo("Modelo de faja", equipo.modeloFaja), campo("N° de fajas", equipo.numFajas),
       campo("Marca motor", equipo.marcaMotor), campo("Modelo motor", equipo.modeloMotor), campo("N° serie motor", equipo.serieMotor),
     ].filter(Boolean).join("");
+    const campos = `<div class="campos">${filaGen}</div>` +
+      (filaElec ? `<div class="campos" style="margin-top:8px">${filaElec}</div>` : "") +
+      (filaMotor ? `<div class="campos" style="margin-top:8px">${filaMotor}</div>` : "");
 
     // Observaciones con causa en tabla
     const obsHtml = obsArr.length > 0 ? `
@@ -258,7 +265,7 @@ export default function VistaEquipo() {
         <div style="font-size:15px;font-weight:700;color:#1a5fa8;">${equipo.marca || ""} / ${equipo.modelo || ""}</div>
         <div style="font-size:12px;color:#555;margin-top:4px;">${equipo.tipoEquipo || ""} · Código: <b>${equipo.codigo || "-"}</b> · ${equipo.cliente || ""} · Piso ${equipo.piso || ""} · ${equipo.ambiente || ""}</div>
       </div>
-      <div class="sec">Ficha técnica</div><div class="campos">${campos}</div>
+      <div class="sec">Datos del equipo</div>${campos}
       <div class="sec">Observaciones · Causa · Recomendación ${syncBadge}</div>${obsHtml}
       <div class="sec">Cronograma de mantenimiento</div><div class="cron">${cronHtml}</div>
       <div style="display:flex;align-items:center;gap:14px;border-top:.5px solid #ddd;margin-top:16px;padding-top:12px">

@@ -259,6 +259,11 @@ export default function PanelCliente() {
     programado: { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", label: "Programado" },
   }[estado] || { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", label: "Programado" });
 
+  const GRUPO_POR_TIPO_PDF = {
+    "Ventilación": "ventilacion", "Extractor": "ventilacion", "Inyector": "ventilacion",
+    "Cortina de aire": "ventilacion", "Jetfan": "ventilacion", "Presurizador": "ventilacion",
+  };
+
   const generarPDFFicha = (eq) => {
     const obs = getObs(eq);
     const rec = getRec(eq);
@@ -267,13 +272,28 @@ export default function PanelCliente() {
     const badgeColor = eq.estado === "Operativo" ? "#2e7d32" : eq.estado === "Operativo con observaciones" ? "#e65100" : "#c62828";
     const badgeBg = eq.estado === "Operativo" ? "#e8f5e9" : eq.estado === "Operativo con observaciones" ? "#fff8e1" : "#ffebee";
 
+    const esVentF = GRUPO_POR_TIPO_PDF[eq.tipoEquipo] === "ventilacion";
     const campo = (l, v) => v ? `<div style="background:#f8f9fa;border-radius:6px;padding:7px 10px;"><div style="font-size:10px;color:#888;margin-bottom:2px;">${l}</div><div style="font-size:12px;font-weight:600;color:#222;">${v}</div></div>` : "";
-    const campos = [
-      campo("Tipo equipo", eq.tipoEquipo), campo("Marca", eq.marca), campo("Modelo", eq.modelo), campo("N° Serie", eq.serie),
-      campo("Capacidad", eq.capacidad ? eq.capacidad + " BTU" : null), campo("Refrigerante", eq.tipoRefrigerante),
-      campo("Voltaje", eq.voltaje ? eq.voltaje + "V" : null), campo("Amperaje", eq.amperaje ? eq.amperaje + "A" : null),
-      campo("Fases", eq.fases), campo("Piso", eq.piso), campo("Ambiente", eq.ambiente), campo("Sede", eq.sede),
+    const filaGen = [
+      campo("Cliente", eq.cliente), campo("Sede", eq.sede), campo("Piso", eq.piso), campo("Ambiente", eq.ambiente),
+      campo("Marca", eq.marca), campo("Modelo", eq.modelo), campo("N° Serie", eq.serie),
+      campo("Capacidad", eq.capacidad ? eq.capacidad + (esVentF ? " CFM" : " BTU") : null),
     ].filter(Boolean).join("");
+    const filaElec = [
+      !esVentF ? campo("Refrigerante", eq.tipoRefrigerante) : "",
+      campo("Voltaje de placa", eq.voltaje ? eq.voltaje + "V" : null), campo("Amperaje nominal", eq.amperaje ? eq.amperaje + "A" : null),
+      campo("Fases", eq.fases),
+      campo("Voltaje cond.", eq.condVoltaje ? eq.condVoltaje + "V" : null),
+      campo("Amperaje cond.", eq.condAmperaje ? eq.condAmperaje + "A" : null),
+      campo("Modelo compresor", eq.modeloCompresor),
+    ].filter(Boolean).join("");
+    const filaMotor = [
+      campo("Contrato", eq.contrato), campo("Modelo de faja", eq.modeloFaja), campo("N° de fajas", eq.numFajas),
+      campo("Marca motor", eq.marcaMotor), campo("Modelo motor", eq.modeloMotor), campo("N° serie motor", eq.serieMotor),
+    ].filter(Boolean).join("");
+    const campos = `<div class="campos">${filaGen}</div>` +
+      (filaElec ? `<div class="campos" style="margin-top:8px">${filaElec}</div>` : "") +
+      (filaMotor ? `<div class="campos" style="margin-top:8px">${filaMotor}</div>` : "");
 
     const syncBadge = eq.ultimoProtocolo ? `<span style="font-size:10px;padding:2px 8px;background:#e8f5e9;color:#2e7d32;border-radius:20px;margin-left:8px;">Sincronizado ${eq.ultimoProtocolo}</span>` : "";
 
@@ -318,7 +338,7 @@ export default function PanelCliente() {
         <div style="font-size:15px;font-weight:700;color:#1a5fa8;">${eq.marca || ""} / ${eq.modelo || ""}</div>
         <div style="font-size:12px;color:#555;margin-top:4px;">${eq.tipoEquipo || ""} · ${eq.cliente || ""} · ${eq.sede || ""} · Piso ${eq.piso || ""} · ${eq.ambiente || ""}</div>
       </div>
-      <div class="sec">Ficha técnica</div><div class="campos">${campos}</div>
+      <div class="sec">Datos del equipo</div>${campos}
       <div class="sec obs">Observación · Causa · Recomendación ${syncBadge}</div>${ocrHtml}
       ${cron.length > 0 ? `<div class="sec">Cronograma de mantenimiento</div><div class="cron">${cronHtml}</div>` : ""}
       ${cor.length > 0 ? `<div class="sec">Correctivos realizados</div>${corHtml}` : ""}
@@ -573,36 +593,38 @@ export default function PanelCliente() {
               {modalTipo === "info" ? (
                 <>
                   <div style={s.modalSec}>
-                    <div style={s.modalSecTitulo}>Ubicación</div>
+                    <div style={s.modalSecTitulo}>Datos del equipo</div>
                     <div style={s.grid3}>
                       <div style={s.campo}><span style={s.campoLabel}>Cliente</span><span style={s.campoVal}>{modalEquipo.cliente || "-"}</span></div>
                       <div style={s.campo}><span style={s.campoLabel}>Sede</span><span style={modalEquipo.sede ? s.campoVal : s.campoVacio}>{modalEquipo.sede || "Sin sede"}</span></div>
                       <div style={s.campo}><span style={s.campoLabel}>Piso</span><span style={s.campoVal}>{modalEquipo.piso || "-"}</span></div>
-                    </div>
-                    <div style={{ marginTop: "10px" }}>
                       <div style={s.campo}><span style={s.campoLabel}>Ambiente</span><span style={s.campoVal}>{modalEquipo.ambiente || "-"}</span></div>
-                    </div>
-                  </div>
-
-                  <div style={s.modalSec}>
-                    <div style={s.modalSecTitulo}>Ficha técnica</div>
-                    <div style={s.grid2}>
-                      <div style={s.campo}><span style={s.campoLabel}>Tipo de equipo</span><span style={modalEquipo.tipoEquipo ? s.campoVal : s.campoVacio}>{modalEquipo.tipoEquipo || "Sin registrar"}</span></div>
                       <div style={s.campo}><span style={s.campoLabel}>Marca</span><span style={modalEquipo.marca ? s.campoVal : s.campoVacio}>{modalEquipo.marca || "Sin registrar"}</span></div>
                       <div style={s.campo}><span style={s.campoLabel}>Modelo</span><span style={modalEquipo.modelo ? s.campoVal : s.campoVacio}>{modalEquipo.modelo || "Sin registrar"}</span></div>
                       <div style={s.campo}><span style={s.campoLabel}>N° de Serie</span><span style={modalEquipo.serie ? s.campoVal : s.campoVacio}>{modalEquipo.serie || "Sin registrar"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Capacidad</span><span style={modalEquipo.capacidad ? s.campoVal : s.campoVacio}>{modalEquipo.capacidad ? `${modalEquipo.capacidad} BTU` : "Sin registrar"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Refrigerante</span><span style={modalEquipo.tipoRefrigerante ? s.campoVal : s.campoVacio}>{modalEquipo.tipoRefrigerante || "Sin registrar"}</span></div>
+                      <div style={s.campo}><span style={s.campoLabel}>Capacidad</span><span style={modalEquipo.capacidad ? s.campoVal : s.campoVacio}>{modalEquipo.capacidad ? `${modalEquipo.capacidad} ${GRUPO_POR_TIPO_PDF[modalEquipo.tipoEquipo] === "ventilacion" ? "CFM" : "BTU"}` : "Sin registrar"}</span></div>
                     </div>
-                  </div>
-
-                  <div style={s.modalSec}>
-                    <div style={s.modalSecTitulo}>Datos eléctricos</div>
-                    <div style={s.grid3}>
-                      <div style={s.campo}><span style={s.campoLabel}>Voltaje</span><span style={modalEquipo.voltaje ? s.campoVal : s.campoVacio}>{modalEquipo.voltaje ? `${modalEquipo.voltaje}V` : "Sin registrar"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Amperaje</span><span style={modalEquipo.amperaje ? s.campoVal : s.campoVacio}>{modalEquipo.amperaje ? `${modalEquipo.amperaje}A` : "Sin registrar"}</span></div>
+                    <div style={{ ...s.grid3, marginTop: "10px" }}>
+                      {GRUPO_POR_TIPO_PDF[modalEquipo.tipoEquipo] !== "ventilacion" && (
+                        <div style={s.campo}><span style={s.campoLabel}>Refrigerante</span><span style={modalEquipo.tipoRefrigerante ? s.campoVal : s.campoVacio}>{modalEquipo.tipoRefrigerante || "Sin registrar"}</span></div>
+                      )}
+                      <div style={s.campo}><span style={s.campoLabel}>Voltaje de placa</span><span style={modalEquipo.voltaje ? s.campoVal : s.campoVacio}>{modalEquipo.voltaje ? `${modalEquipo.voltaje}V` : "Sin registrar"}</span></div>
+                      <div style={s.campo}><span style={s.campoLabel}>Amperaje nominal</span><span style={modalEquipo.amperaje ? s.campoVal : s.campoVacio}>{modalEquipo.amperaje ? `${modalEquipo.amperaje}A` : "Sin registrar"}</span></div>
                       <div style={s.campo}><span style={s.campoLabel}>Fases</span><span style={s.campoVal}>{modalEquipo.fases || "Monofásico"}</span></div>
+                      {modalEquipo.condVoltaje && <div style={s.campo}><span style={s.campoLabel}>Voltaje cond.</span><span style={s.campoVal}>{modalEquipo.condVoltaje}V</span></div>}
+                      {modalEquipo.condAmperaje && <div style={s.campo}><span style={s.campoLabel}>Amperaje cond.</span><span style={s.campoVal}>{modalEquipo.condAmperaje}A</span></div>}
+                      {modalEquipo.modeloCompresor && <div style={s.campo}><span style={s.campoLabel}>Modelo compresor</span><span style={s.campoVal}>{modalEquipo.modeloCompresor}</span></div>}
                     </div>
+                    {(modalEquipo.contrato || modalEquipo.modeloFaja || modalEquipo.numFajas || modalEquipo.marcaMotor || modalEquipo.modeloMotor || modalEquipo.serieMotor) && (
+                      <div style={{ ...s.grid3, marginTop: "10px" }}>
+                        {modalEquipo.contrato && <div style={s.campo}><span style={s.campoLabel}>Contrato</span><span style={s.campoVal}>{modalEquipo.contrato}</span></div>}
+                        {modalEquipo.modeloFaja && <div style={s.campo}><span style={s.campoLabel}>Modelo de faja</span><span style={s.campoVal}>{modalEquipo.modeloFaja}</span></div>}
+                        {modalEquipo.numFajas && <div style={s.campo}><span style={s.campoLabel}>N° de fajas</span><span style={s.campoVal}>{modalEquipo.numFajas}</span></div>}
+                        {modalEquipo.marcaMotor && <div style={s.campo}><span style={s.campoLabel}>Marca motor</span><span style={s.campoVal}>{modalEquipo.marcaMotor}</span></div>}
+                        {modalEquipo.modeloMotor && <div style={s.campo}><span style={s.campoLabel}>Modelo motor</span><span style={s.campoVal}>{modalEquipo.modeloMotor}</span></div>}
+                        {modalEquipo.serieMotor && <div style={s.campo}><span style={s.campoLabel}>N° serie motor</span><span style={s.campoVal}>{modalEquipo.serieMotor}</span></div>}
+                      </div>
+                    )}
                   </div>
 
                   <div style={s.modalSec}>
