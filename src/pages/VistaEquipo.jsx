@@ -344,12 +344,12 @@ export default function VistaEquipo() {
         equipo.condVoltaje && ["Voltaje cond.", equipo.condVoltaje + "V"],
         equipo.condAmperaje && ["Amperaje cond.", equipo.condAmperaje + "A"],
         equipo.modeloCompresor && ["Modelo compresor", equipo.modeloCompresor],
-      ].filter(Boolean), 3, 248, 249, 250);
+      ].filter(Boolean), 4, 248, 249, 250);
       if (equipo.contrato || equipo.modeloFaja || equipo.numFajas || equipo.marcaMotor || equipo.modeloMotor || equipo.serieMotor) {
         gridCards([
           ["Contrato", equipo.contrato], ["Modelo de faja", equipo.modeloFaja], ["N° de fajas", equipo.numFajas],
           ["Marca motor", equipo.marcaMotor], ["Modelo motor", equipo.modeloMotor], ["N° serie motor", equipo.serieMotor],
-        ].filter(([, v]) => v), 3, 248, 249, 250);
+        ].filter(([, v]) => v), 4, 248, 249, 250);
       }
 
       // Observaciones con causa
