@@ -102,7 +102,6 @@ const exportarPDF = (cliente, sede, equipos) => {
   pdf.text(`Cliente: ${cliente}${sedeTxt}   Generado: ${new Date().toLocaleDateString("es-PE")}   Total: ${equipos.length} equipos`, M, 19);
   y = 28;
 
-  const FW = CW * 0.32, OW = CW - FW - 4;
   const check = (h) => { if (y + h > 195) { pdf.addPage(); y = 15; } };
 
   const badge = (estado) => {
@@ -121,10 +120,9 @@ const exportarPDF = (cliente, sede, equipos) => {
 
     porPiso[p].forEach((e) => {
       const obs = getObsPDF(e); const rec = getRecPDF(e);
-      const nObsRows = Math.max(obs.length, 1);
-      const alturaFicha = 6 + 3 * 5;
-      const alturaObs = 5 + nObsRows * 8;
-      const alturaTotal = Math.max(alturaFicha, alturaObs) + 4;
+      const alturaFicha = 9;
+      const alturaObs = obs.length === 0 ? 6 : 4 + obs.length * 8;
+      const alturaTotal = 6 + alturaFicha + alturaObs + 4;
       check(alturaTotal + 4);
 
       const yTop = y;
@@ -139,48 +137,47 @@ const exportarPDF = (cliente, sede, equipos) => {
       pdf.text(bd.txt, M + CW - 16, y + 2.5, { align: "center" });
       y += 6;
 
-      // Ficha técnica (izquierda, 2 columnas x 3 filas)
-      const fx = M, fy = y;
-      pdf.setFillColor(248, 249, 250); pdf.rect(fx, fy, FW, alturaFicha, "F");
+      // Ficha técnica: fila completa de 6 columnas
+      pdf.setFillColor(248, 249, 250); pdf.rect(M, y, CW, alturaFicha, "F");
       const campos = [
-        ["Modelo", e.modelo || "-"], ["Serie", e.serie || "-"],
-        ["Capacidad", e.capacidad ? `${e.capacidad} BTU` : "-"], ["Refrig.", e.tipoRefrigerante || "-"],
-        ["Voltaje", e.voltaje ? `${e.voltaje}V` : "-"], ["Amperaje", e.amperaje ? `${e.amperaje}A` : "-"],
+        ["Modelo", e.modelo || "-"], ["Serie", e.serie || "-"], ["Capacidad", e.capacidad ? `${e.capacidad} BTU` : "-"],
+        ["Refrig.", e.tipoRefrigerante || "-"], ["Voltaje", e.voltaje ? `${e.voltaje}V` : "-"], ["Amperaje", e.amperaje ? `${e.amperaje}A` : "-"],
       ];
-      const fcw = FW / 2;
+      const fcw = CW / 6;
       campos.forEach(([l, v], i) => {
-        const cx = fx + (i % 2) * fcw + 2, cy = fy + Math.floor(i / 2) * 5 + 3;
+        const cx = M + i * fcw + 3;
         pdf.setFont("helvetica", "normal"); pdf.setFontSize(6); pdf.setTextColor(140, 140, 140);
-        pdf.text(l, cx, cy);
+        pdf.text(l, cx, y + 3.5);
         pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(30, 30, 30);
-        pdf.text(String(v), cx, cy + 2.6);
+        pdf.text(String(v), cx, y + 6.8);
       });
+      y += alturaFicha + 3;
 
-      // Observaciones (derecha)
-      const ox = fx + FW + 4, oy = y;
+      // Observaciones: fila completa debajo
       if (obs.length === 0) {
         pdf.setFont("helvetica", "italic"); pdf.setFontSize(7.5); pdf.setTextColor(160, 160, 160);
-        pdf.text("Sin observaciones registradas", ox, oy + 4);
+        pdf.text("Sin observaciones registradas", M, y + 2);
+        y += 6;
       } else {
-        const colW = (OW - 10) / 3;
+        const col0 = 8, colW = (CW - col0) / 3;
         pdf.setFont("helvetica", "normal"); pdf.setFontSize(6); pdf.setTextColor(150, 150, 150);
-        pdf.text("Observaci\u00f3n", ox + 8, oy + 2);
-        pdf.text("Causa", ox + 8 + colW, oy + 2);
-        pdf.text("Recomendaci\u00f3n", ox + 8 + colW * 2, oy + 2);
-        let oyy = oy + 4;
+        pdf.text("Observaci\u00f3n", M + col0 + 2, y);
+        pdf.text("Causa", M + col0 + colW + 2, y);
+        pdf.text("Recomendaci\u00f3n", M + col0 + colW * 2 + 2, y);
+        y += 2.5;
         obs.forEach((o, i) => {
           const rowH = 7.5;
           pdf.setFontSize(6.5); pdf.setTextColor(130, 130, 130);
-          pdf.text(String(i + 1), ox, oyy + 4);
-          pdf.setFillColor(255, 248, 225); pdf.rect(ox + 8, oyy, colW - 2, rowH, "F");
-          pdf.setFillColor(254, 240, 240); pdf.rect(ox + 8 + colW, oyy, colW - 2, rowH, "F");
-          pdf.setFillColor(232, 245, 233); pdf.rect(ox + 8 + colW * 2, oyy, colW - 2, rowH, "F");
+          pdf.text(String(i + 1), M, y + 4);
+          pdf.setFillColor(255, 248, 225); pdf.rect(M + col0, y, colW - 2, rowH, "F");
+          pdf.setFillColor(254, 240, 240); pdf.rect(M + col0 + colW, y, colW - 2, rowH, "F");
+          pdf.setFillColor(232, 245, 233); pdf.rect(M + col0 + colW * 2, y, colW - 2, rowH, "F");
           pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.8);
-          pdf.setTextColor(122, 74, 0); pdf.text(pdf.splitTextToSize(o.texto, colW - 5).slice(0, 2), ox + 9, oyy + 3);
-          pdf.setTextColor(138, 45, 45); pdf.text(pdf.splitTextToSize(o.causa || "\u2014", colW - 5).slice(0, 2), ox + 9 + colW, oyy + 3);
+          pdf.setTextColor(122, 74, 0); pdf.text(pdf.splitTextToSize(o.texto, colW - 6).slice(0, 2), M + col0 + 2, y + 3);
+          pdf.setTextColor(138, 45, 45); pdf.text(pdf.splitTextToSize(o.causa || "\u2014", colW - 6).slice(0, 2), M + col0 + colW + 2, y + 3);
           const recTxt = rec[i] ? (typeof rec[i] === "string" ? rec[i] : rec[i].texto || "\u2014") : "\u2014";
-          pdf.setTextColor(36, 92, 31); pdf.text(pdf.splitTextToSize(recTxt, colW - 5).slice(0, 2), ox + 9 + colW * 2, oyy + 3);
-          oyy += rowH + 1;
+          pdf.setTextColor(36, 92, 31); pdf.text(pdf.splitTextToSize(recTxt, colW - 6).slice(0, 2), M + col0 + colW * 2 + 2, y + 3);
+          y += rowH + 1;
         });
       }
 
@@ -193,6 +190,7 @@ const exportarPDF = (cliente, sede, equipos) => {
   pdf.text(`HVAC Sistema de Mantenimiento`, M, 205);
   pdf.save(`equipos-${cliente.replace(/\s+/g, "-")}-${new Date().getFullYear()}.pdf`);
 };
+
 
 
 export default function PanelCliente() {
