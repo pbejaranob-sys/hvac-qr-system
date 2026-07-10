@@ -4,6 +4,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import jsPDF from "jspdf";
+import AccesoEquipo from "./AccesoEquipo";
 
 const GRUPO_POR_TIPO = {
   "Fan Coil": "fancoil", "UMA": "fancoil", "Manejadora de Aire": "fancoil",
@@ -127,12 +128,7 @@ export default function VistaEquipo() {
     });
     return () => unsub();
   }, []);
-  useEffect(() => {
-    if (authChecked && esPub && equipo && !cargando && !pdfGenerado) {
-      setPdfGenerado(true);
-      generarPDF("ver");
-    }
-  }, [authChecked, esPub, equipo, cargando, pdfGenerado]);
+  // El flujo público ahora pasa por AccesoEquipo (Cliente/Técnico) en vez de descargar PDF automáticamente.
 
   const cargarEquipo = async () => {
     try {
@@ -427,17 +423,7 @@ export default function VistaEquipo() {
 
   if (cargando || !authChecked) return <div style={s.centro}>Cargando...</div>;
   if (!equipo) return <div style={s.centro}>Equipo no encontrado</div>;
-  if (esPub) return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f0f4f8", fontFamily: "Arial,sans-serif", gap: "12px" }}>
-      <div style={{ fontSize: "48px" }}>📄</div>
-      <div style={{ fontSize: "16px", fontWeight: 700, color: "#1a5fa8" }}>Preparando ficha técnica...</div>
-      <div style={{ fontSize: "12px", color: "#555" }}>
-        {equipo.codigo && <span style={{ fontFamily: "monospace", background: "#f3e5f5", color: "#6a1b9a", padding: "2px 6px", borderRadius: "4px", marginRight: "6px" }}>{equipo.codigo}</span>}
-        {equipo.marca} {equipo.modelo}
-      </div>
-      <div style={{ fontSize: "11px", color: "#aaa" }}>HVAC Sistema de Mantenimiento</div>
-    </div>
-  );
+  if (esPub) return <AccesoEquipo equipo={equipo} onVerInforme={() => generarPDF("ver")} />;
 
   const px = Math.round(getQRpx());
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${px * 2}x${px * 2}&data=${encodeURIComponent(window.location.href)}`;

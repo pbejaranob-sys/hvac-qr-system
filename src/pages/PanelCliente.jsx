@@ -208,6 +208,8 @@ export default function PanelCliente() {
   const [obsAbierto, setObsAbierto] = useState(null);
   const [vistaActual, setVistaActual] = useState("sedes");
   const [sedeActual, setSedeActual] = useState(null);
+  const [averias, setAverias] = useState([]);
+  const [averiasAbierto, setAveriasAbierto] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -234,6 +236,13 @@ export default function PanelCliente() {
           const eSnap = await getDocs(query(collection(db, "equipos"), where("cliente", "==", empresa)));
           const lista = eSnap.docs.map(d => ({ id: d.id, ...d.data() }));
           setEquipos(lista);
+
+          try {
+            const aSnap = await getDocs(query(collection(db, "averias"), where("cliente", "==", empresa), where("atendida", "==", false)));
+            setAverias(aSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+          } catch {
+            setAverias([]);
+          }
 
           try {
             const sSnap = await getDocs(query(collection(db, "sedes"), where("cliente", "==", empresa)));
@@ -468,7 +477,36 @@ export default function PanelCliente() {
             <span style={s.navEmpresa}>{usuario?.empresa}</span>
           )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", position: "relative" }}>
+          {averias.length > 0 && (
+            <button
+              onClick={() => setAveriasAbierto(o => !o)}
+              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "20px", background: "#fef0f0", color: "#791f1f", border: "0.5px solid #f0997b", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
+            >
+              <i className="ti ti-alert-triangle" aria-hidden="true"></i>
+              Averías <span style={{ background: "#c62828", color: "white", borderRadius: "10px", padding: "1px 7px", fontSize: "11px" }}>{averias.length}</span>
+            </button>
+          )}
+          {averiasAbierto && (
+            <>
+              <div style={{ position: "fixed", inset: 0, zIndex: 9 }} onClick={() => setAveriasAbierto(false)}></div>
+              <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: "360px", maxHeight: "420px", overflowY: "auto", background: "white", border: "0.5px solid #ddd", borderRadius: "10px", boxShadow: "0 8px 24px rgba(0,0,0,0.15)", zIndex: 10, padding: "8px" }}>
+                <div style={{ fontSize: "12px", fontWeight: 600, color: "#791f1f", padding: "6px 8px" }}>Averías reportadas</div>
+                {averias.map(a => (
+                  <div key={a.id} style={{ padding: "10px", borderRadius: "8px", background: "#fafafa", marginBottom: "6px" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#222" }}>
+                      {a.equipoCodigo && <span style={{ fontFamily: "monospace", background: "#f3e5f5", color: "#6a1b9a", padding: "1px 5px", borderRadius: "4px", marginRight: "6px" }}>{a.equipoCodigo}</span>}
+                      {a.ambiente || "-"} {a.piso ? `· Piso ${a.piso}` : ""}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#555", margin: "4px 0" }}>{a.mensaje}</div>
+                    <div style={{ fontSize: "10px", color: "#999" }}>
+                      Reportado por {a.tipoReportante || "-"}{a.nombreReportante ? ` (${a.nombreReportante})` : ""} · {a.fecha?.toDate ? a.fecha.toDate().toLocaleString("es-PE") : ""}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
           {vistaActual === "equipos" && (
             <>
               <button style={s.btnExcel} onClick={() => exportarExcel(usuario?.empresa, equiposFiltrados)}>
