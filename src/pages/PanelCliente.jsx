@@ -209,9 +209,12 @@ export default function PanelCliente() {
   const [vistaActual, setVistaActual] = useState("sedes");
   const [sedeActual, setSedeActual] = useState(null);
   const [averias, setAverias] = useState([]);
-  const [averiasAbierto, setAveriasAbierto] = useState(false);
   const [detalleAveria, setDetalleAveria] = useState(null); // avería mostrada dentro del modal de ficha
-  const [listaEmergenciaSede, setListaEmergenciaSede] = useState(null); // averías de una sede cuando hay 2+
+  const [listaEmergenciaSede, setListaEmergenciaSede] = useState(null); // averías activas cuando hay 2+
+  const [historialAverias, setHistorialAverias] = useState(null); // null = aún no cargado
+  const [historialAbierto, setHistorialAbierto] = useState(false);
+  const [historialSedeFiltro, setHistorialSedeFiltro] = useState(null);
+  const [cargandoHistorial, setCargandoHistorial] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -279,7 +282,7 @@ export default function PanelCliente() {
 
   const handleLogout = async () => { await signOut(auth); navigate("/"); };
 
-  // ---- Averías / emergencias por sede ----
+  // ---- Averías / emergencias ----
   const abrirDetalleAveria = (averia) => {
     const equipo = equipos.find(e => e.id === averia.equipoId);
     if (equipo) {
@@ -288,17 +291,19 @@ export default function PanelCliente() {
     }
     setDetalleAveria(averia);
     setListaEmergenciaSede(null);
+    setHistorialAbierto(false);
   };
 
-  const abrirEmergenciasSede = (sede) => {
-    const averiasSede = averias.filter(a => a.sede === sede.nombre);
-    if (averiasSede.length === 0) return;
-    if (averiasSede.length === 1) {
-      abrirDetalleAveria(averiasSede[0]);
+  const abrirEmergencias = (lista) => {
+    if (lista.length === 0) return;
+    if (lista.length === 1) {
+      abrirDetalleAveria(lista[0]);
     } else {
-      setListaEmergenciaSede(averiasSede);
+      setListaEmergenciaSede(lista);
     }
   };
+
+  const abrirEmergenciasSede = (sede) => abrirEmergencias(averias.filter(a => a.sede === sede.nombre));
 
   const cerrarModalEquipo = () => {
     setModalEquipo(null);
@@ -310,11 +315,32 @@ export default function PanelCliente() {
     try {
       const { doc, updateDoc, serverTimestamp } = await import("firebase/firestore");
       await updateDoc(doc(db, "averias", averiaId), { atendida: true, atendidaEn: serverTimestamp() });
+      const averiaAtendida = averias.find(a => a.id === averiaId);
       setAverias(prev => prev.filter(a => a.id !== averiaId));
+      if (averiaAtendida && historialAverias !== null) {
+        setHistorialAverias(prev => [{ ...averiaAtendida, atendida: true, atendidaEn: { toDate: () => new Date() } }, ...prev]);
+      }
       cerrarModalEquipo();
     } catch (e) {
       console.error("Error marcando avería como atendida:", e);
     }
+  };
+
+  const abrirHistorial = async (sede) => {
+    setHistorialSedeFiltro(sede || null);
+    setHistorialAbierto(true);
+    setListaEmergenciaSede(null);
+    if (historialAverias !== null) return; // ya cargado, solo cambia el filtro de vista
+    setCargandoHistorial(true);
+    try {
+      const empresa = usuario?.empresa || usuario?.nombre || "";
+      const hSnap = await getDocs(query(collection(db, "averias"), where("cliente", "==", empresa), where("atendida", "==", true)));
+      setHistorialAverias(hSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (e) {
+      console.error("Error cargando historial de averías:", e);
+      setHistorialAverias([]);
+    }
+    setCargandoHistorial(false);
   };
 
   const getObs = (e) => {
@@ -336,6 +362,10 @@ export default function PanelCliente() {
   const equiposMostrados = sedeActual
     ? equipos.filter(e => e.sede === sedeActual.nombre)
     : equipos;
+
+  const averiasSedeActual = sedeActual
+    ? averias.filter(a => a.sede === sedeActual.nombre)
+    : averias;
 
   const fechaAMesAnio = (fecha) => {
     if (!fecha) return null;
@@ -495,6 +525,10 @@ export default function PanelCliente() {
 
   if (cargando) return <div style={s.centro}>Cargando...</div>;
 
+  const historialFiltrado = historialAverias
+    ? historialAverias.filter(a => !historialSedeFiltro || a.sede === historialSedeFiltro.nombre)
+    : [];
+
   return (
     <div style={s.page}>
       {/* Navbar */}
@@ -518,39 +552,6 @@ export default function PanelCliente() {
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", position: "relative" }}>
-          {averias.length > 0 && (
-            <button
-              onClick={() => setAveriasAbierto(o => !o)}
-              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "20px", background: "#fef0f0", color: "#791f1f", border: "0.5px solid #f0997b", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
-            >
-              <i className="ti ti-alert-triangle" aria-hidden="true"></i>
-              Averías <span style={{ background: "#c62828", color: "white", borderRadius: "10px", padding: "1px 7px", fontSize: "11px" }}>{averias.length}</span>
-            </button>
-          )}
-          {averiasAbierto && (
-            <>
-              <div style={{ position: "fixed", inset: 0, zIndex: 9 }} onClick={() => setAveriasAbierto(false)}></div>
-              <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: "360px", maxHeight: "420px", overflowY: "auto", background: "white", border: "0.5px solid #ddd", borderRadius: "10px", boxShadow: "0 8px 24px rgba(0,0,0,0.15)", zIndex: 10, padding: "8px" }}>
-                <div style={{ fontSize: "12px", fontWeight: 600, color: "#791f1f", padding: "6px 8px" }}>Averías reportadas</div>
-                {averias.map(a => (
-                  <div
-                    key={a.id}
-                    style={{ padding: "10px", borderRadius: "8px", background: "#fafafa", marginBottom: "6px", cursor: "pointer" }}
-                    onClick={() => { setAveriasAbierto(false); abrirDetalleAveria(a); }}
-                  >
-                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#222" }}>
-                      {a.equipoCodigo && <span style={{ fontFamily: "monospace", background: "#f3e5f5", color: "#6a1b9a", padding: "1px 5px", borderRadius: "4px", marginRight: "6px" }}>{a.equipoCodigo}</span>}
-                      {a.ambiente || "-"} {a.piso ? `· Piso ${a.piso}` : ""}
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#555", margin: "4px 0" }}>{a.mensaje}</div>
-                    <div style={{ fontSize: "10px", color: "#999" }}>
-                      Reportado por {a.tipoReportante || "-"}{a.nombreReportante ? ` (${a.nombreReportante})` : ""} · {a.fecha?.toDate ? a.fecha.toDate().toLocaleString("es-PE") : ""}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
           {vistaActual === "equipos" && (
             <>
               <button style={s.btnExcel} onClick={() => exportarExcel(usuario?.empresa, equiposFiltrados)}>
@@ -592,13 +593,21 @@ export default function PanelCliente() {
                     <div style={{ ...s.mini, background: "#e8f5e9" }}><div style={{ ...s.miniNum, color: "#2e7d32" }}>{opS}</div><div style={{ ...s.miniLabel, color: "#2e7d32" }}>Operativo</div></div>
                     <div style={{ ...s.mini, background: "#fff8e1" }}><div style={{ ...s.miniNum, color: "#e65100" }}>{obsS}</div><div style={{ ...s.miniLabel, color: "#e65100" }}>Con obs.</div></div>
                     <div style={{ ...s.mini, background: fsS > 0 ? "#ffebee" : "#f5f5f5" }}><div style={{ ...s.miniNum, color: fsS > 0 ? "#c62828" : "#aaa" }}>{fsS}</div><div style={{ ...s.miniLabel, color: fsS > 0 ? "#c62828" : "#aaa" }}>Fuera serv.</div></div>
-                    <div
-                      style={{ ...s.mini, background: averiasSede.length > 0 ? "#fef0f0" : "#f5f5f5", border: averiasSede.length > 0 ? "0.5px solid #f0997b" : "none", cursor: averiasSede.length > 0 ? "pointer" : "default" }}
-                      onClick={() => abrirEmergenciasSede(sede)}
-                    >
-                      <div style={{ ...s.miniNum, color: averiasSede.length > 0 ? "#c62828" : "#aaa" }}>{averiasSede.length}</div>
-                      <div style={{ ...s.miniLabel, color: averiasSede.length > 0 ? "#c62828" : "#aaa", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
-                        <i className="ti ti-alert-triangle" style={{ fontSize: "10px" }} aria-hidden="true"></i>Emergencia
+                    <div style={{ ...s.mini, background: averiasSede.length > 0 ? "#fef0f0" : "#f5f5f5", border: averiasSede.length > 0 ? "0.5px solid #f0997b" : "none" }}>
+                      <div
+                        style={{ cursor: averiasSede.length > 0 ? "pointer" : "default" }}
+                        onClick={() => averiasSede.length > 0 && abrirEmergenciasSede(sede)}
+                      >
+                        <div style={{ ...s.miniNum, color: averiasSede.length > 0 ? "#c62828" : "#aaa" }}>{averiasSede.length}</div>
+                        <div style={{ ...s.miniLabel, color: averiasSede.length > 0 ? "#c62828" : "#aaa", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+                          <i className="ti ti-alert-triangle" style={{ fontSize: "10px" }} aria-hidden="true"></i>Emergencia
+                        </div>
+                      </div>
+                      <div
+                        style={{ fontSize: "9px", color: averiasSede.length > 0 ? "#c62828" : "#999", textAlign: "center", marginTop: "3px", textDecoration: "underline", cursor: "pointer" }}
+                        onClick={() => abrirHistorial(sede)}
+                      >
+                        Historial
                       </div>
                     </div>
                   </div>
@@ -621,7 +630,7 @@ export default function PanelCliente() {
         {/* Vista equipos */}
         {vistaActual === "equipos" && (
           <>
-            <div style={s.statsGrid}>
+            <div style={s.statsGrid5}>
               {[
                 { label: "Total equipos", val: tot, color: "#1a5fa8", bg: "white", border: "1.5px solid #1a5fa8", filtro: "Todos" },
                 { label: "Operativos", val: op, color: "#2e7d32", bg: "#e8f5e9", border: filtroEstado === "Operativo" ? "1.5px solid #2e7d32" : "0.5px solid #a5d6a7", filtro: "Operativo" },
@@ -634,6 +643,18 @@ export default function PanelCliente() {
                   <div style={{ fontSize: "10px", color: st.color, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "4px", fontWeight: 500 }}>{st.label}</div>
                 </div>
               ))}
+              <div style={{ background: averiasSedeActual.length > 0 ? "#ffebee" : "#f5f5f5", border: averiasSedeActual.length > 0 ? "0.5px solid #ef9a9a" : "0.5px solid #e0e0e0", borderRadius: "12px", padding: "14px", textAlign: "center" }}>
+                <div style={{ cursor: averiasSedeActual.length > 0 ? "pointer" : "default" }} onClick={() => abrirEmergencias(averiasSedeActual)}>
+                  <div style={{ fontSize: "28px", fontWeight: 500, color: averiasSedeActual.length > 0 ? "#c62828" : "#aaa" }}>{averiasSedeActual.length}</div>
+                  <div style={{ fontSize: "10px", color: averiasSedeActual.length > 0 ? "#c62828" : "#aaa", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "4px", fontWeight: 500 }}>Emergencia</div>
+                </div>
+                <div
+                  style={{ fontSize: "9px", color: averiasSedeActual.length > 0 ? "#c62828" : "#999", marginTop: "5px", textDecoration: "underline", cursor: "pointer" }}
+                  onClick={() => abrirHistorial(sedeActual)}
+                >
+                  Historial
+                </div>
+              </div>
             </div>
 
             <div style={s.barrasCard}>
@@ -797,7 +818,7 @@ export default function PanelCliente() {
         )}
       </div>
 
-      {/* Modal lista de emergencias de una sede (2 o más averías) */}
+      {/* Modal lista de emergencias activas (2 o más averías) */}
       {listaEmergenciaSede && (
         <div style={s.modalOverlay} onClick={() => setListaEmergenciaSede(null)}>
           <div style={{ ...s.modalCard, maxWidth: "420px" }} onClick={e => e.stopPropagation()}>
@@ -835,7 +856,55 @@ export default function PanelCliente() {
         </div>
       )}
 
-      {/* Modal ficha técnica (también usado para detalle de avería/emergencia) */}
+      {/* Modal historial de averías atendidas */}
+      {historialAbierto && (
+        <div style={s.modalOverlay} onClick={() => setHistorialAbierto(false)}>
+          <div style={{ ...s.modalCard, maxWidth: "460px" }} onClick={e => e.stopPropagation()}>
+            <div style={s.modalHeader}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <i className="ti ti-history" aria-hidden="true" style={{ color: "#555" }}></i>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>
+                  Historial de averías{historialSedeFiltro ? ` — ${historialSedeFiltro.nombre}` : ""}
+                </span>
+              </div>
+              <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={() => setHistorialAbierto(false)}>X</button>
+            </div>
+            <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "60vh", overflowY: "auto" }}>
+              {cargandoHistorial ? (
+                <div style={{ fontSize: "12px", color: "#888", textAlign: "center", padding: "20px 0" }}>Cargando historial...</div>
+              ) : historialFiltrado.length === 0 ? (
+                <div style={{ fontSize: "12px", color: "#aaa", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>Sin averías atendidas registradas</div>
+              ) : historialFiltrado
+                  .slice()
+                  .sort((a, b) => (b.atendidaEn?.toDate ? b.atendidaEn.toDate().getTime() : 0) - (a.atendidaEn?.toDate ? a.atendidaEn.toDate().getTime() : 0))
+                  .map(a => {
+                    const eq = equipos.find(e => e.id === a.equipoId);
+                    return (
+                      <div
+                        key={a.id}
+                        onClick={() => abrirDetalleAveria(a)}
+                        style={{ border: "0.5px solid #e0e0e0", borderRadius: "8px", padding: "10px 12px", cursor: "pointer" }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div>
+                            <div style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
+                            <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>{a.sede ? `${a.sede} · ` : ""}{a.piso ? `Piso ${a.piso}` : ""}</div>
+                          </div>
+                          <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "20px", background: "#e8f5e9", color: "#2e7d32", whiteSpace: "nowrap" }}>Atendida</span>
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#555", margin: "6px 0 4px" }}>{a.mensaje}</div>
+                        <div style={{ fontSize: "10px", color: "#999" }}>
+                          Reportada: {a.fecha?.toDate ? a.fecha.toDate().toLocaleString("es-PE") : "-"} · Atendida: {a.atendidaEn?.toDate ? a.atendidaEn.toDate().toLocaleString("es-PE") : "-"}
+                        </div>
+                      </div>
+                    );
+                  })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal ficha técnica (también usado para detalle de avería, activa o del historial) */}
       {modalEquipo && (
         <div style={s.modalOverlay} onClick={cerrarModalEquipo}>
           <div style={s.modalCard} onClick={e => e.stopPropagation()}>
@@ -854,26 +923,31 @@ export default function PanelCliente() {
             </div>
 
             <div style={{ overflowY: "auto", maxHeight: "65vh" }}>
-              {/* Bloque de emergencia, solo si el modal se abrió desde una avería */}
+              {/* Bloque de emergencia/historial, solo si el modal se abrió desde una avería */}
               {detalleAveria && (
-                <div style={{ padding: "14px 20px", background: "#fef0f0", borderBottom: "0.5px solid #f0997b" }}>
+                <div style={{ padding: "14px 20px", background: detalleAveria.atendida ? "#e8f5e9" : "#fef0f0", borderBottom: `0.5px solid ${detalleAveria.atendida ? "#a5d6a7" : "#f0997b"}` }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-                    <i className="ti ti-alert-triangle" style={{ color: "#c62828", fontSize: "15px" }} aria-hidden="true"></i>
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#c62828" }}>Mensaje de emergencia</span>
+                    <i className={detalleAveria.atendida ? "ti ti-circle-check" : "ti ti-alert-triangle"} style={{ color: detalleAveria.atendida ? "#2e7d32" : "#c62828", fontSize: "15px" }} aria-hidden="true"></i>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: detalleAveria.atendida ? "#2e7d32" : "#c62828" }}>
+                      {detalleAveria.atendida ? "Avería atendida" : "Mensaje de emergencia"}
+                    </span>
                   </div>
                   <div style={{ fontSize: "13px", color: "#333", marginBottom: "6px" }}>{detalleAveria.mensaje}</div>
-                  <div style={{ fontSize: "11px", color: "#791f1f", marginBottom: "10px" }}>
+                  <div style={{ fontSize: "11px", color: detalleAveria.atendida ? "#2e7d32" : "#791f1f", marginBottom: detalleAveria.atendida ? 0 : "10px" }}>
                     Reportado por {detalleAveria.tipoReportante || "-"}{detalleAveria.nombreReportante ? ` (${detalleAveria.nombreReportante})` : ""} · {detalleAveria.fecha?.toDate ? detalleAveria.fecha.toDate().toLocaleString("es-PE") : ""}
                   </div>
-                  <button
-                    style={{ width: "100%", padding: "9px", borderRadius: "8px", border: "none", background: "#c62828", color: "white", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
-                    onClick={() => marcarAveriaAtendida(detalleAveria.id)}
-                  >
-                    Marcar como atendida
-                  </button>
-                  <div style={{ fontSize: "10px", color: "#a32d2d", textAlign: "center", marginTop: "6px" }}>
-                    No se elimina: queda en el historial del equipo y deja de contar como emergencia activa.
-                  </div>
+                  {detalleAveria.atendida ? (
+                    <div style={{ fontSize: "11px", color: "#2e7d32", marginTop: "4px" }}>
+                      ✓ Atendida: {detalleAveria.atendidaEn?.toDate ? detalleAveria.atendidaEn.toDate().toLocaleString("es-PE") : "-"}
+                    </div>
+                  ) : (
+                    <button
+                      style={{ width: "100%", padding: "9px", borderRadius: "8px", border: "none", background: "#c62828", color: "white", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
+                      onClick={() => marcarAveriaAtendida(detalleAveria.id)}
+                    >
+                      Marcar como atendida
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -1033,7 +1107,7 @@ const s = {
   barraWrap: { padding: "0 14px 10px" },
   barra: { display: "flex", height: "5px", borderRadius: "3px", overflow: "hidden", background: "#f0f0f0" },
   btnVerSede: { width: "100%", padding: "10px", border: "none", borderTop: "0.5px solid #f0f0f0", cursor: "pointer", fontSize: "13px", fontWeight: 500, background: "white", color: "#1a5fa8" },
-  statsGrid: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "12px", marginBottom: "16px" },
+  statsGrid5: { display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: "12px", marginBottom: "16px" },
   barrasCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "14px 16px", marginBottom: "16px" },
   tablaCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", overflow: "hidden" },
   tablaHeader: { padding: "12px 16px", borderBottom: "0.5px solid #f0f0f0", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" },
