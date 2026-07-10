@@ -28,8 +28,8 @@ const sortPiso = (a, b) => {
 };
 
 const ordenarPisos = (a, b) => {
-  const [ta, na, la] = parsePiso({ piso: a });
-  const [tb, nb, lb] = parsePiso({ piso: b });
+  const [ta, na, la] = parsePiso(a);
+  const [tb, nb, lb] = parsePiso(b);
   if (ta !== tb) return ta - tb;
   if (na !== nb) return na - nb;
   return la - lb;
