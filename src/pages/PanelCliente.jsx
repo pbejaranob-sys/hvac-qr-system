@@ -122,7 +122,8 @@ export default function PanelCliente() {
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
-  const [filtroPiso, setFiltroPiso] = useState("Todos");
+  const [pisosSeleccionados, setPisosSeleccionados] = useState([]);
+  const [pisoDropdownAbierto, setPisoDropdownAbierto] = useState(false);
   const [filtroTipoEquipo, setFiltroTipoEquipo] = useState("Todos");
   const [filtroMes, setFiltroMes] = useState("Todos");
   const [modalEquipo, setModalEquipo] = useState(null);
@@ -236,7 +237,7 @@ export default function PanelCliente() {
   const equiposFiltrados = equiposMostrados
     .filter(e => {
       const okE = filtroEstado === "Todos" || e.estado === filtroEstado;
-      const okP = filtroPiso === "Todos" || (e.piso || "Sin piso") === filtroPiso;
+      const okP = pisosSeleccionados.length === 0 || pisosSeleccionados.includes(e.piso || "Sin piso");
       const okT = filtroTipoEquipo === "Todos" || (e.tipoEquipo || "Sin tipo") === filtroTipoEquipo;
       const okM = filtroMes === "Todos" ||
         (filtroMes === "Sin fecha" && !e.ultimoMantenimiento) ||
@@ -244,7 +245,7 @@ export default function PanelCliente() {
       return okE && okP && okT && okM;
     })
     .sort((a, b) => {
-      const todosFiltrosVacios = filtroPiso === "Todos" && filtroTipoEquipo === "Todos" && filtroMes === "Todos";
+      const todosFiltrosVacios = pisosSeleccionados.length === 0 && filtroTipoEquipo === "Todos" && filtroMes === "Todos";
       if (todosFiltrosVacios) return sortPiso(a, b);
       const fa = fechaATimestamp(a.ultimoMantenimiento);
       const fb = fechaATimestamp(b.ultimoMantenimiento);
@@ -486,9 +487,38 @@ export default function PanelCliente() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                   <span style={{ fontSize: "12px", color: "#888" }}>Piso:</span>
-                  <select style={{ fontSize: "12px", padding: "5px 10px", borderRadius: "6px", border: "0.5px solid #ddd" }} value={filtroPiso} onChange={e => setFiltroPiso(e.target.value)}>
-                    {pisos.map(p => <option key={p} value={p}>{p === "Todos" ? "Todos los pisos" : `Piso ${p}`}</option>)}
-                  </select>
+                  <div style={{ position: "relative" }}>
+                    <button
+                      onClick={() => setPisoDropdownAbierto(o => !o)}
+                      style={{ fontSize: "12px", padding: "5px 10px", borderRadius: "6px", border: "0.5px solid #ddd", background: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", minWidth: "140px", justifyContent: "space-between" }}
+                    >
+                      <span>{pisosSeleccionados.length === 0 ? "Todos los pisos" : pisosSeleccionados.length === 1 ? `Piso ${pisosSeleccionados[0]}` : `${pisosSeleccionados.length} pisos`}</span>
+                      <span style={{ fontSize: "10px", color: "#888" }}>{pisoDropdownAbierto ? "▴" : "▾"}</span>
+                    </button>
+                    {pisoDropdownAbierto && (
+                      <>
+                        <div style={{ position: "fixed", inset: 0, zIndex: 9 }} onClick={() => setPisoDropdownAbierto(false)}></div>
+                        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, background: "white", border: "0.5px solid #ddd", borderRadius: "8px", boxShadow: "0 4px 16px rgba(0,0,0,0.12)", zIndex: 10, minWidth: "180px", maxHeight: "320px", overflowY: "auto" }}>
+                          <div
+                            onClick={() => setPisosSeleccionados([])}
+                            style={{ padding: "8px 12px", fontSize: "12px", fontWeight: 500, cursor: "pointer", background: pisosSeleccionados.length === 0 ? "#e8f0fe" : "white", color: pisosSeleccionados.length === 0 ? "#1a5fa8" : "#333", borderBottom: "0.5px solid #f0f0f0" }}
+                          >
+                            Todos los pisos
+                          </div>
+                          {pisos.filter(p => p !== "Todos").map(p => (
+                            <label key={p} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "7px 12px", fontSize: "12px", cursor: "pointer", color: "#333" }}>
+                              <input
+                                type="checkbox"
+                                checked={pisosSeleccionados.includes(p)}
+                                onChange={() => setPisosSeleccionados(sel => sel.includes(p) ? sel.filter(x => x !== p) : [...sel, p])}
+                              />
+                              Piso {p}
+                            </label>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                   <span style={{ fontSize: "12px", color: "#888" }}>Equipo:</span>
                   <select style={{ fontSize: "12px", padding: "5px 10px", borderRadius: "6px", border: "0.5px solid #ddd" }} value={filtroTipoEquipo} onChange={e => setFiltroTipoEquipo(e.target.value)}>
                     {tiposEquipo.map(t => <option key={t} value={t}>{t === "Todos" ? "Todos los equipos" : t}</option>)}
