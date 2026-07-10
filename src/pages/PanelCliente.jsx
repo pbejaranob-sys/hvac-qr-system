@@ -6,25 +6,33 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import jsPDF from "jspdf";
 
 const parsePiso = (p) => {
-  if (!p) return [99, 0];
+  if (!p) return [99, 0, 0];
   const s = String(p).toLowerCase().trim();
   const m = s.match(/s[oó]tano\s*(\d*)/);
-  if (m) return [-1, -(parseInt(m[1]) || 1)];
-  const n = parseFloat(s);
-  if (!isNaN(n)) return [0, n];
-  return [1, 0];
+  if (m) return [-1, -(parseInt(m[1]) || 1), 0];
+  const match = s.match(/^(\d+)\s*([a-z]?)/);
+  if (match) {
+    const num = parseInt(match[1]);
+    const letra = match[2] ? match[2].charCodeAt(0) - 96 : 0;
+    return [0, num, letra];
+  }
+  return [1, 0, 0];
 };
 
 const sortPiso = (a, b) => {
-  const [ta, na] = parsePiso(a.piso);
-  const [tb, nb] = parsePiso(b.piso);
-  return ta !== tb ? ta - tb : na - nb;
+  const [ta, na, la] = parsePiso(a.piso);
+  const [tb, nb, lb] = parsePiso(b.piso);
+  if (ta !== tb) return ta - tb;
+  if (na !== nb) return na - nb;
+  return la - lb;
 };
 
 const ordenarPisos = (a, b) => {
-  const [ta, na] = parsePiso({ piso: a });
-  const [tb, nb] = parsePiso({ piso: b });
-  return ta !== tb ? ta - tb : na - nb;
+  const [ta, na, la] = parsePiso({ piso: a });
+  const [tb, nb, lb] = parsePiso({ piso: b });
+  if (ta !== tb) return ta - tb;
+  if (na !== nb) return na - nb;
+  return la - lb;
 };
 
 const agruparPorPiso = (equipos) => {
