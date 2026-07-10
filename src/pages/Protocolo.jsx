@@ -223,6 +223,7 @@ export default function Protocolo() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const equipoId = searchParams.get("equipo");
+  const esAccesoTecnico = searchParams.get("tecnico") === "1";
   const origen = searchParams.get("origen");
   const origenSede = searchParams.get("sede");
 
@@ -267,6 +268,12 @@ export default function Protocolo() {
         setAuthChecked(true);
         setSoloLectura(esLectura);
         cargarEquipo(esLectura);
+      } else if (equipoId && esAccesoTecnico) {
+        // Técnico llega vía código de acceso (sin login Firebase): puede editar el protocolo.
+        setEsPub(false);
+        setAuthChecked(true);
+        setSoloLectura(false);
+        cargarEquipo(false);
       } else if (equipoId) {
         // Acceso público (QR escaneado sin sesión): solo lectura, mostrar/abrir PDF
         setEsPub(true);

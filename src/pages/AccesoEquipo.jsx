@@ -159,7 +159,7 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
                 <div style={s.menuS}>Datos del equipo</div>
               </div>
             </div>
-            <div style={s.menuItem} onClick={() => window.location.href = `/protocolo?equipo=${equipo.id}`}>
+            <div style={s.menuItem} onClick={() => window.location.href = `/protocolo?equipo=${equipo.id}&tecnico=1`}>
               <div style={s.menuIcon}>✅</div>
               <div>
                 <div style={s.menuT}>Registrar mantenimiento</div>
