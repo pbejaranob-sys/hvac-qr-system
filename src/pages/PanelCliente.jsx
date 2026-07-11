@@ -817,7 +817,7 @@ export default function PanelCliente() {
         <div style={s.modalOverlay} onClick={() => setListaEmergenciaSede(null)}>
           <div style={s.averiaListaCard} onClick={e => e.stopPropagation()}>
             <div style={s.averiaListaHeader}>
-              <span style={{ fontSize: "17px", color: "#DC2626" }}>⚠</span>
+              <span style={{ fontSize: "14px", color: "#DC2626" }}>⚠</span>
               <span style={s.averiaListaTitulo}>Equipos con emergencia</span>
               <span style={s.badgeEmergenciaCount}>{listaEmergenciaSede.length}</span>
               <button style={s.btnCerrarX} onClick={() => setListaEmergenciaSede(null)}>✕</button>
@@ -850,7 +850,7 @@ export default function PanelCliente() {
         <div style={s.modalOverlay} onClick={() => setHistorialAbierto(false)}>
           <div style={s.averiaListaCard} onClick={e => e.stopPropagation()}>
             <div style={s.averiaListaHeader}>
-              <span style={{ fontSize: "17px", color: "#8E8E93" }}>🕘</span>
+              <span style={{ fontSize: "14px", color: "#8E8E93" }}>🕘</span>
               <span style={s.averiaListaTitulo}>Historial de averías{historialSedeFiltro ? ` — ${historialSedeFiltro.nombre}` : ""}</span>
               <button style={s.btnCerrarX} onClick={() => setHistorialAbierto(false)}>✕</button>
             </div>
@@ -1169,17 +1169,17 @@ const s = {
 
   // ---- Modal lista (emergencias activas / historial) estilo iOS ----
   averiaListaCard: { background: "white", borderRadius: "16px", width: "100%", maxWidth: "420px", border: "1px solid #F0F0F0", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", overflow: "hidden", fontFamily: iosFont },
-  averiaListaHeader: { display: "flex", alignItems: "center", gap: "8px", padding: "18px 20px", borderBottom: "1px solid #F0F0F0" },
-  averiaListaTitulo: { fontSize: "17px", fontWeight: 600, color: "#1C1C1E", flex: 1 },
-  badgeEmergenciaCount: { fontSize: "12px", minWidth: "22px", height: "22px", padding: "0 7px", borderRadius: "11px", background: "#DC2626", color: "white", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" },
-  btnCerrarX: { background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#8E8E93", padding: 0, marginLeft: "6px" },
-  averiaListaBody: { padding: "14px 16px", display: "flex", flexDirection: "column", gap: "10px", maxHeight: "60vh", overflowY: "auto" },
-  averiaListaItem: { background: "white", border: "1px solid #F0F0F0", borderRadius: "12px", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", cursor: "pointer" },
-  averiaListaItemLeft: { minWidth: 0, flex: 1 },
-  averiaListaItemNombre: { fontSize: "15px", fontWeight: 600, color: "#1C1C1E" },
-  averiaListaItemMeta: { fontSize: "13px", color: "#8E8E93", marginTop: "3px" },
-  averiaListaItemRight: { display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, whiteSpace: "nowrap" },
-  averiaListaItemFecha: { fontSize: "13px", color: "#DC2626", fontWeight: 500, whiteSpace: "nowrap" },
-  averiaListaChevron: { fontSize: "18px", color: "#C7C7CC", lineHeight: 1 },
-  badgeAtendidaChip: { fontSize: "12px", padding: "3px 9px", borderRadius: "20px", background: "#DCFCE7", color: "#16A34A", fontWeight: 500, whiteSpace: "nowrap" },
+  averiaListaHeader: { display: "flex", alignItems: "center", gap: "8px", padding: "14px 16px", borderBottom: "1px solid #F0F0F0" },
+  averiaListaTitulo: { fontSize: "14px", fontWeight: 600, color: "#1C1C1E", flex: 1, textAlign: "left" },
+  badgeEmergenciaCount: { fontSize: "11px", minWidth: "20px", height: "20px", padding: "0 6px", borderRadius: "10px", background: "#DC2626", color: "white", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" },
+  btnCerrarX: { background: "none", border: "none", fontSize: "16px", cursor: "pointer", color: "#8E8E93", padding: 0, marginLeft: "6px" },
+  averiaListaBody: { padding: "12px 14px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "60vh", overflowY: "auto" },
+  averiaListaItem: { background: "white", border: "1px solid #F0F0F0", borderRadius: "12px", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", cursor: "pointer" },
+  averiaListaItemLeft: { minWidth: 0, flex: 1, textAlign: "left" },
+  averiaListaItemNombre: { fontSize: "13px", fontWeight: 600, color: "#1C1C1E", textAlign: "left" },
+  averiaListaItemMeta: { fontSize: "11px", color: "#8E8E93", marginTop: "3px", textAlign: "left" },
+  averiaListaItemRight: { display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, whiteSpace: "nowrap" },
+  averiaListaItemFecha: { fontSize: "11px", color: "#DC2626", fontWeight: 500, whiteSpace: "nowrap" },
+  averiaListaChevron: { fontSize: "16px", color: "#C7C7CC", lineHeight: 1 },
+  badgeAtendidaChip: { fontSize: "11px", padding: "3px 8px", borderRadius: "20px", background: "#DCFCE7", color: "#16A34A", fontWeight: 500, whiteSpace: "nowrap" },
 };
