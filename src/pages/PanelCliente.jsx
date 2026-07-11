@@ -817,7 +817,7 @@ export default function PanelCliente() {
         <div style={s.modalOverlay} onClick={() => setListaEmergenciaSede(null)}>
           <div style={s.averiaListaCard} onClick={e => e.stopPropagation()}>
             <div style={s.averiaListaHeader}>
-              <span style={{ fontSize: "15px" }}>⚠</span>
+              <span style={{ fontSize: "17px", color: "#DC2626" }}>⚠</span>
               <span style={s.averiaListaTitulo}>Equipos con emergencia</span>
               <span style={s.badgeEmergenciaCount}>{listaEmergenciaSede.length}</span>
               <button style={s.btnCerrarX} onClick={() => setListaEmergenciaSede(null)}>✕</button>
@@ -827,14 +827,14 @@ export default function PanelCliente() {
                 const eq = equipos.find(e => e.id === a.equipoId);
                 return (
                   <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.averiaListaItem}>
-                    <div>
+                    <div style={s.averiaListaItemLeft}>
                       <div style={s.averiaListaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
                       <div style={s.averiaListaItemMeta}>
                         {a.piso ? `Piso ${a.piso}` : ""}{eq?.serie ? ` · Serie ${eq.serie}` : ""}
                       </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={s.averiaListaItemFecha}>{a.fecha?.toDate ? a.fecha.toDate().toLocaleString("es-PE") : ""}</span>
+                    <div style={s.averiaListaItemRight}>
+                      <span style={s.averiaListaItemFecha}>{a.fecha?.toDate ? a.fecha.toDate().toLocaleDateString("es-PE") + ", " + a.fecha.toDate().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : ""}</span>
                       <span style={s.averiaListaChevron}>›</span>
                     </div>
                   </div>
@@ -848,9 +848,9 @@ export default function PanelCliente() {
       {/* Modal historial de averías atendidas */}
       {historialAbierto && (
         <div style={s.modalOverlay} onClick={() => setHistorialAbierto(false)}>
-          <div style={{ ...s.averiaListaCard, border: "0.5px solid #e0e0e0" }} onClick={e => e.stopPropagation()}>
-            <div style={{ ...s.averiaListaHeader, color: "#555" }}>
-              <span style={{ fontSize: "15px" }}>🕘</span>
+          <div style={s.averiaListaCard} onClick={e => e.stopPropagation()}>
+            <div style={s.averiaListaHeader}>
+              <span style={{ fontSize: "17px", color: "#8E8E93" }}>🕘</span>
               <span style={s.averiaListaTitulo}>Historial de averías{historialSedeFiltro ? ` — ${historialSedeFiltro.nombre}` : ""}</span>
               <button style={s.btnCerrarX} onClick={() => setHistorialAbierto(false)}>✕</button>
             </div>
@@ -866,11 +866,11 @@ export default function PanelCliente() {
                     const eq = equipos.find(e => e.id === a.equipoId);
                     return (
                       <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.averiaListaItem}>
-                        <div>
+                        <div style={s.averiaListaItemLeft}>
                           <div style={s.averiaListaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
                           <div style={s.averiaListaItemMeta}>{a.sede ? `${a.sede} · ` : ""}{a.piso ? `Piso ${a.piso}` : ""}</div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={s.averiaListaItemRight}>
                           <span style={s.badgeAtendidaChip}>Atendida</span>
                           <span style={s.averiaListaChevron}>›</span>
                         </div>
@@ -907,10 +907,10 @@ export default function PanelCliente() {
 
               <div style={s.averiaDivider}></div>
 
-              <div style={{ ...s.averiaMsgLabel, color: atendida ? "#2e7d32" : "#c62828" }}>
+              <div style={{ ...s.averiaMsgLabel, color: atendida ? "#16A34A" : "#DC2626" }}>
                 {atendida ? "✓ Avería atendida" : "⚠ Mensaje de emergencia"}
               </div>
-              <div style={{ ...s.averiaMsgBox, background: atendida ? "#e8f5e9" : "#fde8e8" }}>
+              <div style={{ ...s.averiaMsgBox, background: atendida ? "#DCFCE7" : "#FEE2E2", border: atendida ? "1px solid #86EFAC" : "1px solid #FCA5A5" }}>
                 <div style={s.averiaMsgTxt}>{detalleAveria.mensaje}</div>
                 <div style={{ ...s.averiaMsgFecha, color: atendida ? "#2e7d32" : "#c62828" }}>
                   🕐 {detalleAveria.fecha?.toDate ? detalleAveria.fecha.toDate().toLocaleString("es-PE") : ""}
@@ -1093,8 +1093,10 @@ export default function PanelCliente() {
   );
 }
 
+const iosFont = '-apple-system, "SF Pro Text", Inter, sans-serif';
+
 const s = {
-  page: { minHeight: "100vh", background: "#f0f4f8", fontFamily: "Inter, Arial, sans-serif" },
+  page: { minHeight: "100vh", background: "#f0f4f8", fontFamily: `${iosFont}, Arial, sans-serif` },
   navbar: { background: "white", borderBottom: "0.5px solid #e0e0e0", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
   navLeft: { display: "flex", alignItems: "center", gap: "12px" },
   logo: { fontFamily: "'Arial Black', sans-serif", fontWeight: 900, fontSize: "20px", display: "flex", alignItems: "baseline", letterSpacing: "1px" },
@@ -1144,38 +1146,40 @@ const s = {
   vacio: { textAlign: "center", padding: "3rem", background: "white", borderRadius: "12px", color: "#888", border: "0.5px solid #e0e0e0" },
   centro: { textAlign: "center", padding: "3rem", fontSize: "16px", color: "#888" },
 
-  // ---- Modal compacto de detalle de avería (estilo mockup) ----
-  averiaCard: { background: "white", borderRadius: "12px", width: "100%", maxWidth: "420px", padding: "20px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" },
-  averiaHeaderRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px", gap: "10px" },
-  averiaTitulo: { fontSize: "15px", fontWeight: 600, color: "#1a1a1a" },
-  averiaSub: { fontSize: "13px", color: "#888", marginTop: "3px" },
-  badgeEmergencia: { fontSize: "11px", padding: "4px 10px", background: "#fde8e8", color: "#c62828", borderRadius: "20px", fontWeight: 500, whiteSpace: "nowrap" },
-  badgeAtendida: { fontSize: "11px", padding: "4px 10px", background: "#e8f5e9", color: "#2e7d32", borderRadius: "20px", fontWeight: 500, whiteSpace: "nowrap" },
-  averiaTabla: { display: "flex", flexDirection: "column", gap: "8px", marginBottom: "14px" },
+  // ---- Modal compacto de detalle de avería (estilo iOS) ----
+  averiaCard: { background: "white", borderRadius: "16px", width: "100%", maxWidth: "420px", padding: "20px", border: "1px solid #F0F0F0", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", fontFamily: iosFont },
+  averiaHeaderRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", gap: "10px" },
+  averiaTitulo: { fontSize: "17px", fontWeight: 600, color: "#1C1C1E", lineHeight: 1.3 },
+  averiaSub: { fontSize: "13px", color: "#8E8E93", marginTop: "3px" },
+  badgeEmergencia: { fontSize: "12px", padding: "4px 10px", background: "#FEE2E2", color: "#DC2626", borderRadius: "20px", fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 },
+  badgeAtendida: { fontSize: "12px", padding: "4px 10px", background: "#DCFCE7", color: "#16A34A", borderRadius: "20px", fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 },
+  averiaTabla: { display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" },
   averiaFila: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  averiaLabel: { fontSize: "13px", color: "#888" },
-  averiaValor: { fontSize: "13px", color: "#222", fontWeight: 500 },
-  averiaDivider: { height: "0.5px", background: "#eee", margin: "2px 0 14px" },
-  averiaMsgLabel: { fontSize: "13px", fontWeight: 600, marginBottom: "8px" },
-  averiaMsgBox: { borderRadius: "8px", padding: "12px 14px" },
-  averiaMsgTxt: { fontSize: "14px", color: "#333", marginBottom: "6px", lineHeight: 1.4 },
-  averiaMsgFecha: { fontSize: "11px" },
-  averiaAtendidaTxt: { fontSize: "12px", color: "#2e7d32", fontWeight: 500, marginTop: "10px" },
-  btnVerProtocolo: { flex: 1, padding: "10px", borderRadius: "8px", border: "0.5px solid #ddd", background: "white", color: "#333", fontSize: "13px", fontWeight: 500, cursor: "pointer" },
-  btnMarcarAtendida: { flex: 1, padding: "10px", borderRadius: "8px", border: "none", background: "#c62828", color: "white", fontSize: "13px", fontWeight: 600, cursor: "pointer" },
-  averiaCaption: { fontSize: "11px", color: "#999", textAlign: "center", marginTop: "10px" },
+  averiaLabel: { fontSize: "14px", color: "#8E8E93", fontWeight: 400 },
+  averiaValor: { fontSize: "15px", color: "#1C1C1E", fontWeight: 600 },
+  averiaDivider: { height: "1px", background: "#F0F0F0", margin: "2px 0 16px" },
+  averiaMsgLabel: { fontSize: "14px", fontWeight: 600, marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" },
+  averiaMsgBox: { borderRadius: "12px", padding: "14px", border: "1px solid #FCA5A5" },
+  averiaMsgTxt: { fontSize: "14px", color: "#1C1C1E", marginBottom: "6px", lineHeight: 1.45 },
+  averiaMsgFecha: { fontSize: "12px", color: "#8E8E93" },
+  averiaAtendidaTxt: { fontSize: "13px", color: "#16A34A", fontWeight: 500, marginTop: "12px" },
+  btnVerProtocolo: { flex: 1, height: "48px", borderRadius: "10px", border: "1px solid #D1D1D6", background: "white", color: "#1C1C1E", fontSize: "15px", fontWeight: 500, cursor: "pointer" },
+  btnMarcarAtendida: { flex: 1, height: "48px", borderRadius: "10px", border: "none", background: "#DC2626", color: "white", fontSize: "15px", fontWeight: 500, cursor: "pointer" },
+  averiaCaption: { fontSize: "12px", color: "#8E8E93", textAlign: "center", marginTop: "12px", lineHeight: 1.4 },
 
-  // ---- Modal lista (emergencias activas / historial) estilo mockup ----
-  averiaListaCard: { background: "white", borderRadius: "12px", width: "100%", maxWidth: "420px", border: "0.5px solid #ef9a9a", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", overflow: "hidden" },
-  averiaListaHeader: { display: "flex", alignItems: "center", gap: "8px", padding: "16px 18px", borderBottom: "0.5px solid #f0f0f0", color: "#c62828" },
-  averiaListaTitulo: { fontSize: "14px", fontWeight: 600, color: "#222", flex: 1 },
-  badgeEmergenciaCount: { fontSize: "11px", padding: "2px 9px", borderRadius: "20px", background: "#fde8e8", color: "#c62828", fontWeight: 700 },
-  btnCerrarX: { background: "none", border: "none", fontSize: "16px", cursor: "pointer", color: "#999", padding: 0, marginLeft: "4px" },
-  averiaListaBody: { padding: "12px 14px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "60vh", overflowY: "auto" },
-  averiaListaItem: { border: "0.5px solid #eee", borderRadius: "8px", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" },
-  averiaListaItemNombre: { fontSize: "14px", fontWeight: 600, color: "#1a1a1a" },
-  averiaListaItemMeta: { fontSize: "12px", color: "#999", marginTop: "3px" },
-  averiaListaItemFecha: { fontSize: "12px", color: "#c62828" },
-  averiaListaChevron: { fontSize: "18px", color: "#ccc" },
-  badgeAtendidaChip: { fontSize: "10px", padding: "2px 8px", borderRadius: "20px", background: "#e8f5e9", color: "#2e7d32", fontWeight: 500, whiteSpace: "nowrap" },
+  // ---- Modal lista (emergencias activas / historial) estilo iOS ----
+  averiaListaCard: { background: "white", borderRadius: "16px", width: "100%", maxWidth: "420px", border: "1px solid #F0F0F0", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", overflow: "hidden", fontFamily: iosFont },
+  averiaListaHeader: { display: "flex", alignItems: "center", gap: "8px", padding: "18px 20px", borderBottom: "1px solid #F0F0F0" },
+  averiaListaTitulo: { fontSize: "17px", fontWeight: 600, color: "#1C1C1E", flex: 1 },
+  badgeEmergenciaCount: { fontSize: "12px", minWidth: "22px", height: "22px", padding: "0 7px", borderRadius: "11px", background: "#DC2626", color: "white", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" },
+  btnCerrarX: { background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#8E8E93", padding: 0, marginLeft: "6px" },
+  averiaListaBody: { padding: "14px 16px", display: "flex", flexDirection: "column", gap: "10px", maxHeight: "60vh", overflowY: "auto" },
+  averiaListaItem: { background: "white", border: "1px solid #F0F0F0", borderRadius: "12px", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", cursor: "pointer" },
+  averiaListaItemLeft: { minWidth: 0, flex: 1 },
+  averiaListaItemNombre: { fontSize: "15px", fontWeight: 600, color: "#1C1C1E" },
+  averiaListaItemMeta: { fontSize: "13px", color: "#8E8E93", marginTop: "3px" },
+  averiaListaItemRight: { display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, whiteSpace: "nowrap" },
+  averiaListaItemFecha: { fontSize: "13px", color: "#DC2626", fontWeight: 500, whiteSpace: "nowrap" },
+  averiaListaChevron: { fontSize: "18px", color: "#C7C7CC", lineHeight: 1 },
+  badgeAtendidaChip: { fontSize: "12px", padding: "3px 9px", borderRadius: "20px", background: "#DCFCE7", color: "#16A34A", fontWeight: 500, whiteSpace: "nowrap" },
 };
