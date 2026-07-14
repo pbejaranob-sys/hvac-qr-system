@@ -18,93 +18,17 @@ const GRUPO_POR_TIPO = {
   "Chiller": "pendiente", "Torre de Enfriamiento": "pendiente", "Bombas de agua": "pendiente",
 };
 
-const IconoEquipo = ({ grupo }) => {
-  if (grupo === "fancoil") return (
-    <svg width="46" height="46" viewBox="0 0 100 100">
-      <rect x="8" y="18" width="84" height="26" rx="6" fill="#e6f1fb" stroke="#378add" strokeWidth="1.4"/>
-      <rect x="13" y="23" width="14" height="16" rx="3" fill="#b5d4f4" stroke="#85b7eb" strokeWidth="0.7"/>
-      <rect x="31" y="23" width="14" height="16" rx="3" fill="#b5d4f4" stroke="#85b7eb" strokeWidth="0.7"/>
-      <line x1="51" y1="22" x2="51" y2="43" stroke="#378add" strokeWidth="1"/>
-      <line x1="59" y1="22" x2="59" y2="43" stroke="#378add" strokeWidth="1"/>
-      <line x1="67" y1="22" x2="67" y2="43" stroke="#378add" strokeWidth="1"/>
-      <line x1="75" y1="22" x2="75" y2="43" stroke="#378add" strokeWidth="1"/>
-      <rect x="8" y="43" width="84" height="4" rx="2" fill="#85b7eb"/>
-      <path d="M14 60 Q22 53 30 60 Q38 67 46 60 Q54 53 62 60 Q70 67 78 60" stroke="#378add" strokeWidth="1.4" fill="none" strokeLinecap="round"/>
-      <path d="M18 70 Q26 63 34 70 Q42 77 50 70 Q58 63 66 70" stroke="#85b7eb" strokeWidth="1" fill="none" strokeLinecap="round"/>
-      <circle cx="88" cy="24" r="3" fill="#2e7d32"/>
-    </svg>
-  );
-  if (grupo === "expansion") return (
-    <svg width="46" height="46" viewBox="0 0 100 100">
-      <rect x="4" y="8" width="38" height="26" rx="5" fill="#e6f1fb" stroke="#378add" strokeWidth="1.3"/>
-      <rect x="8" y="12" width="8" height="18" rx="2" fill="#b5d4f4"/>
-      <rect x="19" y="12" width="8" height="18" rx="2" fill="#b5d4f4"/>
-      <rect x="4" y="33" width="38" height="3.5" rx="1.5" fill="#85b7eb"/>
-      <path d="M7 44 Q13 39 19 44 Q25 49 31 44" stroke="#378add" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
-      <circle cx="38" cy="11" r="2.5" fill="#2e7d32"/>
-      <rect x="55" y="20" width="40" height="72" rx="6" fill="#e1f5ee" stroke="#1d9e75" strokeWidth="1.3"/>
-      <rect x="59" y="25" width="32" height="6" rx="2" fill="#9fe1cb"/>
-      <rect x="59" y="34" width="32" height="6" rx="2" fill="#9fe1cb"/>
-      <rect x="59" y="43" width="32" height="6" rx="2" fill="#9fe1cb"/>
-      <rect x="59" y="52" width="32" height="6" rx="2" fill="#5dcaa5"/>
-      <circle cx="91" cy="23" r="2.5" fill="#2e7d32"/>
-      <path d="M42 22 Q48 22 48 30 L48 56 Q48 60 55 60" stroke="#85b7eb" strokeWidth="1.2" fill="none" strokeDasharray="4,2.5"/>
-    </svg>
-  );
-  if (grupo === "ventilacion") return (
-    <svg width="46" height="46" viewBox="0 0 100 100">
-      <path d="M52 6 A36 36 0 1 1 15 42" stroke="#0f6e56" strokeWidth="3" fill="none" strokeLinecap="round" strokeDasharray="4,5"/>
-      <circle cx="50" cy="46" r="32" fill="#e1f5ee" stroke="#0f6e56" strokeWidth="2"/>
-      <g stroke="#0f6e56" strokeWidth="2" fill="#9fe1cb" strokeLinejoin="round">
-        <path d="M50 46 L50 18 Q50 14 54 14 Q58 14 58 18 L58 40 Z"/>
-        <path d="M50 46 L68 27 Q71 24 74 27 Q77 30 74 33 L58 50 Z"/>
-        <path d="M50 46 L78 46 Q82 46 82 50 Q82 54 78 54 L58 50 Z"/>
-        <path d="M50 46 L68 65 Q71 68 68 71 Q65 74 62 71 L46 54 Z"/>
-        <path d="M50 46 L50 74 Q50 78 46 78 Q42 78 42 74 L42 50 Z"/>
-        <path d="M50 46 L32 65 Q29 68 26 65 Q23 62 26 59 L42 42 Z"/>
-        <path d="M50 46 L22 46 Q18 46 18 42 Q18 38 22 38 L42 42 Z"/>
-        <path d="M50 46 L32 27 Q29 24 32 21 Q35 18 38 21 L54 38 Z"/>
-      </g>
-      <circle cx="50" cy="46" r="7" fill="#e1f5ee" stroke="#0f6e56" strokeWidth="2"/>
-      <path d="M27 78 L18 96 M73 78 L82 96" stroke="#0f6e56" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="12" y1="96" x2="88" y2="96" stroke="#0f6e56" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  );
-  if (grupo === "vrv") return (
-    <svg width="46" height="46" viewBox="0 0 100 100">
-      <rect x="4" y="4" width="92" height="40" rx="6" fill="#faeeda" stroke="#ba7517" strokeWidth="1.4"/>
-      <rect x="8" y="9" width="11" height="30" rx="3" fill="#fac775" stroke="#ef9f27" strokeWidth="0.8"/>
-      <rect x="23" y="9" width="11" height="30" rx="3" fill="#fac775" stroke="#ef9f27" strokeWidth="0.8"/>
-      <rect x="38" y="9" width="11" height="30" rx="3" fill="#fac775" stroke="#ef9f27" strokeWidth="0.8"/>
-      <circle cx="79" cy="24" r="13" fill="#fac775" stroke="#ba7517" strokeWidth="1.2"/>
-      <circle cx="79" cy="24" r="7" fill="#ef9f27" stroke="#ba7517" strokeWidth="0.8"/>
-      <circle cx="93" cy="7" r="2.5" fill="#2e7d32"/>
-      <rect x="18" y="52" width="64" height="40" rx="6" fill="#e1f5ee" stroke="#1d9e75" strokeWidth="1.3"/>
-      <rect x="22" y="57" width="56" height="7" rx="2" fill="#9fe1cb"/>
-      <rect x="22" y="67" width="56" height="7" rx="2" fill="#9fe1cb"/>
-      <rect x="22" y="77" width="56" height="7" rx="2" fill="#5dcaa5"/>
-    </svg>
-  );
-  return (
-    <svg width="46" height="46" viewBox="0 0 100 100">
-      <rect x="6" y="4" width="88" height="46" rx="6" fill="#f0f4f8" stroke="#888" strokeWidth="1.3"/>
-      <rect x="10" y="8" width="36" height="38" rx="4" fill="#e6f1fb" stroke="#378add" strokeWidth="1"/>
-      <rect x="50" y="8" width="40" height="38" rx="4" fill="#e1f5ee" stroke="#1d9e75" strokeWidth="1"/>
-      <circle cx="46" cy="27" r="10" fill="#f0f4f8" stroke="#888" strokeWidth="1.2"/>
-      <circle cx="46" cy="27" r="5" fill="#e6f1fb" stroke="#378add" strokeWidth="1"/>
-      <rect x="14" y="56" width="72" height="16" rx="4" fill="#f5f5f5" stroke="#ccc" strokeWidth="1"/>
-      <circle cx="28" cy="64" r="5" fill="#b5d4f4" stroke="#378add" strokeWidth="0.8"/>
-      <circle cx="50" cy="64" r="5" fill="#b5d4f4" stroke="#378add" strokeWidth="0.8"/>
-      <circle cx="72" cy="64" r="5" fill="#9fe1cb" stroke="#1d9e75" strokeWidth="0.8"/>
-    </svg>
-  );
+const getBadgeStyle = (estado) => {
+  if (estado === "Operativo") return { background: "#e6f7ec", color: "#1c7a44" };
+  if (estado === "Operativo con observaciones") return { background: "#fff8e6", color: "#8a5b0a" };
+  return { background: "#fdeeee", color: "#a52b2b" };
 };
 
-const getBadgeStyle = (estado) => {
-  if (estado === "Operativo") return { background: "#e8f5e9", color: "#2e7d32" };
-  if (estado === "Operativo con observaciones") return { background: "#fff8e1", color: "#f57f17" };
-  return { background: "#ffebee", color: "#c62828" };
-};
+const cronBadge = (estado) => ({
+  realizado: { bg: "#e6f7ec", color: "#1c7a44", label: "Realizado" },
+  pendiente: { bg: "#fff8e6", color: "#8a5b0a", label: "Pendiente" },
+  programado: { bg: "#e5f0ff", color: "#1a4fc0", label: "Programado" },
+}[estado] || { bg: "#e5f0ff", color: "#1a4fc0", label: "Programado" });
 
 export default function VistaEquipo() {
   const { id } = useParams();
@@ -128,7 +52,6 @@ export default function VistaEquipo() {
     });
     return () => unsub();
   }, []);
-  // El flujo público ahora pasa por AccesoEquipo (Cliente/Técnico) en vez de descargar PDF automáticamente.
 
   const cargarEquipo = async () => {
     try {
@@ -145,7 +68,6 @@ export default function VistaEquipo() {
     return escala * 37.8;
   };
 
-  // Observaciones con causa sincronizada desde protocolo
   const getObs = () => {
     const arr = equipo.observacionesArray || [];
     const norm = arr.map(o => typeof o === "string"
@@ -173,12 +95,6 @@ export default function VistaEquipo() {
     { label: "4to Trimestre", fecha: "", estado: "programado" },
   ];
 
-  const cronColor = (estado) => ({
-    realizado: { bg: "#e8f5e9", border: "#a5d6a7", color: "#2e7d32", icon: "✅" },
-    pendiente:  { bg: "#fff8e1", border: "#ffe082", color: "#e65100", icon: "⏳" },
-    programado: { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", icon: "📆" },
-  }[estado] || { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", icon: "📆" });
-
   const imprimirQR = () => {
     const url = window.location.href;
     const px = Math.round(getQRpx());
@@ -193,91 +109,6 @@ export default function VistaEquipo() {
     win.document.close();
   };
 
-  const imprimirFicha = () => {
-    const obsArr = getObs(), recArr = getRec(), corArr = getCor(), cronArr = getCron();
-    const badgeColor = equipo.estado === "Operativo" ? "#2e7d32" : equipo.estado === "Operativo con observaciones" ? "#e65100" : "#c62828";
-    const badgeBg = equipo.estado === "Operativo" ? "#e8f5e9" : equipo.estado === "Operativo con observaciones" ? "#fff8e1" : "#ffebee";
-    const qrPx = Math.round(getQRpx()) * 2;
-    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=${qrPx}x${qrPx}&data=${encodeURIComponent(window.location.href)}`;
-
-    const esVentF = GRUPO_POR_TIPO[equipo.tipoEquipo] === "ventilacion";
-    const campo = (l, v) => v ? `<div style="background:#f8f9fa;border-radius:6px;padding:7px 10px;"><div style="font-size:10px;color:#888;margin-bottom:2px;">${l}</div><div style="font-size:12px;font-weight:600;color:#222;">${v}</div></div>` : "";
-    const filaGen = [
-      campo("Cliente", equipo.cliente), campo("Sede", equipo.sede), campo("Piso", equipo.piso), campo("Ambiente", equipo.ambiente),
-      campo("Marca", equipo.marca), campo("Modelo", equipo.modelo), campo("N° Serie", equipo.serie),
-      campo("Capacidad", equipo.capacidad ? equipo.capacidad + (esVentF ? " CFM" : " BTU") : null),
-    ].filter(Boolean).join("");
-    const filaElec = [
-      !esVentF ? campo("Refrigerante", equipo.tipoRefrigerante) : "",
-      campo("Voltaje de placa", equipo.voltaje ? equipo.voltaje + "V" : null), campo("Amperaje nominal", equipo.amperaje ? equipo.amperaje + "A" : null),
-      campo("Fases", equipo.fases),
-      campo("Voltaje cond.", equipo.condVoltaje ? equipo.condVoltaje + "V" : null),
-      campo("Amperaje cond.", equipo.condAmperaje ? equipo.condAmperaje + "A" : null),
-      campo("Modelo compresor", equipo.modeloCompresor),
-    ].filter(Boolean).join("");
-    const filaMotor = [
-      campo("Contrato", equipo.contrato), campo("Modelo de faja", equipo.modeloFaja), campo("N° de fajas", equipo.numFajas),
-      campo("Marca motor", equipo.marcaMotor), campo("Modelo motor", equipo.modeloMotor), campo("N° serie motor", equipo.serieMotor),
-    ].filter(Boolean).join("");
-    const campos = `<div class="campos">${filaGen}</div>` +
-      (filaElec ? `<div class="campos" style="margin-top:8px">${filaElec}</div>` : "") +
-      (filaMotor ? `<div class="campos" style="margin-top:8px">${filaMotor}</div>` : "");
-
-    // Observaciones con causa en tabla
-    const obsHtml = obsArr.length > 0 ? `
-      <table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr>
-          <th style="background:#fff3e0;color:#e65100;padding:5px 8px;text-align:left;width:34%">Observación</th>
-          <th style="background:#fce4ec;color:#c62828;padding:5px 8px;text-align:left;width:33%">Causa</th>
-          <th style="background:#e8f5e9;color:#2e7d32;padding:5px 8px;text-align:left;width:33%">Recomendación</th>
-        </tr></thead>
-        <tbody>${obsArr.map((o, i) => `
-          <tr style="background:${i % 2 === 0 ? "white" : "#fafafa"}">
-            <td style="padding:6px 8px;border-bottom:0.5px solid #f0f0f0;color:#e65100;background:#fff8e1;">
-              <div>${o.texto}</div>
-              ${o.fecha || o.tecnico ? `<div style="font-size:9px;color:#aaa;margin-top:2px;">${o.fecha || ""}${o.fecha && o.tecnico ? " · " : ""}${o.tecnico ? "Téc: " + o.tecnico : ""}</div>` : ""}
-            </td>
-            <td style="padding:6px 8px;border-bottom:0.5px solid #f0f0f0;color:#c62828;background:#fef0f0;">${o.causa || "—"}</td>
-            <td style="padding:6px 8px;border-bottom:0.5px solid #f0f0f0;color:#2e7d32;background:#e8f5e9;">${recArr[i] || "—"}</td>
-          </tr>`).join("")}
-        </tbody>
-      </table>` : `<div style="font-size:12px;color:#aaa;font-style:italic;">Sin observaciones</div>`;
-
-    const cronColors = { realizado: { bg: "#e8f5e9", color: "#2e7d32", icon: "✅" }, pendiente: { bg: "#fff8e1", color: "#e65100", icon: "⏳" }, programado: { bg: "#f5f5f5", color: "#888", icon: "📆" } };
-    const cronHtml = cronArr.map(t => { const c = cronColors[t.estado] || cronColors.programado; return `<div style="background:${c.bg};border-radius:8px;padding:10px;text-align:center;flex:1;"><div style="font-size:11px;font-weight:700;color:${c.color};margin-bottom:3px;">${t.label}</div><div style="font-size:11px;color:${c.color};">${t.fecha || "Sin fecha"}</div><div style="font-size:10px;color:${c.color};margin-top:3px;">${c.icon} ${t.estado}</div></div>`; }).join("");
-
-    const syncBadge = equipo.ultimoProtocolo ? `<span style="font-size:10px;padding:2px 8px;background:#e8f5e9;color:#2e7d32;border-radius:20px;margin-left:8px;">🔄 Sincronizado ${equipo.ultimoProtocolo}</span>` : "";
-
-    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Ficha — ${equipo.codigo || equipo.marca}</title>
-    <style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:13px;color:#222;background:white;margin:0}
-    .header{background:#1a5fa8;color:white;padding:13px 20px;display:flex;justify-content:space-between;align-items:center}
-    .logo{font-size:18px;font-weight:900;letter-spacing:2px}.badge{background:${badgeBg};color:${badgeColor};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
-    .sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#1a5fa8;border-left:3px solid #1a5fa8;padding-left:8px;margin:14px 0 8px}
-    .campos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.cron{display:flex;gap:8px}
-    .btn-print{display:block;margin:12px auto;padding:10px 24px;background:#1a5fa8;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600}
-    @media print{.btn-print{display:none!important}}</style></head><body>
-    <div class="header"><div class="logo">HVAC</div><div class="badge">${equipo.estado === "Operativo con observaciones" ? "Con observaciones" : equipo.estado || "Operativo"}</div></div>
-    <button class="btn-print" onclick="window.print()">🖨️ Imprimir ficha</button>
-    <div style="padding:0 16px 16px">
-      <div style="background:#f8f9fa;border-radius:8px;padding:12px 16px;margin:14px 0 0">
-        <div style="font-size:15px;font-weight:700;color:#1a5fa8;">${equipo.marca || ""} / ${equipo.modelo || ""}</div>
-        <div style="font-size:12px;color:#555;margin-top:4px;">${equipo.tipoEquipo || ""} · Código: <b>${equipo.codigo || "-"}</b> · ${equipo.cliente || ""} · Piso ${equipo.piso || ""} · ${equipo.ambiente || ""}</div>
-      </div>
-      <div class="sec">Datos del equipo</div>${campos}
-      <div class="sec">Observaciones · Causa · Recomendación ${syncBadge}</div>${obsHtml}
-      <div class="sec">Cronograma de mantenimiento</div><div class="cron">${cronHtml}</div>
-      <div style="display:flex;align-items:center;gap:14px;border-top:.5px solid #ddd;margin-top:16px;padding-top:12px">
-        <img src="${qrSrc}" width="70" height="70"/>
-        <div><div style="font-size:10px;color:#aaa;margin-top:2px;">Generado: ${new Date().toLocaleDateString("es-PE")} · HVAC Sistema de Mantenimiento</div></div>
-      </div>
-    </div>
-    <script>setTimeout(()=>window.print(),600);</script></body></html>`;
-
-    const win = window.open("", "_blank");
-    win.document.write(html);
-    win.document.close();
-  };
-
   const generarPDF = async (modo = "descargar") => {
     setImprimiendo(true);
     try {
@@ -286,19 +117,19 @@ export default function VistaEquipo() {
       let y = 0;
       const check = (h = 10) => { if (y + h > 280) { pdf.addPage(); y = 14; } };
 
-      pdf.setFillColor(26, 95, 168); pdf.rect(0, 0, W, 22, "F");
+      pdf.setFillColor(26, 79, 192); pdf.rect(0, 0, W, 22, "F");
       pdf.setFont("helvetica", "bold"); pdf.setFontSize(14); pdf.setTextColor(255, 255, 255);
       pdf.text("HVAC", M, 14);
-      pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(200, 220, 255);
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(210, 222, 250);
       pdf.text("SISTEMA DE MANTENIMIENTO", M + 22, 14);
-      const ec = equipo.estado === "Operativo" ? [46, 125, 50] : equipo.estado === "Operativo con observaciones" ? [230, 81, 0] : [198, 40, 40];
-      pdf.setFillColor(255, 248, 225); pdf.roundedRect(W - M - 52, 7, 52, 8, 2, 2, "F");
+      const ec = equipo.estado === "Operativo" ? [28, 122, 68] : equipo.estado === "Operativo con observaciones" ? [138, 91, 10] : [165, 43, 43];
+      pdf.setFillColor(255, 255, 255); pdf.roundedRect(W - M - 52, 7, 52, 8, 2, 2, "F");
       pdf.setFontSize(7.5); pdf.setTextColor(...ec);
       pdf.text(equipo.estado === "Operativo con observaciones" ? "Con observaciones" : (equipo.estado || "Operativo"), W - M - 26, 12.5, { align: "center" });
       y = 30;
 
       pdf.setFillColor(248, 249, 250); pdf.rect(M, y, C, 14, "F");
-      pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(26, 95, 168);
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(26, 79, 192);
       pdf.text(`${equipo.marca || "-"} / ${equipo.modelo || "-"} — ${equipo.tipoEquipo || "-"}`, M + 3, y + 6);
       pdf.setFont("helvetica", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(100, 100, 100);
       pdf.text(`Cliente: ${equipo.cliente || "-"}   Piso: ${equipo.piso || "-"}   Ambiente: ${equipo.ambiente || "-"}   Cod: ${equipo.codigo || "-"}`, M + 3, y + 11.5);
@@ -326,16 +157,14 @@ export default function VistaEquipo() {
         y += rows * (cH + 2) + 2;
       };
 
-      const esVent = GRUPO_POR_TIPO[equipo.tipoEquipo] === "ventilacion";
-
-      secTit("Datos del equipo", 26, 95, 168);
+      secTit("Datos del equipo", 26, 79, 192);
       gridCards([
         ["Cliente", equipo.cliente], ["Sede", equipo.sede], ["Piso", equipo.piso], ["Ambiente", equipo.ambiente],
         ["Marca", equipo.marca], ["Modelo", equipo.modelo], ["N° Serie", equipo.serie],
-        ["Capacidad", equipo.capacidad ? equipo.capacidad + (esVent ? " CFM" : " BTU") : null],
+        ["Capacidad", equipo.capacidad ? equipo.capacidad + (GRUPO_POR_TIPO[equipo.tipoEquipo] === "ventilacion" ? " CFM" : " BTU") : null],
       ], 4, 248, 249, 250);
       gridCards([
-        !esVent && ["Refrigerante", equipo.tipoRefrigerante],
+        GRUPO_POR_TIPO[equipo.tipoEquipo] !== "ventilacion" && ["Refrigerante", equipo.tipoRefrigerante],
         ["Voltaje de placa", equipo.voltaje ? equipo.voltaje + "V" : null],
         ["Amperaje nominal", equipo.amperaje ? equipo.amperaje + "A" : null],
         ["Fases", equipo.fases],
@@ -343,56 +172,43 @@ export default function VistaEquipo() {
         equipo.condAmperaje && ["Amperaje cond.", equipo.condAmperaje + "A"],
         equipo.modeloCompresor && ["Modelo compresor", equipo.modeloCompresor],
       ].filter(Boolean), 4, 248, 249, 250);
-      if (equipo.contrato || equipo.modeloFaja || equipo.numFajas || equipo.marcaMotor || equipo.modeloMotor || equipo.serieMotor) {
-        gridCards([
-          ["Contrato", equipo.contrato], ["Modelo de faja", equipo.modeloFaja], ["N° de fajas", equipo.numFajas],
-          ["Marca motor", equipo.marcaMotor], ["Modelo motor", equipo.modeloMotor], ["N° serie motor", equipo.serieMotor],
-        ].filter(([, v]) => v), 4, 248, 249, 250);
-      }
 
-      // Observaciones con causa
       const obs = getObs();
       if (obs.length > 0) {
-        secTit("Observaciones · Causa · Recomendación", 230, 81, 0);
         const rec = getRec();
+        secTit("Observación · Causa · Recomendación", 217, 154, 28);
         const colW = (C - 4) / 3;
         obs.forEach((o, i) => {
           const h = 12; check(h + 2);
-          pdf.setFillColor(255, 248, 225); pdf.rect(M, y, colW, h, "F");
-          pdf.setFillColor(254, 240, 240); pdf.rect(M + colW + 2, y, colW, h, "F");
-          pdf.setFillColor(232, 245, 233); pdf.rect(M + (colW + 2) * 2, y, colW, h, "F");
+          pdf.setFillColor(255, 248, 230); pdf.rect(M, y, colW, h, "F");
+          pdf.setFillColor(253, 238, 238); pdf.rect(M + colW + 2, y, colW, h, "F");
+          pdf.setFillColor(230, 247, 236); pdf.rect(M + (colW + 2) * 2, y, colW, h, "F");
           pdf.setFont("helvetica", "normal"); pdf.setFontSize(7.5);
-          pdf.setTextColor(230, 81, 0); pdf.text(pdf.splitTextToSize(o.texto, colW - 4)[0], M + 2, y + 5);
-          pdf.setTextColor(198, 40, 40); pdf.text(pdf.splitTextToSize(o.causa || "—", colW - 4)[0], M + colW + 4, y + 5);
-          pdf.setTextColor(46, 125, 50); pdf.text(pdf.splitTextToSize(rec[i] ? (typeof rec[i] === "string" ? rec[i] : rec[i].texto || "—") : "—", colW - 4)[0], M + (colW + 2) * 2 + 2, y + 5);
-          if (o.fecha || o.tecnico) {
-            const meta = [o.fecha, o.tecnico ? "Téc: " + o.tecnico : ""].filter(Boolean).join(" · ");
-            pdf.setFontSize(6.5); pdf.setTextColor(150, 150, 150);
-            pdf.text(meta, M + 2, y + 10);
-          }
+          pdf.setTextColor(138, 91, 10); pdf.text(pdf.splitTextToSize(o.texto, colW - 4)[0], M + 2, y + 5);
+          pdf.setTextColor(165, 43, 43); pdf.text(pdf.splitTextToSize(o.causa || "—", colW - 4)[0], M + colW + 4, y + 5);
+          pdf.setTextColor(28, 122, 68); pdf.text(pdf.splitTextToSize(rec[i] ? (typeof rec[i] === "string" ? rec[i] : rec[i].texto || "—") : "—", colW - 4)[0], M + (colW + 2) * 2 + 2, y + 5);
+          if (o.fecha) { pdf.setFontSize(6.5); pdf.setTextColor(150, 150, 150); pdf.text(o.fecha, M + 2, y + 10); }
           y += h + 2;
         });
         y += 2;
       }
 
-      // Cronograma
       const cron = getCron();
-      secTit("Cronograma de mantenimiento", 26, 95, 168);
+      secTit("Cronograma de mantenimiento", 26, 79, 192);
       const tW = (C - (cron.length - 1) * 3) / cron.length, tH = 14;
       check(tH + 2);
       cron.forEach((t, i) => {
         const x = M + i * (tW + 3);
-        const col = { realizado: { bg: [232, 245, 233], text: [46, 125, 50] }, pendiente: { bg: [255, 248, 225], text: [230, 81, 0] }, programado: { bg: [245, 245, 245], text: [130, 130, 130] } }[t.estado] || { bg: [245, 245, 245], text: [130, 130, 130] };
-        pdf.setFillColor(...col.bg); pdf.rect(x, y, tW, tH, "F");
-        pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(...col.text);
+        const col = { realizado: [230, 247, 236], pendiente: [255, 248, 230], programado: [229, 240, 255] }[t.estado] || [229, 240, 255];
+        pdf.setFillColor(...col); pdf.rect(x, y, tW, tH, "F");
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(18, 36, 94);
         pdf.text(t.label, x + tW / 2, y + 4, { align: "center" });
-        pdf.setFont("helvetica", "normal");
-        pdf.text(t.fecha || "-", x + tW / 2, y + 8.5, { align: "center" });
-        pdf.text(t.estado, x + tW / 2, y + 13, { align: "center" });
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.5); pdf.setTextColor(100, 100, 100);
+        pdf.text(t.fecha || "Sin fecha", x + tW / 2, y + 8.5, { align: "center" });
+        pdf.text(t.estado || "programado", x + tW / 2, y + 12.5, { align: "center" });
       });
       y += tH + 6;
 
-      // QR
       check(25);
       const urlE = `${window.location.origin}/equipo/${id}`;
       const px = Math.round(getQRpx());
@@ -427,214 +243,207 @@ export default function VistaEquipo() {
 
   const px = Math.round(getQRpx());
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${px * 2}x${px * 2}&data=${encodeURIComponent(window.location.href)}`;
-  const obs = getObs(), rec = getRec(), cor = getCor(), cron = getCron();
-  const cronCols = cron.length <= 2 ? "1fr 1fr" : cron.length <= 4 ? `repeat(${cron.length}, 1fr)` : "repeat(4, 1fr)";
+  const obs = getObs(), rec = getRec(), cron = getCron();
+  const esVent = GRUPO_POR_TIPO[equipo.tipoEquipo] === "ventilacion";
+
+  const datosGrid = [
+    ["Cliente", equipo.cliente], ["Sede", equipo.sede], ["Piso", equipo.piso], ["Ambiente", equipo.ambiente],
+    ["Marca", equipo.marca], ["Modelo", equipo.modelo], ["N° Serie", equipo.serie],
+    ["Capacidad", equipo.capacidad ? `${equipo.capacidad} ${esVent ? "CFM" : "BTU"}` : "—"],
+    !esVent && ["Refrigerante", equipo.tipoRefrigerante || "—"],
+    ["Voltaje de placa", equipo.voltaje ? `${equipo.voltaje}V` : "—"],
+    ["Amperaje nominal", equipo.amperaje ? `${equipo.amperaje}A` : "—"],
+    ["Fases", equipo.fases || "Monofásico"],
+  ].filter(Boolean);
+
+  const fechaReporte = equipo.ultimoMantenimiento || new Date().toLocaleDateString("es-PE");
+  const badge = getBadgeStyle(equipo.estado);
 
   return (
     <div style={s.page}>
+      {/* Navbar */}
       <div style={s.navbar}>
         <div style={s.navLeft}>
-          <div style={s.logo}>
-            <span style={{ color: "#1a5fa8" }}>H</span>
-            <span style={{ color: "#1a5fa8", marginRight: "-6px" }}>V</span>
-            <span style={{ color: "#f0c040", marginLeft: "2px" }}>A</span>
-            <span style={{ color: "#1a5fa8", marginLeft: "2px" }}>C</span>
-          </div>
+          <img src="/assets/hvac-isotipo-blue.png" alt="HVAC" style={s.navLogo} />
           <div style={s.div}></div>
           <button style={s.btnBack} onClick={() => navigate(-1)}>← Volver</button>
         </div>
-        <span style={{ ...s.badge, ...getBadgeStyle(equipo.estado) }}>{equipo.estado || "Operativo"}</span>
+        <span style={{ ...s.badge, ...badge }}>{equipo.estado === "Operativo con observaciones" ? "Con observaciones" : (equipo.estado || "Operativo")}</span>
       </div>
 
       <div style={s.content}>
-        <div style={s.layout}>
+        <div style={s.headerRow}>
+          <img src="/assets/hvac-isotipo-blue.png" alt="HVAC" style={{ width: 22, height: 22, objectFit: "contain" }} />
+          <div style={s.headerTitulo}>Ficha técnica de equipo</div>
+          <span style={s.headerFecha}>Reporte generado · {fechaReporte}</span>
+        </div>
 
+        <div style={s.layout}>
           {/* SIDEBAR */}
           <div style={s.sidebar}>
-            <div style={s.sCard}>
-              <div style={s.iconWrap}><IconoEquipo grupo={GRUPO_POR_TIPO[equipo.tipoEquipo] || "pendiente"} /></div>
+            <div style={s.sCardCenter}>
+              <div style={s.sLogoBox}>
+                <img src="/assets/hvac-isotipo-filled.png" alt="" style={s.sLogoImg} />
+              </div>
               <div style={s.sNombre}>{equipo.marca || "-"} / {equipo.modelo || "-"}</div>
               <span style={s.sTipo}>{equipo.tipoEquipo || "-"}</span>
             </div>
+
             <div style={s.sCard}>
               <div style={s.sLbl}>Ubicación</div>
-              <div style={s.sVal}>🏢 {equipo.cliente || "-"}</div>
-              <div style={{ ...s.sVal, color: "#888", marginTop: "4px" }}>📍 Piso {equipo.piso || "-"} · {equipo.ambiente || "-"}</div>
+              <div style={s.sRow}>
+                <SvgUbicacion />
+                <div style={s.sVal}>{equipo.cliente || "-"}</div>
+              </div>
+              <div style={s.sRow}>
+                <SvgPin />
+                <div style={s.sValMuted}>Piso {equipo.piso || "-"} · {equipo.ambiente || "-"}</div>
+              </div>
             </div>
+
             <div style={s.sCard}>
               <div style={s.sLbl}>Código</div>
-              <span style={s.codTag}>{equipo.codigo || "-"}</span>
+              <div style={s.sCodigo}>{equipo.codigo || "—"}</div>
             </div>
+
             <div style={s.sCard}>
               <div style={s.sLbl}>Último mantenimiento</div>
-              <div style={s.sVal}>📅 {equipo.ultimoMantenimiento || "Sin registro"}</div>
-              {equipo.ultimoProtocolo && (
-                <div style={{ fontSize: "10px", color: "#2e7d32", marginTop: "4px", background: "#e8f5e9", padding: "2px 6px", borderRadius: "10px", display: "inline-block" }}>
-                  🔄 Protocolo {equipo.ultimoProtocolo}
-                </div>
-              )}
+              <div style={s.sRow}>
+                <SvgCalendario />
+                <div style={s.sValStrong}>{equipo.ultimoMantenimiento || "Sin registro"}</div>
+              </div>
             </div>
-            <button style={s.btnQR} onClick={imprimirQR}>🖨️ Imprimir QR</button>
-            <button style={{ ...s.btnQR, background: "#c62828", color: "white", border: "none" }} onClick={generarPDF} disabled={imprimiendo}>
-              {imprimiendo ? "Generando..." : "📄 Descargar PDF"}
+
+            {!sinQR && (
+              <button style={s.btnOutline} onClick={imprimirQR}>
+                <SvgPrint /> Imprimir QR
+              </button>
+            )}
+            <button style={s.btnOutline} onClick={() => generarPDF("descargar")} disabled={imprimiendo}>
+              <SvgDownload /> {imprimiendo ? "Generando..." : "Descargar PDF"}
             </button>
           </div>
 
           {/* MAIN */}
           <div style={s.main}>
-
-            <div style={s.sec}>
-              <div style={s.secT}>📋 Datos del equipo</div>
-              <div style={s.g4}>
-                {[["Cliente", equipo.cliente], ["Sede", equipo.sede], ["Piso", equipo.piso], ["Ambiente", equipo.ambiente],
-                  ["Marca", equipo.marca], ["Modelo", equipo.modelo], ["N° Serie", equipo.serie],
-                  ["Capacidad", equipo.capacidad ? equipo.capacidad + (GRUPO_POR_TIPO[equipo.tipoEquipo] === "ventilacion" ? " CFM" : " BTU") : null],
-                ].map(([l, v]) => (
-                  <div key={l}><div style={s.fl}>{l}</div><div style={s.fv}>{v || "-"}</div></div>
+            <div style={s.card}>
+              <div style={s.cardHeaderCenter}>
+                <SvgFicha />
+                <div style={s.cardTitulo}>DATOS DEL EQUIPO</div>
+              </div>
+              <div style={s.datosGrid}>
+                {datosGrid.map(([label, value]) => (
+                  <div key={label} style={{ textAlign: "center" }}>
+                    <div style={s.datoLabel}>{label}</div>
+                    <div style={s.datoValor}>{value || "—"}</div>
+                  </div>
                 ))}
               </div>
-              <div style={{ ...s.g4, marginTop: "10px" }}>
-                {[
-                  GRUPO_POR_TIPO[equipo.tipoEquipo] !== "ventilacion" && ["Refrigerante", equipo.tipoRefrigerante],
-                  ["Voltaje de placa", equipo.voltaje ? equipo.voltaje + "V" : null],
-                  ["Amperaje nominal", equipo.amperaje ? equipo.amperaje + "A" : null],
-                  ["Fases", equipo.fases],
-                  equipo.condVoltaje && ["Voltaje cond.", equipo.condVoltaje + "V"],
-                  equipo.condAmperaje && ["Amperaje cond.", equipo.condAmperaje + "A"],
-                  equipo.modeloCompresor && ["Modelo compresor", equipo.modeloCompresor],
-                ].filter(Boolean).map(([l, v]) => (
-                  <div key={l}><div style={s.fl}>{l}</div><div style={s.fv}>{v || "-"}</div></div>
-                ))}
-              </div>
-              {(equipo.contrato || equipo.modeloFaja || equipo.numFajas || equipo.marcaMotor || equipo.modeloMotor || equipo.serieMotor) && (
-                <div style={{ ...s.g4, marginTop: "10px" }}>
-                  {[
-                    ["Contrato", equipo.contrato], ["Modelo de faja", equipo.modeloFaja], ["N° de fajas", equipo.numFajas],
-                    ["Marca motor", equipo.marcaMotor], ["Modelo motor", equipo.modeloMotor], ["N° serie motor", equipo.serieMotor],
-                  ].filter(([, v]) => v).map(([l, v]) => (
-                    <div key={l}><div style={s.fl}>{l}</div><div style={s.fv}>{v}</div></div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* Observaciones en formato columnas */}
-            <div style={s.sec}>
-              <div style={{ ...s.secT, display: "flex", alignItems: "center", gap: "8px", justifyContent: "space-between" }}>
-                <span>⚠️ Observación · Causa · Recomendación</span>
-                {equipo.ultimoProtocolo && (
-                  <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "20px", background: "#e8f5e9", color: "#2e7d32", border: "0.5px solid #a5d6a7" }}>
-                    🔄 desde protocolo {equipo.ultimoProtocolo}
-                  </span>
-                )}
+            <div style={s.card}>
+              <div style={s.cardHeaderCenter}>
+                <SvgAlerta />
+                <div style={s.cardTitulo}>OBSERVACIÓN · CAUSA · RECOMENDACIÓN</div>
               </div>
               {obs.length > 0 ? (
                 <>
-                  <div style={s.ocrHdr}>
-                    <span></span>
-                    <span style={s.ocrHdrLbl}>Observación</span>
-                    <span style={s.ocrHdrLbl}>Causa</span>
-                    <span style={s.ocrHdrLbl}>Recomendación</span>
+                  <div style={s.ocrHead}>
+                    <div></div><div>OBSERVACIÓN</div><div>CAUSA</div><div>RECOMENDACIÓN</div>
                   </div>
                   {obs.map((o, i) => (
-                    <div key={i} style={s.ocrRow}>
-                      <div style={s.ocrNum}>{i + 1}</div>
-                      <div>
-                        <div style={s.cellObs}>{o.texto}</div>
-                        {(o.fecha || o.tecnico) && (
-                          <div style={{ fontSize: "9px", color: "#aaa", marginTop: "2px" }}>
-                            {o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico ? "Téc: " + o.tecnico : ""}
-                          </div>
-                        )}
+                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div style={s.ocrRow}>
+                        <div style={s.ocrNum}>{i + 1}</div>
+                        <div style={s.ocrObs}>{o.texto}</div>
+                        <div style={s.ocrCausa}>{o.causa || "—"}</div>
+                        <div style={s.ocrRec}>{rec[i] ? (typeof rec[i] === "string" ? rec[i] : rec[i]?.texto || "—") : "—"}</div>
                       </div>
-                      <div style={s.cellCausa}>{o.causa || "—"}</div>
-                      <div style={s.cellRec}>{typeof rec[i] === "string" ? rec[i] : rec[i]?.texto || "—"}</div>
+                      {(o.fecha || o.tecnico) && (
+                        <div style={s.ocrFecha}>{o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico ? "Téc: " + o.tecnico : ""}</div>
+                      )}
                     </div>
                   ))}
                 </>
               ) : (
-                <div style={{ fontSize: "12px", color: "#aaa", fontStyle: "italic", padding: "6px 0" }}>Sin observaciones registradas</div>
+                <div style={s.vacio}>Sin observaciones registradas</div>
               )}
             </div>
 
-            {/* Correctivos */}
-            {cor.length > 0 && (
-              <div style={s.sec}>
-                <div style={s.secT}>🔧 Correctivos realizados</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  {cor.map((c, i) => (
-                    <div key={i} style={s.iCor}>
-                      <div style={{ fontSize: "12px", fontWeight: 500, color: "#222" }}>{typeof c === "object" ? c.descripcion : c}</div>
-                      {typeof c === "object" && c.fecha && <div style={{ fontSize: "11px", color: "#888" }}>📅 {c.fecha}</div>}
+            {getCor().length > 0 && (
+              <div style={s.card}>
+                <div style={s.cardHeaderCenter}>
+                  <SvgLlave />
+                  <div style={s.cardTitulo}>CORRECTIVOS REALIZADOS</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {getCor().map((c, i) => (
+                    <div key={i} style={s.corItem}>
+                      <span style={{ fontSize: "13.5px", fontWeight: 600, color: "#26314d" }}>{typeof c === "object" ? c.descripcion : c}</span>
+                      {typeof c === "object" && c.fecha && <span style={{ fontSize: "12px", color: "#8a92a6", fontWeight: 600 }}>{c.fecha}</span>}
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Cronograma dinámico */}
-            <div style={s.sec}>
-              <div style={s.secT}>
-                📅 Cronograma de mantenimiento
-                {equipo.frecuencia && <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "20px", background: "#e8f0fe", color: "#1a5fa8", border: "0.5px solid #c5d5e8", marginLeft: "8px" }}>{equipo.frecuencia}</span>}
+            <div style={s.card}>
+              <div style={s.cardHeaderCenter}>
+                <SvgCalendario color="#1a4fc0" />
+                <div style={s.cardTitulo}>CRONOGRAMA DE MANTENIMIENTO</div>
+                {equipo.frecuencia && <span style={s.freqBadge}>{equipo.frecuencia.toUpperCase()}</span>}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: cronCols, gap: "8px" }}>
-                {cron.map(({ label, fecha, estado }, i) => {
-                  const col = cronColor(estado);
+              <div style={s.cronGrid}>
+                {cron.map((t, i) => {
+                  const b = cronBadge(t.estado);
                   return (
-                    <div key={i} style={{ textAlign: "center", padding: "10px 8px", borderRadius: "8px", background: col.bg, border: `0.5px solid ${col.border}` }}>
-                      <div style={{ fontSize: "10px", color: col.color, fontWeight: 500, marginBottom: "4px" }}>{label}</div>
-                      <div style={{ fontSize: "11px", color: col.color, marginBottom: "4px" }}>{fecha || "Sin fecha"}</div>
-                      <div style={{ fontSize: "10px", color: col.color }}>{col.icon} {estado.charAt(0).toUpperCase() + estado.slice(1)}</div>
+                    <div key={i} style={s.cronCard}>
+                      <div style={s.cronLabel}>{t.label}</div>
+                      <div style={s.cronFecha}>{t.fecha || "Sin fecha"}</div>
+                      <span style={{ ...s.cronStatus, background: b.bg, color: b.color }}>{b.label}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* QR */}
             {!sinQR && (
-            <div style={s.sec}>
-              <div style={s.secT}>📱 Código QR</div>
-              <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap" }}>
-                <div style={{ textAlign: "center" }}>
-                  <img src={qrUrl} alt="QR" style={{ width: px, height: px, border: "0.5px solid #e0e0e0", borderRadius: "8px" }} />
-                  <div style={{ fontSize: "10px", color: "#888", marginTop: "4px" }}>Vista previa</div>
+              <div style={s.card}>
+                <div style={s.cardHeaderCenter}>
+                  <SvgQR />
+                  <div style={s.cardTitulo}>CÓDIGO QR</div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "11px", color: "#888", marginBottom: "10px" }}>Tamaño de impresión:</div>
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
-                    {["2x2", "3x3", "5x5", "personalizado"].map(t => (
-                      <div key={t} onClick={() => setTamanoQR(t)}
-                        style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 12px", border: tamanoQR === t ? "2px solid #1a5fa8" : "0.5px solid #ddd", borderRadius: "8px", background: tamanoQR === t ? "#e8f0fe" : "white", cursor: "pointer" }}>
-                        <div style={{ width: "14px", height: "14px", borderRadius: "50%", border: tamanoQR === t ? "2px solid #1a5fa8" : "1.5px solid #aaa", background: tamanoQR === t ? "#1a5fa8" : "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          {tamanoQR === t && <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: "white" }}></div>}
-                        </div>
-                        <span style={{ fontSize: "12px", fontWeight: tamanoQR === t ? 500 : 400, color: tamanoQR === t ? "#1a5fa8" : "#333" }}>
-                          {t === "personalizado" ? "Personalizado" : `${t} cm`}
-                        </span>
-                      </div>
-                    ))}
+                <div style={{ display: "flex", gap: "24px", alignItems: "flex-start", flexWrap: "wrap", justifyContent: "center" }}>
+                  <div style={{ textAlign: "center" }}>
+                    <img src={qrUrl} alt="QR" style={{ width: px, height: px, border: "1px solid #eef1f6", borderRadius: "12px" }} />
+                    <div style={{ fontSize: "11px", color: "#8a92a6", marginTop: "6px", fontWeight: 600 }}>Vista previa</div>
                   </div>
-                  {tamanoQR === "personalizado" && (
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", background: "#f5f5f5", borderRadius: "8px", border: "0.5px solid #e0e0e0", marginBottom: "12px" }}>
-                      <span style={{ fontSize: "11px", color: "#888", whiteSpace: "nowrap" }}>Escala:</span>
-                      <input type="range" min="1" max="10" value={escala} onChange={e => setEscala(Number(e.target.value))} style={{ flex: 1 }} />
-                      <span style={{ fontSize: "12px", fontWeight: 500, minWidth: "36px" }}>{escala} cm</span>
+                  <div style={{ flex: 1, minWidth: "220px" }}>
+                    <div style={{ fontSize: "12px", color: "#8a92a6", fontWeight: 700, marginBottom: "10px" }}>Tamaño de impresión</div>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "14px" }}>
+                      {["2x2", "3x3", "5x5", "personalizado"].map(t => (
+                        <div key={t} onClick={() => setTamanoQR(t)} style={{ ...s.tamañoOpt, ...(tamanoQR === t ? s.tamañoOptActivo : {}) }}>
+                          {t === "personalizado" ? "Personalizado" : `${t} cm`}
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                    <button style={s.btnImp} onClick={imprimirQR}>🖨️ Imprimir QR</button>
-                    <button style={{ ...s.btnImp, background: "#e8f0fe", color: "#1a5fa8", border: "0.5px solid #c5d5e8" }} onClick={imprimirFicha}>🖨️ Imprimir ficha</button>
-                    <button style={s.btnPDF} onClick={() => generarPDF("descargar")} disabled={imprimiendo}>
-                      {imprimiendo ? "Generando..." : "📄 Descargar PDF"}
-                    </button>
+                    {tamanoQR === "personalizado" && (
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", background: "#f9fafc", borderRadius: "10px", border: "1px solid #dfe6f5", marginBottom: "14px" }}>
+                        <span style={{ fontSize: "12px", color: "#8a92a6", whiteSpace: "nowrap" }}>Escala:</span>
+                        <input type="range" min="1" max="10" value={escala} onChange={e => setEscala(Number(e.target.value))} style={{ flex: 1 }} />
+                        <span style={{ fontSize: "13px", fontWeight: 700, minWidth: "36px", color: "#12245e" }}>{escala} cm</span>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      <button style={s.btnOutlineSm} onClick={imprimirQR}><SvgPrint /> Imprimir QR</button>
+                      <button style={{ ...s.btnOutlineSm, background: "#1a4fc0", color: "white", borderColor: "#1a4fc0" }} onClick={() => generarPDF("descargar")} disabled={imprimiendo}>
+                        <SvgDownload color="white" /> {imprimiendo ? "Generando..." : "Descargar PDF"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
             )}
-
           </div>
         </div>
       </div>
@@ -642,41 +451,114 @@ export default function VistaEquipo() {
   );
 }
 
+// ---- Iconos inline (mismo trazo que el handoff de Claude Design) ----
+const SvgUbicacion = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ marginTop: "2px", flexShrink: 0 }}>
+    <path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6" stroke="#1a4fc0" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgPin = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ marginTop: "2px", flexShrink: 0 }}>
+    <path d="M12 21s7-6.5 7-11.5A7 7 0 0 0 5 9.5C5 14.5 12 21 12 21z" stroke="#1a4fc0" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="12" cy="9.5" r="2.3" stroke="#1a4fc0" strokeWidth="1.7" />
+  </svg>
+);
+const SvgCalendario = ({ color = "#1a4fc0" }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <rect x="4" y="5" width="16" height="15" rx="2" stroke={color} strokeWidth="1.7" />
+    <path d="M4 10h16M8 3v4M16 3v4" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+const SvgPrint = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <rect x="4" y="9" width="16" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M7 9V4h10v5M7 20h10v-4H7v4z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+  </svg>
+);
+const SvgDownload = ({ color = "currentColor" }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgFicha = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <rect x="4.5" y="4" width="15" height="17" rx="1.6" stroke="#c23b1c" strokeWidth="1.7" />
+    <path d="M9.2 4.6a2.8 2.8 0 0 1 5.6 0" stroke="#c23b1c" strokeWidth="1.7" />
+  </svg>
+);
+const SvgAlerta = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M12 3l9 16H3l9-16z" stroke="#d99a1c" strokeWidth="1.7" strokeLinejoin="round" />
+    <path d="M12 10v3.5M12 16.5h.01" stroke="#d99a1c" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+const SvgLlave = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M14.7 6.3a3 3 0 0 1-3.9 3.9L5 16v3h3l5.8-5.8a3 3 0 0 1 3.9-3.9l-2.2 2.2-1.4-1.4 2.2-2.2z" stroke="#1a4fc0" strokeWidth="1.6" strokeLinejoin="round" />
+  </svg>
+);
+const SvgQR = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <rect x="3" y="3" width="7" height="7" rx="1" stroke="#1a4fc0" strokeWidth="1.7" />
+    <rect x="14" y="3" width="7" height="7" rx="1" stroke="#1a4fc0" strokeWidth="1.7" />
+    <rect x="3" y="14" width="7" height="7" rx="1" stroke="#1a4fc0" strokeWidth="1.7" />
+    <path d="M14 14h3v3h-3zM19 14h2M14 19h2M19 19h2" stroke="#1a4fc0" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+
+const FONT = "'Manrope', -apple-system, sans-serif";
+
 const s = {
-  page: { minHeight: "100vh", background: "#f0f4f8", fontFamily: "Inter, Arial, sans-serif" },
-  navbar: { background: "white", borderBottom: "0.5px solid #e0e0e0", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
+  page: { minHeight: "100vh", background: "#eef1f6", fontFamily: FONT },
+  navbar: { background: "white", borderBottom: "1px solid #e7ebf3", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
   navLeft: { display: "flex", alignItems: "center", gap: "12px" },
-  logo: { fontFamily: "'Arial Black', sans-serif", fontWeight: 900, fontSize: "20px", display: "flex", alignItems: "baseline", letterSpacing: "1px" },
-  div: { width: "1px", height: "18px", background: "#e0e0e0" },
-  btnBack: { background: "none", border: "none", color: "#1a5fa8", cursor: "pointer", fontSize: "13px", fontWeight: 500, padding: 0 },
-  badge: { padding: "3px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: 500, whiteSpace: "nowrap" },
-  content: { maxWidth: "1200px", margin: "0 auto", padding: "20px 24px" },
-  layout: { display: "flex", gap: "16px", alignItems: "flex-start" },
-  sidebar: { width: "185px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "10px" },
-  sCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "12px 14px" },
-  iconWrap: { width: "60px", height: "60px", borderRadius: "12px", background: "#f8f9fa", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" },
-  sNombre: { fontSize: "13px", fontWeight: 500, color: "#222", textAlign: "center", marginBottom: "5px" },
-  sTipo: { fontSize: "10px", padding: "2px 8px", background: "#e8f0fe", color: "#1a5fa8", borderRadius: "20px", display: "inline-block" },
-  sLbl: { fontSize: "10px", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" },
-  sVal: { fontSize: "12px", color: "#222" },
-  codTag: { fontSize: "13px", padding: "3px 8px", background: "#f3e5f5", color: "#6a1b9a", borderRadius: "5px", fontFamily: "monospace", fontWeight: 700 },
-  btnQR: { width: "100%", fontSize: "11px", padding: "8px", borderRadius: "8px", border: "0.5px solid #ddd", background: "white", cursor: "pointer", fontWeight: 500 },
-  main: { flex: 1, display: "flex", flexDirection: "column", gap: "10px", minWidth: 0 },
-  sec: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "14px" },
-  secT: { fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" },
-  g4: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "10px" },
-  g3: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "10px" },
-  fl: { fontSize: "10px", color: "#888", marginBottom: "3px" },
-  fv: { fontSize: "12px", fontWeight: 500, color: "#222" },
-  ocrHdr: { display: "grid", gridTemplateColumns: "24px 1fr 1fr 1fr", gap: "8px", paddingBottom: "4px" },
-  ocrHdrLbl: { fontSize: "8.5px", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" },
-  ocrRow: { display: "grid", gridTemplateColumns: "24px 1fr 1fr 1fr", gap: "8px", alignItems: "start", marginBottom: "7px" },
-  ocrNum: { fontSize: "11px", color: "#aaa", fontWeight: 700, paddingTop: "8px", textAlign: "center" },
-  cellObs: { fontSize: "11px", color: "#e65100", background: "#fff8e1", padding: "7px 9px", borderRadius: "6px", border: "0.5px solid #ffa726" },
-  cellCausa: { fontSize: "11px", color: "#c62828", background: "#fef0f0", padding: "7px 9px", borderRadius: "6px", border: "0.5px solid #ef9a9a" },
-  cellRec: { fontSize: "11px", color: "#2e7d32", background: "#e8f5e9", padding: "7px 9px", borderRadius: "6px", border: "0.5px solid #66bb6a" },
-  iCor: { padding: "9px 12px", background: "#f5f5f5", borderRadius: "8px", borderLeft: "3px solid #1a5fa8" },
-  btnImp: { fontSize: "11px", padding: "7px 16px", borderRadius: "8px", border: "0.5px solid #ddd", background: "white", cursor: "pointer", fontWeight: 500 },
-  btnPDF: { fontSize: "11px", padding: "7px 16px", borderRadius: "8px", background: "#c62828", color: "white", border: "none", cursor: "pointer", fontWeight: 500 },
-  centro: { textAlign: "center", padding: "3rem", fontSize: "16px", color: "#888" },
+  navLogo: { width: "26px", height: "26px", objectFit: "contain" },
+  div: { width: "1px", height: "18px", background: "#e7ebf3" },
+  btnBack: { background: "none", border: "none", color: "#1a4fc0", cursor: "pointer", fontSize: "13px", fontWeight: 700, padding: 0, fontFamily: "inherit" },
+  badge: { padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: 700, whiteSpace: "nowrap" },
+  content: { maxWidth: "1200px", margin: "0 auto", padding: "24px 24px 60px" },
+  headerRow: { display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" },
+  headerTitulo: { fontWeight: 800, fontSize: "17px", color: "#12245e" },
+  headerFecha: { marginLeft: "auto", color: "#8a92a6", fontWeight: 600, fontSize: "12.5px" },
+  layout: { display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap" },
+  sidebar: { width: "260px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "14px" },
+  sCardCenter: { background: "white", borderRadius: "16px", padding: "22px 18px", boxShadow: "0 2px 10px rgba(20,40,90,0.06)", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center" },
+  sLogoBox: { width: "60px", height: "60px", borderRadius: "14px", background: "#1a4fc0", display: "flex", alignItems: "center", justifyContent: "center" },
+  sLogoImg: { width: "46px", height: "46px", objectFit: "contain", filter: "brightness(0) invert(1)" },
+  sNombre: { fontWeight: 800, fontSize: "15px", color: "#12245e", lineHeight: 1.3 },
+  sTipo: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "11.5px", padding: "3px 11px", borderRadius: "20px" },
+  sCard: { background: "white", borderRadius: "16px", padding: "16px 18px", boxShadow: "0 2px 10px rgba(20,40,90,0.06)", display: "flex", flexDirection: "column", gap: "8px" },
+  sLbl: { fontWeight: 700, fontSize: "11px", color: "#8a92a6", letterSpacing: "0.05em" },
+  sRow: { display: "flex", alignItems: "flex-start", gap: "8px" },
+  sVal: { fontSize: "13.5px", fontWeight: 700, color: "#26314d" },
+  sValMuted: { fontSize: "12.5px", fontWeight: 600, color: "#6b7488", lineHeight: 1.4 },
+  sValStrong: { fontWeight: 700, fontSize: "13.5px", color: "#12245e" },
+  sCodigo: { fontWeight: 700, fontSize: "14px", color: "#12245e" },
+  btnOutline: { width: "100%", boxSizing: "border-box", background: "white", color: "#1a4fc0", border: "1.5px solid #a9c8fb", borderRadius: "12px", padding: "11px 14px", fontFamily: "inherit", fontWeight: 700, fontSize: "12.5px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" },
+  main: { flex: 1, minWidth: "320px", display: "flex", flexDirection: "column", gap: "18px" },
+  card: { background: "white", borderRadius: "16px", padding: "24px 26px", boxShadow: "0 2px 10px rgba(20,40,90,0.06)", display: "flex", flexDirection: "column", gap: "16px" },
+  cardHeaderCenter: { display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" },
+  cardTitulo: { fontWeight: 800, fontSize: "13px", color: "#26314d", letterSpacing: "0.07em" },
+  freqBadge: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "10.5px", padding: "3px 9px", borderRadius: "20px", letterSpacing: "0.04em" },
+  datosGrid: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "20px 14px" },
+  datoLabel: { fontWeight: 600, fontSize: "11.5px", color: "#8a92a6" },
+  datoValor: { fontWeight: 700, fontSize: "14px", color: "#0f1b3d", marginTop: "5px" },
+  ocrHead: { display: "grid", gridTemplateColumns: "28px 2fr 1fr 1fr", gap: "10px", fontWeight: 700, fontSize: "10.5px", color: "#8a92a6", letterSpacing: "0.05em", textAlign: "center" },
+  ocrRow: { display: "grid", gridTemplateColumns: "28px 2fr 1fr 1fr", gap: "10px", alignItems: "stretch" },
+  ocrNum: { display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#8a92a6", fontSize: "12.5px" },
+  ocrObs: { background: "#fff8e6", border: "1px solid #f3dfa3", borderRadius: "10px", padding: "10px 13px", fontSize: "12.5px", fontWeight: 600, color: "#8a5b0a", textAlign: "center", lineHeight: 1.4 },
+  ocrCausa: { background: "#fdeeee", border: "1px solid #f6d3d3", borderRadius: "10px", padding: "10px 13px", fontSize: "12.5px", fontWeight: 700, color: "#a52b2b", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" },
+  ocrRec: { background: "#e6f7ec", border: "1px solid #c3ecd2", borderRadius: "10px", padding: "10px 13px", fontSize: "12.5px", fontWeight: 700, color: "#1c7a44", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" },
+  ocrFecha: { textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#8a92a6" },
+  corItem: { padding: "11px 14px", background: "#f9fafc", borderRadius: "10px", borderLeft: "3px solid #1a4fc0", display: "flex", justifyContent: "space-between", alignItems: "center" },
+  cronGrid: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "14px" },
+  cronCard: { border: "1px solid #eef1f6", borderRadius: "12px", padding: "14px", textAlign: "center", display: "flex", flexDirection: "column", gap: "7px", background: "#fafbfd" },
+  cronLabel: { fontWeight: 700, fontSize: "13px", color: "#12245e" },
+  cronFecha: { fontSize: "12px", color: "#8a92a6", fontWeight: 600 },
+  cronStatus: { fontWeight: 700, fontSize: "10.5px", padding: "3px 9px", borderRadius: "20px", alignSelf: "center" },
+  tamañoOpt: { padding: "7px 12px", border: "1px solid #dfe6f5", borderRadius: "9px", fontSize: "12px", fontWeight: 600, color: "#26314d", cursor: "pointer", background: "#f9fafc" },
+  tamañoOptActivo: { background: "#1a4fc0", color: "white", borderColor: "#1a4fc0" },
+  btnOutlineSm: { fontSize: "12.5px", padding: "9px 16px", borderRadius: "10px", border: "1.5px solid #a9c8fb", background: "white", color: "#1a4fc0", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", fontFamily: "inherit" },
+  vacio: { fontSize: "12.5px", color: "#aab1c2", fontStyle: "italic", textAlign: "center", padding: "6px 0" },
+  centro: { textAlign: "center", padding: "3rem", fontSize: "15px", color: "#8a92a6", fontFamily: FONT },
 };
