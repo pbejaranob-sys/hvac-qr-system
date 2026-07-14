@@ -579,7 +579,7 @@ export default function PanelCliente() {
               </div>
 
               <div style={{ overflowX: "auto", paddingRight: "12px" }}>
-                <div style={{ minWidth: "1080px" }}>
+                <div style={{ minWidth: "940px" }}>
                   <div style={s.tablaColHead}>
                     {["#", "CÓDIGO", "PISO", "AMBIENTE", "TIPO EQUIPO", "MARCA/MODELO", "SERIE", "ESTADO", "ÚLT. MANT.", "ACCIONES"].map(h => (
                       <div key={h} style={{ fontWeight: 700, fontSize: "11.5px", color: "#8a92a6", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</div>
@@ -620,14 +620,14 @@ export default function PanelCliente() {
                             ) : (
                               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                 {(() => { const recArr = getRec(equipo); return obsArr.filter(o => o.texto?.trim()).map((o, idx) => (
-                                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "28px 1fr 1fr 1fr", gap: "10px", alignItems: "start" }}>
-                                    <div style={{ fontSize: "11px", color: "#8a92a6", paddingTop: "10px", textAlign: "center" }}>{idx + 1}</div>
-                                    <div style={{ background: "#fff8e6", border: "1px solid #f3dfa3", borderRadius: "10px", padding: "9px 12px" }}>
-                                      <div style={{ fontSize: "12.5px", color: "#26314d", lineHeight: 1.4 }}>{o.texto}</div>
-                                      {(o.fecha || o.tecnico) && <div style={{ fontSize: "10px", color: "#aab1c2", marginTop: "4px" }}>{o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico}</div>}
+                                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "22px 1fr 1fr 1fr", gap: "6px", alignItems: "start" }}>
+                                    <div style={{ fontSize: "10px", color: "#8a92a6", paddingTop: "8px", textAlign: "center" }}>{idx + 1}</div>
+                                    <div style={{ background: "#fff8e6", border: "1px solid #f3dfa3", borderRadius: "9px", padding: "7px 9px", minWidth: 0 }}>
+                                      <div style={{ fontSize: "11.5px", color: "#26314d", lineHeight: 1.35 }}>{o.texto}</div>
+                                      {(o.fecha || o.tecnico) && <div style={{ fontSize: "9px", color: "#aab1c2", marginTop: "3px" }}>{o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico}</div>}
                                     </div>
-                                    <div style={{ background: "#fdeeee", border: "1px solid #f6d3d3", borderRadius: "10px", padding: "9px 12px", fontSize: "12.5px", color: "#a52b2b" }}>{o.causa || "—"}</div>
-                                    <div style={{ background: "#e6f7ec", border: "1px solid #c3ecd2", borderRadius: "10px", padding: "9px 12px", fontSize: "12.5px", color: "#1c7a44" }}>{recArr[idx] ? (typeof recArr[idx] === "string" ? recArr[idx] : recArr[idx].texto || "—") : "—"}</div>
+                                    <div style={{ background: "#fdeeee", border: "1px solid #f6d3d3", borderRadius: "9px", padding: "7px 9px", fontSize: "11.5px", color: "#a52b2b", minWidth: 0 }}>{o.causa || "—"}</div>
+                                    <div style={{ background: "#e6f7ec", border: "1px solid #c3ecd2", borderRadius: "9px", padding: "7px 9px", fontSize: "11.5px", color: "#1c7a44", minWidth: 0 }}>{recArr[idx] ? (typeof recArr[idx] === "string" ? recArr[idx] : recArr[idx].texto || "—") : "—"}</div>
                                   </div>
                                 )); })()}
                               </div>
@@ -791,13 +791,13 @@ const s = {
   filterLabel: { fontSize: "12.5px", fontWeight: 600, color: "#6b7488" },
   filterSelect: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", minWidth: "140px", justifyContent: "space-between", fontFamily: "inherit" },
   filterSelectNative: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", fontFamily: "inherit" },
-  tablaColHead: { display: "grid", gridTemplateColumns: "26px 72px 42px 150px 88px 128px 88px 88px 78px 220px", gap: "8px", borderBottom: "2px solid #eef1f6", paddingBottom: "10px" },
-  tablaFila: { display: "grid", gridTemplateColumns: "26px 72px 42px 150px 88px 128px 88px 88px 78px 220px", gap: "8px", alignItems: "center", borderBottom: "1px solid #f2f4f8", padding: "14px 0" },
+  tablaColHead: { display: "grid", gridTemplateColumns: "24px 66px 38px 140px 78px 118px 78px 78px 70px 190px", gap: "6px", borderBottom: "2px solid #eef1f6", paddingBottom: "10px" },
+  tablaFila: { display: "grid", gridTemplateColumns: "24px 66px 38px 140px 78px 118px 78px 78px 70px 190px", gap: "6px", alignItems: "center", borderBottom: "1px solid #f2f4f8", padding: "14px 0" },
   codigoChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "12px", padding: "3px 9px", borderRadius: "7px" },
   ultMantChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "11.5px", padding: "3px 9px", borderRadius: "20px", whiteSpace: "nowrap" },
-  btnInfo: { background: "#1a4fc0", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", fontFamily: "inherit", fontWeight: 700, fontSize: "11px", cursor: "pointer" },
-  btnObs: { background: "#fff8e6", color: "#8a5b0a", border: "1px solid #f3dfa3", borderRadius: "8px", padding: "6px 8px", fontFamily: "inherit", fontWeight: 700, fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" },
-  btnProto: { background: "#a52b2b", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", fontFamily: "inherit", fontWeight: 700, fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" },
+  btnInfo: { background: "#1a4fc0", color: "white", border: "none", borderRadius: "7px", padding: "5px 8px", fontFamily: "inherit", fontWeight: 700, fontSize: "10px", cursor: "pointer" },
+  btnObs: { background: "#fff8e6", color: "#8a5b0a", border: "1px solid #f3dfa3", borderRadius: "7px", padding: "5px 7px", fontFamily: "inherit", fontWeight: 700, fontSize: "10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" },
+  btnProto: { background: "#a52b2b", color: "white", border: "none", borderRadius: "7px", padding: "5px 8px", fontFamily: "inherit", fontWeight: 700, fontSize: "10px", cursor: "pointer", whiteSpace: "nowrap" },
 
   modalOverlay: { position: "fixed", inset: 0, background: "rgba(10,25,70,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px", boxSizing: "border-box" },
 
