@@ -417,7 +417,7 @@ export default function PanelCliente() {
       "Fuera de servicio": { bg: "#fdeeee", color: "#a52b2b" },
     };
     const st = map[estado] || map["Operativo"];
-    return <span style={{ background: st.bg, color: st.color, fontWeight: 700, fontSize: "12px", padding: "5px 12px", borderRadius: "20px", whiteSpace: "nowrap" }}>{estado === "Operativo con observaciones" ? "Con obs." : estado || "Operativo"}</span>;
+    return <span style={{ background: st.bg, color: st.color, fontWeight: 700, fontSize: "11px", padding: "3px 9px", borderRadius: "20px", whiteSpace: "nowrap", display: "inline-block" }}>{estado === "Operativo con observaciones" ? "Con obs." : estado || "Operativo"}</span>;
   };
 
   const historialFiltrado = historialAverias
@@ -471,7 +471,7 @@ export default function PanelCliente() {
               return (
                 <div key={sede.id} style={s.sedeCard}>
                   <div style={s.sedeHeader}>
-                    <div style={s.sedeIconBox}><img src="/assets/hvac-isotipo-filled.png" alt="" style={{ width: 20, height: 20, objectFit: "contain", filter: "brightness(0) invert(1)" }} /></div>
+                    <div style={s.sedeIconBox}><img src="/assets/hvac-isotipo-filled.png" alt="" style={{ width: 30, height: 30, objectFit: "contain", filter: "brightness(0) invert(1)" }} /></div>
                     <div>
                       <div style={s.sedeNombre}>{sede.nombre}</div>
                       <div style={s.sedeDireccion}>{sede.direccion}</div>
@@ -578,8 +578,8 @@ export default function PanelCliente() {
                 </div>
               </div>
 
-              <div style={{ overflowX: "auto", paddingRight: "12px" }}>
-                <div style={{ minWidth: "940px" }}>
+              <div style={{ overflowX: "auto", paddingRight: "4px" }}>
+                <div style={{ minWidth: "890px" }}>
                   <div style={s.tablaColHead}>
                     {["#", "CÓDIGO", "PISO", "AMBIENTE", "TIPO EQUIPO", "MARCA/MODELO", "SERIE", "ESTADO", "ÚLT. MANT.", "ACCIONES"].map(h => (
                       <div key={h} style={{ fontWeight: 700, fontSize: "11.5px", color: "#8a92a6", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</div>
@@ -774,7 +774,7 @@ const s = {
   sedesGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" },
   sedeCard: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", overflow: "hidden" },
   sedeHeader: { padding: "14px 16px", borderBottom: "1px solid #f2f4f8", display: "flex", alignItems: "center", gap: "10px" },
-  sedeIconBox: { width: "34px", height: "34px", borderRadius: "9px", background: "#1a4fc0", display: "flex", alignItems: "center", justifyContent: "center" },
+  sedeIconBox: { width: "51px", height: "51px", borderRadius: "12px", background: "#1a4fc0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   sedeNombre: { fontSize: "13.5px", fontWeight: 700, color: "#12245e" },
   sedeDireccion: { fontSize: "11.5px", color: "#8a92a6", marginTop: "2px" },
   miniStats: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "6px", padding: "12px 14px" },
@@ -791,10 +791,10 @@ const s = {
   filterLabel: { fontSize: "12.5px", fontWeight: 600, color: "#6b7488" },
   filterSelect: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", minWidth: "140px", justifyContent: "space-between", fontFamily: "inherit" },
   filterSelectNative: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", fontFamily: "inherit" },
-  tablaColHead: { display: "grid", gridTemplateColumns: "24px 66px 38px 140px 78px 118px 78px 78px 70px 190px", gap: "6px", borderBottom: "2px solid #eef1f6", paddingBottom: "10px" },
-  tablaFila: { display: "grid", gridTemplateColumns: "24px 66px 38px 140px 78px 118px 78px 78px 70px 190px", gap: "6px", alignItems: "center", borderBottom: "1px solid #f2f4f8", padding: "14px 0" },
+  tablaColHead: { display: "grid", gridTemplateColumns: "24px 66px 38px 140px 78px 118px 78px 78px 70px 145px", gap: "6px", borderBottom: "2px solid #eef1f6", paddingBottom: "10px" },
+  tablaFila: { display: "grid", gridTemplateColumns: "24px 66px 38px 140px 78px 118px 78px 78px 70px 145px", gap: "6px", alignItems: "center", borderBottom: "1px solid #f2f4f8", padding: "14px 0" },
   codigoChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "12px", padding: "3px 9px", borderRadius: "7px" },
-  ultMantChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "11.5px", padding: "3px 9px", borderRadius: "20px", whiteSpace: "nowrap" },
+  ultMantChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "11px", padding: "3px 9px", borderRadius: "20px", whiteSpace: "nowrap", display: "inline-block" },
   btnInfo: { background: "#1a4fc0", color: "white", border: "none", borderRadius: "7px", padding: "5px 8px", fontFamily: "inherit", fontWeight: 700, fontSize: "10px", cursor: "pointer" },
   btnObs: { background: "#fff8e6", color: "#8a5b0a", border: "1px solid #f3dfa3", borderRadius: "7px", padding: "5px 7px", fontFamily: "inherit", fontWeight: 700, fontSize: "10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" },
   btnProto: { background: "#a52b2b", color: "white", border: "none", borderRadius: "7px", padding: "5px 8px", fontFamily: "inherit", fontWeight: 700, fontSize: "10px", cursor: "pointer", whiteSpace: "nowrap" },
