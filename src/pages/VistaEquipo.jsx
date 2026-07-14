@@ -206,6 +206,24 @@ export default function VistaEquipo() {
         y += 2;
       }
 
+      const cor = getCor();
+      if (cor.length > 0) {
+        secTit("Correctivos realizados", 26, 79, 192);
+        cor.forEach((c) => {
+          const h = 9; check(h + 1);
+          pdf.setFillColor(249, 250, 252); pdf.rect(M, y, C, h, "F");
+          pdf.setDrawColor(26, 79, 192); pdf.setLineWidth(0.8); pdf.line(M, y, M, y + h); pdf.setLineWidth(0.2);
+          pdf.setFont("helvetica", "normal"); pdf.setFontSize(8); pdf.setTextColor(38, 49, 77);
+          pdf.text(pdf.splitTextToSize(typeof c === "object" ? c.descripcion : c, C - 40)[0], M + 4, y + 5.5);
+          if (typeof c === "object" && c.fecha) {
+            pdf.setFontSize(7); pdf.setTextColor(138, 146, 166);
+            pdf.text(c.fecha, M + C - 4, y + 5.5, { align: "right" });
+          }
+          y += h + 1.5;
+        });
+        y += 2;
+      }
+
       const cron = getCron();
       secTit("Cronograma de mantenimiento", 26, 79, 192);
       const tW = (C - (cron.length - 1) * 3) / cron.length, tH = 14;
@@ -220,24 +238,16 @@ export default function VistaEquipo() {
         pdf.text(t.fecha || "Sin fecha", x + tW / 2, y + 8.5, { align: "center" });
         pdf.text(t.estado || "programado", x + tW / 2, y + 12.5, { align: "center" });
       });
-      y += tH + 6;
+      y += tH + 10;
 
-      check(25);
-      const urlE = `${window.location.origin}/equipo/${id}`;
-      const px = Math.round(getQRpx());
-      const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=${px * 2}x${px * 2}&data=${encodeURIComponent(urlE)}`;
-      const qrImg = await new Promise(res => {
-        const img = new Image(); img.crossOrigin = "anonymous";
-        img.onload = () => { const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; c.getContext("2d").drawImage(img, 0, 0); res(c.toDataURL("image/png")); };
-        img.onerror = () => res(null); img.src = qrSrc;
-      });
-      if (qrImg) pdf.addImage(qrImg, "PNG", M, y, 22, 22);
+      check(14);
+      pdf.setDrawColor(220, 220, 220); pdf.line(M, y, W - M, y); y += 5;
       pdf.setFont("helvetica", "normal"); pdf.setFontSize(7.5); pdf.setTextColor(150, 150, 150);
-      pdf.text("HVAC Sistema de Mantenimiento", W - M, y + 5, { align: "right" });
-      pdf.text(`Generado: ${new Date().toLocaleDateString("es-PE")}`, W - M, y + 10, { align: "right" });
-      pdf.setDrawColor(220, 220, 220); pdf.line(M, 287, W - M, 287);
+      pdf.text("HVAC Sistema de Mantenimiento", M, y);
+      pdf.text(`Generado: ${new Date().toLocaleDateString("es-PE")}`, W - M, y, { align: "right" });
+      y += 5;
       pdf.setFontSize(7); pdf.setTextColor(180, 180, 180);
-      pdf.text(`Reporte · ${equipo.cliente || ""} · ${equipo.codigo || id.slice(0, 6).toUpperCase()}`, M, 291);
+      pdf.text(`Reporte · ${equipo.cliente || ""} · ${equipo.codigo || id.slice(0, 6).toUpperCase()}`, M, y);
 
       if (modo === "ver") {
         const blob = pdf.output("blob");
