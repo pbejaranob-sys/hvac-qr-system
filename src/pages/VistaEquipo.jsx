@@ -44,6 +44,19 @@ export default function VistaEquipo() {
   const [authChecked, setAuthChecked] = useState(false);
   const [pdfGenerado, setPdfGenerado] = useState(false);
 
+  // Quita el margen por defecto del body y aplica el mismo fondo gris de la página,
+  // así no queda un borde blanco alrededor (efecto de "página cortada").
+  useEffect(() => {
+    const prevMargin = document.body.style.margin;
+    const prevBg = document.body.style.background;
+    document.body.style.margin = "0";
+    document.body.style.background = "#eef1f6";
+    return () => {
+      document.body.style.margin = prevMargin;
+      document.body.style.background = prevBg;
+    };
+  }, []);
+
   useEffect(() => { cargarEquipo(); }, []);
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, user => {
@@ -509,7 +522,7 @@ const SvgQR = () => (
 const FONT = "'Manrope', -apple-system, sans-serif";
 
 const s = {
-  page: { minHeight: "100vh", background: "#eef1f6", fontFamily: FONT },
+  page: { minHeight: "100vh", width: "100%", background: "#eef1f6", fontFamily: FONT, boxSizing: "border-box" },
   navbar: { background: "white", borderBottom: "1px solid #e7ebf3", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
   navLeft: { display: "flex", alignItems: "center", gap: "12px" },
   navLogo: { width: "26px", height: "26px", objectFit: "contain" },
