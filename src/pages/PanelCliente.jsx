@@ -5,6 +5,28 @@ import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import jsPDF from "jspdf";
 
+const FONT = "'Manrope', -apple-system, sans-serif";
+
+function useManropeAndBodyReset() {
+  useEffect(() => {
+    if (!document.getElementById("font-manrope")) {
+      const link = document.createElement("link");
+      link.id = "font-manrope";
+      link.rel = "stylesheet";
+      link.href = "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap";
+      document.head.appendChild(link);
+    }
+    const prevMargin = document.body.style.margin;
+    const prevBg = document.body.style.background;
+    document.body.style.margin = "0";
+    document.body.style.background = "#eef1f6";
+    return () => {
+      document.body.style.margin = prevMargin;
+      document.body.style.background = prevBg;
+    };
+  }, []);
+}
+
 const parsePiso = (p) => {
   if (!p) return [99, 0, 0];
   const s = String(p).toLowerCase().trim();
@@ -47,14 +69,14 @@ const exportarExcel = (cliente, equipos) => {
   let item = 1;
   let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
   <head><meta charset="UTF-8"><style>
-    body{font-family:Arial;font-size:9pt;}.titulo{background:#1A73E8;color:white;font-size:14pt;font-weight:bold;}
-    .header{background:#1565C0;color:white;font-weight:bold;font-size:9pt;text-align:center;}
-    .piso{background:#BBDEFB;color:#0D47A1;font-weight:bold;font-size:9pt;}
+    body{font-family:Arial;font-size:9pt;}.titulo{background:#1A4FC0;color:white;font-size:14pt;font-weight:bold;}
+    .header{background:#1a4fc0;color:white;font-weight:bold;font-size:9pt;text-align:center;}
+    .piso{background:#e5f0ff;color:#1a4fc0;font-weight:bold;font-size:9pt;}
     .fila{font-size:9pt;}.fila-alt{background:#F8F9FA;font-size:9pt;}
-    .op{background:#C8E6C9;color:#1B5E20;font-weight:bold;text-align:center;}
-    .obs{background:#FFF9C4;color:#E65100;font-weight:bold;text-align:center;}
-    .fs{background:#FFCDD2;color:#B71C1C;font-weight:bold;text-align:center;}
-    .cod{background:#F3E5F5;color:#6A1B9A;font-weight:bold;text-align:center;font-family:monospace;}
+    .op{background:#e6f7ec;color:#1c7a44;font-weight:bold;text-align:center;}
+    .obs{background:#fff8e6;color:#8a5b0a;font-weight:bold;text-align:center;}
+    .fs{background:#fdeeee;color:#a52b2b;font-weight:bold;text-align:center;}
+    .cod{background:#e5f0ff;color:#1a4fc0;font-weight:bold;text-align:center;font-family:monospace;}
     td{border:1px solid #E0E0E0;padding:4px 6px;}
   </style></head><body><table>
   <tr><td colspan="13" class="titulo">HVAC - Sistema de Mantenimiento</td></tr>
@@ -94,7 +116,7 @@ const exportarPDF = (cliente, sede, equipos) => {
   const pdf = new jsPDF("l", "mm", "a4");
   const M = 10, PW = 297, CW = PW - M * 2;
   let y = 15;
-  pdf.setFillColor(26, 115, 232); pdf.rect(0, 0, PW, 20, "F");
+  pdf.setFillColor(26, 79, 192); pdf.rect(0, 0, PW, 20, "F");
   pdf.setFontSize(13); pdf.setFont("helvetica", "bold"); pdf.setTextColor(255, 255, 255);
   pdf.text("HVAC - Sistema de Mantenimiento", M, 13);
   pdf.setFontSize(10); pdf.setFont("helvetica", "normal");
@@ -105,16 +127,16 @@ const exportarPDF = (cliente, sede, equipos) => {
   const check = (h) => { if (y + h > 195) { pdf.addPage(); y = 15; } };
 
   const badge = (estado) => {
-    if (estado === "Operativo") return { bg: [232, 245, 233], color: [27, 94, 32], txt: "Operativo" };
-    if (estado === "Operativo con observaciones") return { bg: [255, 248, 225], color: [230, 81, 0], txt: "Con obs." };
-    return { bg: [255, 235, 238], color: [183, 28, 28], txt: estado || "Operativo" };
+    if (estado === "Operativo") return { bg: [230, 247, 236], color: [28, 122, 68], txt: "Operativo" };
+    if (estado === "Operativo con observaciones") return { bg: [255, 248, 230], color: [138, 91, 10], txt: "Con obs." };
+    return { bg: [253, 238, 238], color: [165, 43, 43], txt: estado || "Operativo" };
   };
 
   const porPiso = agruparPorPiso(equipos); let item = 1;
   Object.keys(porPiso).sort(ordenarPisos).forEach(p => {
     check(10);
-    pdf.setFillColor(187, 222, 251); pdf.rect(M, y, CW, 6, "F");
-    pdf.setFontSize(8.5); pdf.setFont("helvetica", "bold"); pdf.setTextColor(13, 71, 161);
+    pdf.setFillColor(229, 240, 255); pdf.rect(M, y, CW, 6, "F");
+    pdf.setFontSize(8.5); pdf.setFont("helvetica", "bold"); pdf.setTextColor(18, 36, 94);
     pdf.text(`PISO: ${p.toUpperCase()}`, M + 3, y + 4.2);
     y += 9;
 
@@ -137,7 +159,6 @@ const exportarPDF = (cliente, sede, equipos) => {
       pdf.text(bd.txt, M + CW - 16, y + 2.5, { align: "center" });
       y += 6;
 
-      // Ficha técnica: fila completa de 6 columnas
       pdf.setFillColor(248, 249, 250); pdf.rect(M, y, CW, alturaFicha, "F");
       const campos = [
         ["Modelo", e.modelo || "-"], ["Serie", e.serie || "-"], ["Capacidad", e.capacidad ? `${e.capacidad} BTU` : "-"],
@@ -153,7 +174,6 @@ const exportarPDF = (cliente, sede, equipos) => {
       });
       y += alturaFicha + 3;
 
-      // Observaciones: fila completa debajo
       if (obs.length === 0) {
         pdf.setFont("helvetica", "italic"); pdf.setFontSize(7.5); pdf.setTextColor(160, 160, 160);
         pdf.text("Sin observaciones registradas", M, y + 2);
@@ -169,14 +189,14 @@ const exportarPDF = (cliente, sede, equipos) => {
           const rowH = 7.5;
           pdf.setFontSize(6.5); pdf.setTextColor(130, 130, 130);
           pdf.text(String(i + 1), M, y + 4);
-          pdf.setFillColor(255, 248, 225); pdf.rect(M + col0, y, colW - 2, rowH, "F");
-          pdf.setFillColor(254, 240, 240); pdf.rect(M + col0 + colW, y, colW - 2, rowH, "F");
-          pdf.setFillColor(232, 245, 233); pdf.rect(M + col0 + colW * 2, y, colW - 2, rowH, "F");
+          pdf.setFillColor(255, 248, 230); pdf.rect(M + col0, y, colW - 2, rowH, "F");
+          pdf.setFillColor(253, 238, 238); pdf.rect(M + col0 + colW, y, colW - 2, rowH, "F");
+          pdf.setFillColor(230, 247, 236); pdf.rect(M + col0 + colW * 2, y, colW - 2, rowH, "F");
           pdf.setFont("helvetica", "normal"); pdf.setFontSize(6.8);
-          pdf.setTextColor(122, 74, 0); pdf.text(pdf.splitTextToSize(o.texto, colW - 6).slice(0, 2), M + col0 + 2, y + 3);
-          pdf.setTextColor(138, 45, 45); pdf.text(pdf.splitTextToSize(o.causa || "\u2014", colW - 6).slice(0, 2), M + col0 + colW + 2, y + 3);
+          pdf.setTextColor(138, 91, 10); pdf.text(pdf.splitTextToSize(o.texto, colW - 6).slice(0, 2), M + col0 + 2, y + 3);
+          pdf.setTextColor(165, 43, 43); pdf.text(pdf.splitTextToSize(o.causa || "\u2014", colW - 6).slice(0, 2), M + col0 + colW + 2, y + 3);
           const recTxt = rec[i] ? (typeof rec[i] === "string" ? rec[i] : rec[i].texto || "\u2014") : "\u2014";
-          pdf.setTextColor(36, 92, 31); pdf.text(pdf.splitTextToSize(recTxt, colW - 6).slice(0, 2), M + col0 + colW * 2 + 2, y + 3);
+          pdf.setTextColor(28, 122, 68); pdf.text(pdf.splitTextToSize(recTxt, colW - 6).slice(0, 2), M + col0 + colW * 2 + 2, y + 3);
           y += rowH + 1;
         });
       }
@@ -191,9 +211,9 @@ const exportarPDF = (cliente, sede, equipos) => {
   pdf.save(`equipos-${cliente.replace(/\s+/g, "-")}-${new Date().getFullYear()}.pdf`);
 };
 
-
-
 export default function PanelCliente() {
+  useManropeAndBodyReset();
+
   const [equipos, setEquipos] = useState([]);
   const [sedes, setSedes] = useState([]);
   const [usuario, setUsuario] = useState(null);
@@ -203,15 +223,13 @@ export default function PanelCliente() {
   const [pisoDropdownAbierto, setPisoDropdownAbierto] = useState(false);
   const [filtroTipoEquipo, setFiltroTipoEquipo] = useState("Todos");
   const [filtroMes, setFiltroMes] = useState("Todos");
-  const [modalEquipo, setModalEquipo] = useState(null);
-  const [modalTipo, setModalTipo] = useState(null);
   const [obsAbierto, setObsAbierto] = useState(null);
   const [vistaActual, setVistaActual] = useState("sedes");
   const [sedeActual, setSedeActual] = useState(null);
   const [averias, setAverias] = useState([]);
-  const [detalleAveria, setDetalleAveria] = useState(null); // avería mostrada en su modal propio
-  const [listaEmergenciaSede, setListaEmergenciaSede] = useState(null); // averías activas cuando hay 2+
-  const [historialAverias, setHistorialAverias] = useState(null); // null = aún no cargado
+  const [detalleAveria, setDetalleAveria] = useState(null);
+  const [listaEmergenciaSede, setListaEmergenciaSede] = useState(null);
+  const [historialAverias, setHistorialAverias] = useState(null);
   const [historialAbierto, setHistorialAbierto] = useState(false);
   const [historialSedeFiltro, setHistorialSedeFiltro] = useState(null);
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
@@ -254,7 +272,6 @@ export default function PanelCliente() {
             const listaSedes = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
             setSedes(listaSedes);
 
-            // Restaurar sede si viene desde protocolo
             const sedeParam = searchParams.get("sede");
             if (sedeParam && listaSedes.length > 0) {
               const sedeRestaurada = listaSedes.find(s => s.id === sedeParam);
@@ -282,30 +299,19 @@ export default function PanelCliente() {
 
   const handleLogout = async () => { await signOut(auth); navigate("/"); };
 
-  // ---- Averías / emergencias ----
   const abrirDetalleAveria = (averia) => {
     setDetalleAveria(averia);
     setListaEmergenciaSede(null);
     setHistorialAbierto(false);
   };
-
   const cerrarDetalleAveria = () => setDetalleAveria(null);
 
   const abrirEmergencias = (lista) => {
     if (lista.length === 0) return;
-    if (lista.length === 1) {
-      abrirDetalleAveria(lista[0]);
-    } else {
-      setListaEmergenciaSede(lista);
-    }
+    if (lista.length === 1) abrirDetalleAveria(lista[0]);
+    else setListaEmergenciaSede(lista);
   };
-
   const abrirEmergenciasSede = (sede) => abrirEmergencias(averias.filter(a => a.sede === sede.nombre));
-
-  const cerrarModalEquipo = () => {
-    setModalEquipo(null);
-    setModalTipo(null);
-  };
 
   const marcarAveriaAtendida = async (averiaId) => {
     try {
@@ -326,7 +332,7 @@ export default function PanelCliente() {
     setHistorialSedeFiltro(sede || null);
     setHistorialAbierto(true);
     setListaEmergenciaSede(null);
-    if (historialAverias !== null) return; // ya cargado, solo cambia el filtro de vista
+    if (historialAverias !== null) return;
     setCargandoHistorial(true);
     try {
       const empresa = usuario?.empresa || usuario?.nombre || "";
@@ -353,8 +359,6 @@ export default function PanelCliente() {
   const getRec = (e) => e.recomendacionesArray?.filter(Boolean) ||
     e.recomendaciones?.split(/\n|;/).map(r => r.trim()).filter(Boolean) || [];
 
-  const getCor = (e) => e.correctivosArray?.filter(c => c.descripcion) || [];
-
   const equiposMostrados = sedeActual
     ? equipos.filter(e => e.sede === sedeActual.nombre)
     : equipos;
@@ -373,13 +377,6 @@ export default function PanelCliente() {
     if (!fecha) return 0;
     const d = new Date(fecha.includes("/") ? fecha.split("/").reverse().join("-") : fecha);
     return isNaN(d) ? 0 : d.getTime();
-  };
-  const fechaColor = (fecha) => {
-    if (!fecha) return { bg: "#f5f5f5", color: "#888", border: "#e0e0e0" };
-    const meses = (Date.now() - fechaATimestamp(fecha)) / (1000 * 60 * 60 * 24 * 30);
-    if (meses <= 3) return { bg: "#e8f5e9", color: "#2e7d32", border: "#a5d6a7" };
-    if (meses <= 6) return { bg: "#e8f0fe", color: "#1a5fa8", border: "#c5d5e8" };
-    return { bg: "#ffebee", color: "#c62828", border: "#ef9a9a" };
   };
 
   const mesesDisponibles = ["Todos", ...new Set(
@@ -414,148 +411,46 @@ export default function PanelCliente() {
   const tiposEquipo = ["Todos", ...[...new Set(equiposMostrados.map(e => e.tipoEquipo).filter(Boolean))].sort()];
 
   const getBadge = (estado) => {
-    const map = { "Operativo": { bg: "#e8f5e9", color: "#2e7d32" }, "Operativo con observaciones": { bg: "#fff8e1", color: "#e65100" }, "Fuera de servicio": { bg: "#ffebee", color: "#c62828" } };
+    const map = {
+      "Operativo": { bg: "#e6f7ec", color: "#1c7a44" },
+      "Operativo con observaciones": { bg: "#fff3d6", color: "#a8720b" },
+      "Fuera de servicio": { bg: "#fdeeee", color: "#a52b2b" },
+    };
     const st = map[estado] || map["Operativo"];
-    return <span style={{ fontSize: "11px", padding: "3px 10px", background: st.bg, color: st.color, borderRadius: "20px", fontWeight: 500, whiteSpace: "nowrap", display: "inline-block" }}>{estado === "Operativo con observaciones" ? "Con obs." : estado || "Operativo"}</span>;
+    return <span style={{ background: st.bg, color: st.color, fontWeight: 700, fontSize: "12px", padding: "5px 12px", borderRadius: "20px", whiteSpace: "nowrap" }}>{estado === "Operativo con observaciones" ? "Con obs." : estado || "Operativo"}</span>;
   };
-
-  const getCronColor = (estado) => ({
-    realizado: { bg: "#e8f5e9", border: "#a5d6a7", color: "#2e7d32", label: "Realizado" },
-    pendiente: { bg: "#fff8e1", border: "#ffe082", color: "#e65100", label: "Pendiente" },
-    programado: { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", label: "Programado" },
-  }[estado] || { bg: "#f5f5f5", border: "#e0e0e0", color: "#888", label: "Programado" });
-
-  const GRUPO_POR_TIPO_PDF = {
-    "Ventilación": "ventilacion", "Extractor": "ventilacion", "Inyector": "ventilacion",
-    "Cortina de aire": "ventilacion", "Jetfan": "ventilacion", "Presurizador": "ventilacion",
-  };
-
-  const generarPDFFicha = (eq) => {
-    const obs = getObs(eq);
-    const rec = getRec(eq);
-    const cor = getCor(eq);
-    const cron = eq.cronograma || [];
-    const badgeColor = eq.estado === "Operativo" ? "#2e7d32" : eq.estado === "Operativo con observaciones" ? "#e65100" : "#c62828";
-    const badgeBg = eq.estado === "Operativo" ? "#e8f5e9" : eq.estado === "Operativo con observaciones" ? "#fff8e1" : "#ffebee";
-
-    const esVentF = GRUPO_POR_TIPO_PDF[eq.tipoEquipo] === "ventilacion";
-    const campo = (l, v) => v ? `<div style="background:#f8f9fa;border-radius:6px;padding:7px 10px;"><div style="font-size:10px;color:#888;margin-bottom:2px;">${l}</div><div style="font-size:12px;font-weight:600;color:#222;">${v}</div></div>` : "";
-    const filaGen = [
-      campo("Cliente", eq.cliente), campo("Sede", eq.sede), campo("Piso", eq.piso), campo("Ambiente", eq.ambiente),
-      campo("Marca", eq.marca), campo("Modelo", eq.modelo), campo("N° Serie", eq.serie),
-      campo("Capacidad", eq.capacidad ? eq.capacidad + (esVentF ? " CFM" : " BTU") : null),
-    ].filter(Boolean).join("");
-    const filaElec = [
-      !esVentF ? campo("Refrigerante", eq.tipoRefrigerante) : "",
-      campo("Voltaje de placa", eq.voltaje ? eq.voltaje + "V" : null), campo("Amperaje nominal", eq.amperaje ? eq.amperaje + "A" : null),
-      campo("Fases", eq.fases),
-      campo("Voltaje cond.", eq.condVoltaje ? eq.condVoltaje + "V" : null),
-      campo("Amperaje cond.", eq.condAmperaje ? eq.condAmperaje + "A" : null),
-      campo("Modelo compresor", eq.modeloCompresor),
-    ].filter(Boolean).join("");
-    const filaMotor = [
-      campo("Contrato", eq.contrato), campo("Modelo de faja", eq.modeloFaja), campo("N° de fajas", eq.numFajas),
-      campo("Marca motor", eq.marcaMotor), campo("Modelo motor", eq.modeloMotor), campo("N° serie motor", eq.serieMotor),
-    ].filter(Boolean).join("");
-    const campos = `<div class="campos">${filaGen}</div>` +
-      (filaElec ? `<div class="campos" style="margin-top:8px">${filaElec}</div>` : "") +
-      (filaMotor ? `<div class="campos" style="margin-top:8px">${filaMotor}</div>` : "");
-
-    const syncBadge = eq.ultimoProtocolo ? `<span style="font-size:10px;padding:2px 8px;background:#e8f5e9;color:#2e7d32;border-radius:20px;margin-left:8px;">Sincronizado ${eq.ultimoProtocolo}</span>` : "";
-
-    const ocrHtml = obs.length > 0 ? `
-      <table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:4px;">
-        <thead><tr>
-          <th style="background:#fff3e0;color:#e65100;padding:5px 8px;text-align:left;width:5%">#</th>
-          <th style="background:#fff3e0;color:#e65100;padding:5px 8px;text-align:left;width:32%">Observación</th>
-          <th style="background:#fce4ec;color:#c62828;padding:5px 8px;text-align:left;width:32%">Causa</th>
-          <th style="background:#e8f5e9;color:#2e7d32;padding:5px 8px;text-align:left;width:31%">Recomendación</th>
-        </tr></thead>
-        <tbody>${obs.map((o, i) => `
-          <tr style="background:${i % 2 === 0 ? "white" : "#fafafa"}">
-            <td style="padding:5px 8px;border-bottom:0.5px solid #f0f0f0;color:#888">${i + 1}</td>
-            <td style="padding:5px 8px;border-bottom:0.5px solid #f0f0f0;color:#e65100;background:#fff8e1;">
-              <div>${o.texto}</div>
-              ${o.fecha || o.tecnico ? `<div style="font-size:9px;color:#aaa;margin-top:2px;">${o.fecha || ""}${o.fecha && o.tecnico ? " · " : ""}${o.tecnico ? "Téc: " + o.tecnico : ""}</div>` : ""}
-            </td>
-            <td style="padding:5px 8px;border-bottom:0.5px solid #f0f0f0;color:#c62828;background:#fef0f0;">${o.causa || "—"}</td>
-            <td style="padding:5px 8px;border-bottom:0.5px solid #f0f0f0;color:#2e7d32;background:#e8f5e9;">${rec[i] ? (typeof rec[i] === "string" ? rec[i] : rec[i].texto || "—") : "—"}</td>
-          </tr>`).join("")}
-        </tbody>
-      </table>` : `<div style="font-size:12px;color:#aaa;font-style:italic;">Sin observaciones registradas</div>`;
-
-    const cronColors = { realizado: { bg: "#e8f5e9", color: "#2e7d32", icon: "OK" }, pendiente: { bg: "#fff8e1", color: "#e65100", icon: "Pend." }, programado: { bg: "#f5f5f5", color: "#888", icon: "Prog." } };
-    const cronHtml = cron.length > 0 ? `<div style="display:flex;gap:8px;flex-wrap:wrap;">${cron.map(t => { const c = cronColors[t.estado] || cronColors.programado; return `<div style="background:${c.bg};border-radius:8px;padding:10px;text-align:center;flex:1;min-width:80px;"><div style="font-size:11px;font-weight:700;color:${c.color};margin-bottom:3px;">${t.label}</div><div style="font-size:11px;color:${c.color};">${t.fecha || "Sin fecha"}</div><div style="font-size:10px;color:${c.color};margin-top:3px;">${c.icon} ${t.estado}</div></div>`; }).join("")}</div>` : "";
-
-    const corHtml = cor.length > 0 ? cor.map(c => `<div style="background:#f5f5f5;border-left:3px solid #1a5fa8;border-radius:0 6px 6px 0;padding:6px 10px;font-size:12px;margin-bottom:5px;display:flex;justify-content:space-between;"><span>${c.descripcion}</span>${c.fecha ? `<span style="font-size:10px;color:#888;">${c.fecha}</span>` : ""}</div>`).join("") : "";
-
-    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Ficha — ${eq.codigo || eq.marca}</title>
-    <style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:13px;color:#222;background:white;margin:0}
-    .header{background:#1a5fa8;color:white;padding:13px 20px;display:flex;justify-content:space-between;align-items:center}
-    .logo{font-size:18px;font-weight:900;letter-spacing:2px}.badge{background:${badgeBg};color:${badgeColor};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
-    .sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#1a5fa8;border-left:3px solid #1a5fa8;padding-left:8px;margin:14px 0 8px}
-    .sec.obs{color:#e65100;border-color:#e65100}.campos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-    .cron{display:flex;gap:8px}.btn-print{display:block;margin:12px auto;padding:10px 24px;background:#1a5fa8;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600}
-    @media print{.btn-print{display:none!important}}</style></head><body>
-    <div class="header"><div class="logo">HVAC</div><div class="badge">${eq.estado === "Operativo con observaciones" ? "Con observaciones" : eq.estado || "Operativo"}</div></div>
-    <button class="btn-print" onclick="window.print()">Imprimir / Guardar PDF</button>
-    <div style="padding:0 16px 16px">
-      <div style="background:#f8f9fa;border-radius:8px;padding:12px 16px;margin:14px 0 0">
-        <div style="font-size:15px;font-weight:700;color:#1a5fa8;">${eq.marca || ""} / ${eq.modelo || ""}</div>
-        <div style="font-size:12px;color:#555;margin-top:4px;">${eq.tipoEquipo || ""} · ${eq.cliente || ""} · ${eq.sede || ""} · Piso ${eq.piso || ""} · ${eq.ambiente || ""}</div>
-      </div>
-      <div class="sec">Datos del equipo</div>${campos}
-      <div class="sec obs">Observación · Causa · Recomendación ${syncBadge}</div>${ocrHtml}
-      ${cron.length > 0 ? `<div class="sec">Cronograma de mantenimiento</div><div class="cron">${cronHtml}</div>` : ""}
-      ${cor.length > 0 ? `<div class="sec">Correctivos realizados</div>${corHtml}` : ""}
-      <div style="border-top:0.5px solid #ddd;margin-top:16px;padding-top:10px;font-size:10px;color:#aaa;">
-        Generado: ${new Date().toLocaleDateString("es-PE")} · HVAC Sistema de Mantenimiento
-      </div>
-    </div>
-    <script>setTimeout(()=>window.print(),600);</script></body></html>`;
-
-    const win = window.open("", "_blank");
-    win.document.write(html);
-    win.document.close();
-  };
-
-  if (cargando) return <div style={s.centro}>Cargando...</div>;
 
   const historialFiltrado = historialAverias
     ? historialAverias.filter(a => !historialSedeFiltro || a.sede === historialSedeFiltro.nombre)
     : [];
 
+  if (cargando) return <div style={s.centro}>Cargando...</div>;
+
   return (
     <div style={s.page}>
-      {/* Navbar */}
-      <div style={s.navbar}>
-        <div style={s.navLeft}>
-          <div style={s.logo}>
-            <span style={{ color: "#1a5fa8" }}>H</span>
-            <span style={{ color: "#1a5fa8", marginRight: "-6px" }}>V</span>
-            <span style={{ color: "#f0c040", marginLeft: "2px" }}>A</span>
-            <span style={{ color: "#1a5fa8", marginLeft: "2px" }}>C</span>
-          </div>
-          <div style={s.divider}></div>
+      {/* Top bar */}
+      <div style={s.topbar}>
+        <div style={s.logoBox}>
+          <img src="/assets/hvac-isotipo-filled.png" alt="HVAC" style={s.logoImg} />
+        </div>
+        <div style={s.breadcrumb}>
           {sedeActual ? (
             <>
-              <button style={s.btnBack} onClick={() => { setSedeActual(null); setVistaActual("sedes"); setFiltroEstado("Todos"); setFiltroPiso("Todos"); }}>← {usuario?.empresa}</button>
-              <div style={s.divider}></div>
-              <span style={s.navTitle}>{sedeActual.nombre}</span>
+              <a href="#" onClick={(e) => { e.preventDefault(); setSedeActual(null); setVistaActual("sedes"); setFiltroEstado("Todos"); }} style={s.breadcrumbLink}>
+                ← {usuario?.empresa}
+              </a>
+              <span style={{ color: "#c3cad9" }}>/</span>
+              <span>{sedeActual.nombre}</span>
             </>
           ) : (
-            <span style={s.navEmpresa}>{usuario?.empresa}</span>
+            <span style={{ color: "#12245e", fontWeight: 700, fontSize: "14.5px" }}>{usuario?.empresa}</span>
           )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", position: "relative" }}>
+        <div style={s.topbarBtns}>
           {vistaActual === "equipos" && (
             <>
-              <button style={s.btnExcel} onClick={() => exportarExcel(usuario?.empresa, equiposFiltrados)}>
-                <i className="ti ti-file-spreadsheet" aria-hidden="true"></i> Excel
-              </button>
-              <button style={s.btnPdf} onClick={() => exportarPDF(usuario?.empresa, sedeActual?.nombre, equiposFiltrados)}>
-                <i className="ti ti-file-type-pdf" aria-hidden="true"></i> PDF
-              </button>
+              <button style={s.btnExcel} onClick={() => exportarExcel(usuario?.empresa, equiposFiltrados)}>Excel</button>
+              <button style={s.btnPdf} onClick={() => exportarPDF(usuario?.empresa, sedeActual?.nombre, equiposFiltrados)}>PDF</button>
             </>
           )}
           <button style={s.btnSalir} onClick={handleLogout}>Salir</button>
@@ -572,49 +467,29 @@ export default function PanelCliente() {
               const obsS = eqSede.filter(e => e.estado === "Operativo con observaciones").length;
               const fsS = eqSede.filter(e => e.estado === "Fuera de servicio").length;
               const totS = eqSede.length;
-              const pOpS = totS ? Math.round(opS / totS * 100) : 0;
-              const pObsS = totS ? Math.round(obsS / totS * 100) : 0;
-              const pFsS = totS ? Math.round(fsS / totS * 100) : 0;
               const averiasSede = averias.filter(a => a.sede === sede.nombre);
               return (
                 <div key={sede.id} style={s.sedeCard}>
                   <div style={s.sedeHeader}>
-                    <div style={s.sedeIcon}></div>
+                    <div style={s.sedeIconBox}><img src="/assets/hvac-isotipo-filled.png" alt="" style={{ width: 20, height: 20, objectFit: "contain", filter: "brightness(0) invert(1)" }} /></div>
                     <div>
                       <div style={s.sedeNombre}>{sede.nombre}</div>
                       <div style={s.sedeDireccion}>{sede.direccion}</div>
                     </div>
                   </div>
                   <div style={s.miniStats}>
-                    <div style={{ ...s.mini, background: "#e8f5e9" }}><div style={{ ...s.miniNum, color: "#2e7d32" }}>{opS}</div><div style={{ ...s.miniLabel, color: "#2e7d32" }}>Operativo</div></div>
-                    <div style={{ ...s.mini, background: "#fff8e1" }}><div style={{ ...s.miniNum, color: "#e65100" }}>{obsS}</div><div style={{ ...s.miniLabel, color: "#e65100" }}>Con obs.</div></div>
-                    <div style={{ ...s.mini, background: fsS > 0 ? "#ffebee" : "#f5f5f5" }}><div style={{ ...s.miniNum, color: fsS > 0 ? "#c62828" : "#aaa" }}>{fsS}</div><div style={{ ...s.miniLabel, color: fsS > 0 ? "#c62828" : "#aaa" }}>Fuera serv.</div></div>
-                    <div style={{ ...s.mini, background: averiasSede.length > 0 ? "#fef0f0" : "#f5f5f5", border: averiasSede.length > 0 ? "0.5px solid #f0997b" : "none" }}>
-                      <div
-                        style={{ cursor: averiasSede.length > 0 ? "pointer" : "default" }}
-                        onClick={() => averiasSede.length > 0 && abrirEmergenciasSede(sede)}
-                      >
-                        <div style={{ ...s.miniNum, color: averiasSede.length > 0 ? "#c62828" : "#aaa" }}>{averiasSede.length}</div>
-                        <div style={{ ...s.miniLabel, color: averiasSede.length > 0 ? "#c62828" : "#aaa" }}>⚠ Emergencia</div>
+                    <div style={{ ...s.mini, background: "#e6f7ec" }}><div style={{ ...s.miniNum, color: "#1c7a44" }}>{opS}</div><div style={{ ...s.miniLabel, color: "#1c7a44" }}>Operativo</div></div>
+                    <div style={{ ...s.mini, background: "#fff8e6" }}><div style={{ ...s.miniNum, color: "#8a5b0a" }}>{obsS}</div><div style={{ ...s.miniLabel, color: "#8a5b0a" }}>Con obs.</div></div>
+                    <div style={{ ...s.mini, background: fsS > 0 ? "#fdeeee" : "#f4f6fb" }}><div style={{ ...s.miniNum, color: fsS > 0 ? "#a52b2b" : "#9aa2b3" }}>{fsS}</div><div style={{ ...s.miniLabel, color: fsS > 0 ? "#a52b2b" : "#9aa2b3" }}>Fuera serv.</div></div>
+                    <div style={{ ...s.mini, background: averiasSede.length > 0 ? "#fdeeee" : "#f4f6fb" }}>
+                      <div style={{ cursor: averiasSede.length > 0 ? "pointer" : "default" }} onClick={() => averiasSede.length > 0 && abrirEmergenciasSede(sede)}>
+                        <div style={{ ...s.miniNum, color: averiasSede.length > 0 ? "#a52b2b" : "#9aa2b3" }}>{averiasSede.length}</div>
+                        <div style={{ ...s.miniLabel, color: averiasSede.length > 0 ? "#a52b2b" : "#9aa2b3" }}>Emergencia</div>
                       </div>
-                      <div
-                        style={{ fontSize: "9px", color: averiasSede.length > 0 ? "#c62828" : "#999", textAlign: "center", marginTop: "3px", textDecoration: "underline", cursor: "pointer" }}
-                        onClick={() => abrirHistorial(sede)}
-                      >
-                        Historial
-                      </div>
+                      <div style={{ fontSize: "10px", color: averiasSede.length > 0 ? "#a52b2b" : "#9aa2b3", textAlign: "center", marginTop: "3px", textDecoration: "underline", cursor: "pointer" }} onClick={() => abrirHistorial(sede)}>Historial</div>
                     </div>
                   </div>
-                  <div style={s.barraWrap}>
-                    <div style={s.barra}>
-                      {pOpS > 0 && <div style={{ width: `${pOpS}%`, background: "#43a047", height: "100%" }}></div>}
-                      {pObsS > 0 && <div style={{ width: `${pObsS}%`, background: "#ffa726", height: "100%" }}></div>}
-                      {pFsS > 0 && <div style={{ width: `${pFsS}%`, background: "#ef5350", height: "100%" }}></div>}
-                    </div>
-                  </div>
-                  <button style={s.btnVerSede} onClick={() => { setSedeActual(sede); setVistaActual("equipos"); }}>
-                    Ver equipos →
-                  </button>
+                  <button style={s.btnVerSede} onClick={() => { setSedeActual(sede); setVistaActual("equipos"); }}>Ver equipos →</button>
                 </div>
               );
             })}
@@ -624,78 +499,63 @@ export default function PanelCliente() {
         {/* Vista equipos */}
         {vistaActual === "equipos" && (
           <>
-            <div style={s.statsGrid5}>
+            {/* Stat cards */}
+            <div style={s.statGrid}>
               {[
-                { label: "Total equipos", val: tot, color: "#1a5fa8", bg: "white", border: "1.5px solid #1a5fa8", filtro: "Todos" },
-                { label: "Operativos", val: op, color: "#2e7d32", bg: "#e8f5e9", border: filtroEstado === "Operativo" ? "1.5px solid #2e7d32" : "0.5px solid #a5d6a7", filtro: "Operativo" },
-                { label: "Con obs.", val: obs, color: "#e65100", bg: "#fff8e1", border: filtroEstado === "Operativo con observaciones" ? "1.5px solid #e65100" : "0.5px solid #ffe082", filtro: "Operativo con observaciones" },
-                { label: "Fuera serv.", val: fs, color: "#c62828", bg: "#ffebee", border: filtroEstado === "Fuera de servicio" ? "1.5px solid #c62828" : "0.5px solid #ef9a9a", filtro: "Fuera de servicio" },
+                { label: "TOTAL EQUIPOS", value: tot, color: "#1a4fc0", bg: "#e5f0ff", border: "#c3d6fb", filtro: "Todos" },
+                { label: "OPERATIVOS", value: op, color: "#1c7a44", bg: "#e6f7ec", border: "#c3ecd2", filtro: "Operativo" },
+                { label: "CON OBS.", value: obs, color: "#a8720b", bg: "#fff8e6", border: "#f3dfa3", filtro: "Operativo con observaciones" },
+                { label: "FUERA SERV.", value: fs, color: "#a52b2b", bg: "#fdeeee", border: "#f6d3d3", filtro: "Fuera de servicio" },
               ].map(st => (
-                <div key={st.filtro} onClick={() => setFiltroEstado(filtroEstado === st.filtro ? "Todos" : st.filtro)}
-                  style={{ background: st.bg, border: st.border, borderRadius: "12px", padding: "14px", textAlign: "center", cursor: "pointer", transition: "all 0.15s" }}>
-                  <div style={{ fontSize: "28px", fontWeight: 500, color: st.color }}>{st.val}</div>
-                  <div style={{ fontSize: "10px", color: st.color, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "4px", fontWeight: 500 }}>{st.label}</div>
+                <div key={st.filtro} onClick={() => setFiltroEstado(filtroEstado === st.filtro ? "Todos" : st.filtro)} style={{ background: st.bg, border: `1.5px solid ${filtroEstado === st.filtro ? st.color : st.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", textAlign: "center", cursor: "pointer" }}>
+                  <div style={{ fontWeight: 800, fontSize: "clamp(26px,4vw,34px)", color: st.color }}>{st.value}</div>
+                  <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>{st.label}</div>
                 </div>
               ))}
-              <div style={{ background: averiasSedeActual.length > 0 ? "#ffebee" : "#f5f5f5", border: averiasSedeActual.length > 0 ? "0.5px solid #ef9a9a" : "0.5px solid #e0e0e0", borderRadius: "12px", padding: "14px", textAlign: "center" }}>
+              <div style={{ background: averiasSedeActual.length > 0 ? "#fdeeee" : "#f4f6fb", border: `1.5px solid ${averiasSedeActual.length > 0 ? "#f6d3d3" : "#e7ebf3"}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", textAlign: "center" }}>
                 <div style={{ cursor: averiasSedeActual.length > 0 ? "pointer" : "default" }} onClick={() => abrirEmergencias(averiasSedeActual)}>
-                  <div style={{ fontSize: "28px", fontWeight: 500, color: averiasSedeActual.length > 0 ? "#c62828" : "#aaa" }}>{averiasSedeActual.length}</div>
-                  <div style={{ fontSize: "10px", color: averiasSedeActual.length > 0 ? "#c62828" : "#aaa", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "4px", fontWeight: 500 }}>Emergencia</div>
+                  <div style={{ fontWeight: 800, fontSize: "clamp(26px,4vw,34px)", color: averiasSedeActual.length > 0 ? "#a52b2b" : "#9aa2b3" }}>{averiasSedeActual.length}</div>
+                  <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>EMERGENCIA</div>
                 </div>
-                <div
-                  style={{ fontSize: "9px", color: averiasSedeActual.length > 0 ? "#c62828" : "#999", marginTop: "5px", textDecoration: "underline", cursor: "pointer" }}
-                  onClick={() => abrirHistorial(sedeActual)}
-                >
-                  Historial
-                </div>
+                <a href="#" onClick={(e) => { e.preventDefault(); abrirHistorial(sedeActual); }} style={{ fontSize: "11.5px", fontWeight: 700, color: "#1a4fc0", textDecoration: "underline", marginTop: "4px" }}>Historial</a>
               </div>
             </div>
 
-            <div style={s.barrasCard}>
-              {[["Operativo", op, "#43a047", "#2e7d32"], ["Con observaciones", obs, "#ffa726", "#e65100"], ["Fuera de servicio", fs, "#ef5350", "#c62828"]].map(([label, val, bg, color]) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 500, color: "#555", width: "140px", flexShrink: 0 }}>{label}</span>
-                  <div style={{ flex: 1, height: "8px", background: "#f0f0f0", borderRadius: "4px", overflow: "hidden" }}>
-                    <div style={{ width: `${tot ? Math.round(val / tot * 100) : 0}%`, height: "100%", background: bg, borderRadius: "4px" }}></div>
+            {/* Progress bars */}
+            <div style={s.progressCard}>
+              {[["Operativo", op, "#1c9a53"], ["Con observaciones", obs, "#e8a020"], ["Fuera de servicio", fs, "#c23b3b"]].map(([label, val, color]) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                  <div style={{ width: "150px", minWidth: "110px", fontWeight: 700, fontSize: "13.5px", color: "#26314d" }}>{label}</div>
+                  <div style={{ flex: 1, height: "10px", borderRadius: "6px", background: "#eef1f6", overflow: "hidden" }}>
+                    <div style={{ width: `${tot ? Math.round(val / tot * 100) : 0}%`, height: "100%", background: color, borderRadius: "6px" }}></div>
                   </div>
-                  <span style={{ fontSize: "12px", fontWeight: 500, color, width: "50px", textAlign: "right" }}>{val} und</span>
+                  <div style={{ width: "70px", textAlign: "right", fontWeight: 700, fontSize: "13px", color }}>{val} und</div>
                 </div>
               ))}
             </div>
 
+            {/* Equipment list */}
             <div style={s.tablaCard}>
               <div style={s.tablaHeader}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 500, color: "#222" }}>Lista de equipos</span>
-                  <span style={{ fontSize: "11px", padding: "2px 8px", background: "#e8f0fe", color: "#1a5fa8", borderRadius: "20px" }}>{equiposFiltrados.length} equipo{equiposFiltrados.length !== 1 ? "s" : ""}</span>
+                  <div style={{ fontWeight: 800, fontSize: "16px", color: "#12245e" }}>Lista de equipos</div>
+                  <span style={{ background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "12px", padding: "4px 10px", borderRadius: "20px" }}>{equiposFiltrados.length} equipos</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: "12px", color: "#888" }}>Piso:</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  <span style={s.filterLabel}>Piso:</span>
                   <div style={{ position: "relative" }}>
-                    <button
-                      onClick={() => setPisoDropdownAbierto(o => !o)}
-                      style={{ fontSize: "12px", padding: "5px 10px", borderRadius: "6px", border: "0.5px solid #ddd", background: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", minWidth: "140px", justifyContent: "space-between" }}
-                    >
+                    <button onClick={() => setPisoDropdownAbierto(o => !o)} style={s.filterSelect}>
                       <span>{pisosSeleccionados.length === 0 ? "Todos los pisos" : pisosSeleccionados.length === 1 ? `Piso ${pisosSeleccionados[0]}` : `${pisosSeleccionados.length} pisos`}</span>
-                      <span style={{ fontSize: "10px", color: "#888" }}>{pisoDropdownAbierto ? "▴" : "▾"}</span>
+                      <span style={{ fontSize: "10px", color: "#8a92a6" }}>{pisoDropdownAbierto ? "▴" : "▾"}</span>
                     </button>
                     {pisoDropdownAbierto && (
                       <>
                         <div style={{ position: "fixed", inset: 0, zIndex: 9 }} onClick={() => setPisoDropdownAbierto(false)}></div>
-                        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, background: "white", border: "0.5px solid #ddd", borderRadius: "8px", boxShadow: "0 4px 16px rgba(0,0,0,0.12)", zIndex: 10, minWidth: "180px", maxHeight: "320px", overflowY: "auto" }}>
-                          <div
-                            onClick={() => setPisosSeleccionados([])}
-                            style={{ padding: "8px 12px", fontSize: "12px", fontWeight: 500, cursor: "pointer", background: pisosSeleccionados.length === 0 ? "#e8f0fe" : "white", color: pisosSeleccionados.length === 0 ? "#1a5fa8" : "#333", borderBottom: "0.5px solid #f0f0f0" }}
-                          >
-                            Todos los pisos
-                          </div>
+                        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, background: "white", border: "1px solid #dfe6f5", borderRadius: "10px", boxShadow: "0 4px 16px rgba(20,40,90,0.12)", zIndex: 10, minWidth: "180px", maxHeight: "320px", overflowY: "auto" }}>
+                          <div onClick={() => setPisosSeleccionados([])} style={{ padding: "9px 13px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", background: pisosSeleccionados.length === 0 ? "#e5f0ff" : "white", color: pisosSeleccionados.length === 0 ? "#1a4fc0" : "#26314d", borderBottom: "1px solid #f2f4f8" }}>Todos los pisos</div>
                           {pisos.filter(p => p !== "Todos").map(p => (
-                            <label key={p} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "7px 12px", fontSize: "12px", cursor: "pointer", color: "#333" }}>
-                              <input
-                                type="checkbox"
-                                checked={pisosSeleccionados.includes(p)}
-                                onChange={() => setPisosSeleccionados(sel => sel.includes(p) ? sel.filter(x => x !== p) : [...sel, p])}
-                              />
+                            <label key={p} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 13px", fontSize: "12.5px", cursor: "pointer", color: "#26314d" }}>
+                              <input type="checkbox" checked={pisosSeleccionados.includes(p)} onChange={() => setPisosSeleccionados(sel => sel.includes(p) ? sel.filter(x => x !== p) : [...sel, p])} />
                               Piso {p}
                             </label>
                           ))}
@@ -703,139 +563,108 @@ export default function PanelCliente() {
                       </>
                     )}
                   </div>
-                  <span style={{ fontSize: "12px", color: "#888" }}>Equipo:</span>
-                  <select style={{ fontSize: "12px", padding: "5px 10px", borderRadius: "6px", border: "0.5px solid #ddd" }} value={filtroTipoEquipo} onChange={e => setFiltroTipoEquipo(e.target.value)}>
+                  <span style={s.filterLabel}>Equipo:</span>
+                  <select style={s.filterSelectNative} value={filtroTipoEquipo} onChange={e => setFiltroTipoEquipo(e.target.value)}>
                     {tiposEquipo.map(t => <option key={t} value={t}>{t === "Todos" ? "Todos los equipos" : t}</option>)}
                   </select>
-                  <span style={{ fontSize: "12px", color: "#888" }}>Periodo:</span>
-                  <select style={{ fontSize: "12px", padding: "5px 10px", borderRadius: "6px", border: "0.5px solid #ddd" }} value={filtroMes} onChange={e => setFiltroMes(e.target.value)}>
+                  <span style={s.filterLabel}>Periodo:</span>
+                  <select style={s.filterSelectNative} value={filtroMes} onChange={e => setFiltroMes(e.target.value)}>
                     {mesesDisponibles.map(m => <option key={m}>{m}</option>)}
                     <option value="Sin fecha">Sin fecha</option>
                   </select>
                   {filtroMes !== "Todos" && (
-                    <button onClick={() => setFiltroMes("Todos")} style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "20px", background: "#1a5fa8", color: "white", border: "none", cursor: "pointer" }}>
-                      {filtroMes} X
-                    </button>
+                    <button onClick={() => setFiltroMes("Todos")} style={{ fontSize: "10.5px", padding: "3px 9px", borderRadius: "20px", background: "#1a4fc0", color: "white", border: "none", cursor: "pointer", fontWeight: 700 }}>{filtroMes} ✕</button>
                   )}
                 </div>
               </div>
+
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                  <thead>
-                    <tr style={{ background: "#f8f9fa" }}>
-                      {["#", "Código", "Piso", "Ambiente", "Tipo equipo", "Marca/Modelo", "Estado", "Últ. mant.", "Acciones"].map(h => (
-                        <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#444", borderBottom: "0.5px solid #e0e0e0", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {equiposFiltrados.map((equipo, i) => {
-                      const abierto = obsAbierto === equipo.id;
-                      const obsArr = getObs(equipo);
-                      const numObs = obsArr.length;
-                      return (
-                        <React.Fragment key={equipo.id}>
-                          <tr style={{ borderBottom: abierto ? "none" : "0.5px solid #f5f5f5", background: i % 2 === 0 ? "white" : "#f8f9fa" }}>
-                            <td style={{ padding: "10px 14px", color: "#888", fontSize: "12px" }}>{i + 1}</td>
-                            <td style={{ padding: "10px 14px" }}>
-                              {equipo.codigo ? <span style={{ fontSize: "11px", padding: "2px 7px", background: "#f3e5f5", color: "#6a1b9a", borderRadius: "4px", fontFamily: "monospace", fontWeight: 700 }}>{equipo.codigo}</span> : <span style={{ color: "#aaa" }}>-</span>}
-                            </td>
-                            <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "#222" }}>{equipo.piso || "-"}</td>
-                            <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 500, color: "#222" }}>{equipo.ambiente || "-"}</td>
-                            <td style={{ padding: "10px 14px", fontSize: "13px", color: "#555" }}>{equipo.tipoEquipo || "-"}</td>
-                            <td style={{ padding: "10px 14px", fontSize: "13px", color: "#555" }}>
-                              <div style={{ fontWeight: 500, color: "#222" }}>{equipo.marca || "-"}</div>
-                              <div style={{ fontSize: "11px", color: "#888" }}>{equipo.modelo}</div>
-                            </td>
-                            <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>{getBadge(equipo.estado)}</td>
-                            <td style={{ padding: "10px 14px" }}>
-                              {(() => { const fc = fechaColor(equipo.ultimoMantenimiento); const ma = fechaAMesAnio(equipo.ultimoMantenimiento); return ma ? <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "10px", background: fc.bg, color: fc.color, border: `0.5px solid ${fc.border}`, whiteSpace: "nowrap" }}>{ma}</span> : <span style={{ fontSize: "10px", color: "#aaa" }}>—</span>; })()}
-                            </td>
-                            <td style={{ padding: "10px 14px" }}>
-                              <div style={{ display: "flex", gap: "5px" }}>
-                                <button style={s.btnInfo} onClick={() => window.open(`/equipo/${equipo.id}?noqr=1`, "_blank")}>Info</button>
-                                <button
-                                  style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "5px", cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap", border: `0.5px solid ${abierto ? "#ffa726" : "#ddd"}`, background: abierto ? "#e65100" : "#fff8e1", color: abierto ? "white" : "#e65100", opacity: numObs === 0 ? 0.45 : 1 }}
-                                  onClick={() => setObsAbierto(abierto ? null : equipo.id)}
-                                >
-                                  {"Obs "}
-                                  <span style={{ background: abierto ? "white" : "#e65100", color: abierto ? "#e65100" : "white", borderRadius: "20px", fontSize: "9px", padding: "1px 5px", fontWeight: 700, marginRight: "3px" }}>{numObs}</span>
-                                  {abierto ? "▴" : "▾"}
-                                </button>
-                                <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${equipo.id}&origen=cliente${sedeActual ? `&sede=${encodeURIComponent(sedeActual.id)}` : ""}`)}>Protocolo</button>
-                              </div>
-                            </td>
-                          </tr>
-                          {abierto && (
-                            <tr style={{ borderBottom: "0.5px solid #f5f5f5" }}>
-                              <td colSpan={9} style={{ padding: "0", background: "white", borderTop: "2px solid #ffa726" }}>
-                                <div style={{ padding: "12px 16px" }}>
-                                  <div style={{ fontSize: "11px", fontWeight: 500, color: "#e65100", marginBottom: "8px" }}>{numObs} observación{numObs !== 1 ? "es" : ""} — {equipo.codigo || equipo.ambiente}</div>
-                                  {numObs === 0 ? (
-                                    <div style={{ fontSize: "12px", color: "#aaa", fontStyle: "italic" }}>Sin observaciones registradas</div>
-                                  ) : (
-                                    <div>
-                                      <div style={{ display: "grid", gridTemplateColumns: "28px 1fr 1fr 1fr", gap: "10px", padding: "0 2px 6px", fontSize: "10px", color: "#999", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                                        <span></span><span>Observación</span><span>Causa</span><span>Recomendación</span>
-                                      </div>
-                                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                                        {(() => { const recArr = getRec(equipo); return obsArr.filter(o => o.texto?.trim()).map((o, idx) => (
-                                          <div key={idx} style={{ display: "grid", gridTemplateColumns: "28px 1fr 1fr 1fr", gap: "10px", alignItems: "start" }}>
-                                            <div style={{ fontSize: "11px", color: "#aaa", paddingTop: "10px", textAlign: "center" }}>{idx + 1}</div>
-                                            <div style={{ background: "#fff8e1", border: "0.5px solid #ffe082", borderRadius: "8px", padding: "9px 11px" }}>
-                                              <div style={{ fontSize: "12px", color: "#333", lineHeight: 1.4 }}>{o.texto}</div>
-                                              {(o.fecha || o.tecnico) && (
-                                                <div style={{ fontSize: "10px", color: "#aaa", marginTop: "4px" }}>
-                                                  {o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico ? o.tecnico : ""}
-                                                </div>
-                                              )}
-                                            </div>
-                                            <div style={{ background: "#fef0f0", border: "0.5px solid #f0997b", borderRadius: "8px", padding: "9px 11px", fontSize: "12px", color: "#712b13" }}>{o.causa || "—"}</div>
-                                            <div style={{ background: "#e8f5e9", border: "0.5px solid #97c459", borderRadius: "8px", padding: "9px 11px", fontSize: "12px", color: "#27500a" }}>{recArr[idx] ? (typeof recArr[idx] === "string" ? recArr[idx] : recArr[idx].texto || "—") : "—"}</div>
-                                          </div>
-                                        )); })()}
-                                      </div>
+                <div style={{ minWidth: "900px" }}>
+                  <div style={s.tablaColHead}>
+                    {["#", "CÓDIGO", "PISO", "AMBIENTE", "TIPO EQUIPO", "MARCA/MODELO", "ESTADO", "ÚLT. MANT.", "ACCIONES"].map(h => (
+                      <div key={h} style={{ fontWeight: 700, fontSize: "11.5px", color: "#8a92a6", letterSpacing: "0.05em" }}>{h}</div>
+                    ))}
+                  </div>
+                  {equiposFiltrados.map((equipo, i) => {
+                    const abierto = obsAbierto === equipo.id;
+                    const obsArr = getObs(equipo);
+                    const numObs = obsArr.length;
+                    return (
+                      <React.Fragment key={equipo.id}>
+                        <div style={s.tablaFila}>
+                          <div style={{ fontWeight: 700, color: "#8a92a6", fontSize: "13.5px" }}>{i + 1}</div>
+                          <div>{equipo.codigo ? <span style={s.codigoChip}>{equipo.codigo}</span> : null}</div>
+                          <div style={{ fontWeight: 600, color: "#26314d", fontSize: "13.5px" }}>{equipo.piso || "-"}</div>
+                          <div style={{ fontWeight: 700, color: "#0f1b3d", fontSize: "14px" }}>{equipo.ambiente || "-"}</div>
+                          <div style={{ fontWeight: 600, color: "#26314d", fontSize: "13.5px" }}>{equipo.tipoEquipo || "-"}</div>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: "13.5px", color: "#0f1b3d" }}>{equipo.marca || "-"}</div>
+                            <div style={{ fontWeight: 600, fontSize: "12px", color: "#9aa2b3", marginTop: "2px" }}>{equipo.modelo}</div>
+                          </div>
+                          <div>{getBadge(equipo.estado)}</div>
+                          <div>{equipo.ultimoMantenimiento ? <span style={s.ultMantChip}>{fechaAMesAnio(equipo.ultimoMantenimiento) || equipo.ultimoMantenimiento}</span> : <span style={{ fontSize: "11px", color: "#c3cad9" }}>—</span>}</div>
+                          <div style={{ display: "flex", gap: "6px", flexWrap: "nowrap" }}>
+                            <button style={s.btnInfo} onClick={() => window.open(`/equipo/${equipo.id}?noqr=1`, "_blank")}>Info</button>
+                            <button style={{ ...s.btnObs, ...(abierto ? { background: "#8a5b0a", color: "white" } : {}), opacity: numObs === 0 ? 0.5 : 1 }} onClick={() => setObsAbierto(abierto ? null : equipo.id)}>
+                              Obs <span style={{ background: abierto ? "white" : "#f3dfa3", color: abierto ? "#8a5b0a" : "#8a5b0a", borderRadius: "20px", padding: "1px 6px", fontSize: "10.5px" }}>{numObs}</span>
+                            </button>
+                            <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${equipo.id}&origen=cliente${sedeActual ? `&sede=${encodeURIComponent(sedeActual.id)}` : ""}`)}>Protocolo</button>
+                          </div>
+                        </div>
+                        {abierto && (
+                          <div style={{ background: "white", borderBottom: "1px solid #f2f4f8", padding: "14px 0 18px" }}>
+                            <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#8a5b0a", marginBottom: "10px" }}>{numObs} observación{numObs !== 1 ? "es" : ""} — {equipo.codigo || equipo.ambiente}</div>
+                            {numObs === 0 ? (
+                              <div style={{ fontSize: "12.5px", color: "#aab1c2", fontStyle: "italic" }}>Sin observaciones registradas</div>
+                            ) : (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                {(() => { const recArr = getRec(equipo); return obsArr.filter(o => o.texto?.trim()).map((o, idx) => (
+                                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "28px 1fr 1fr 1fr", gap: "10px", alignItems: "start" }}>
+                                    <div style={{ fontSize: "11px", color: "#8a92a6", paddingTop: "10px", textAlign: "center" }}>{idx + 1}</div>
+                                    <div style={{ background: "#fff8e6", border: "1px solid #f3dfa3", borderRadius: "10px", padding: "9px 12px" }}>
+                                      <div style={{ fontSize: "12.5px", color: "#26314d", lineHeight: 1.4 }}>{o.texto}</div>
+                                      {(o.fecha || o.tecnico) && <div style={{ fontSize: "10px", color: "#aab1c2", marginTop: "4px" }}>{o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico}</div>}
                                     </div>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                                    <div style={{ background: "#fdeeee", border: "1px solid #f6d3d3", borderRadius: "10px", padding: "9px 12px", fontSize: "12.5px", color: "#a52b2b" }}>{o.causa || "—"}</div>
+                                    <div style={{ background: "#e6f7ec", border: "1px solid #c3ecd2", borderRadius: "10px", padding: "9px 12px", fontSize: "12.5px", color: "#1c7a44" }}>{recArr[idx] ? (typeof recArr[idx] === "string" ? recArr[idx] : recArr[idx].texto || "—") : "—"}</div>
+                                  </div>
+                                )); })()}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </>
         )}
       </div>
 
-      {/* Modal lista de emergencias activas (2 o más averías) */}
+      {/* Modal lista de emergencias activas */}
       {listaEmergenciaSede && (
         <div style={s.modalOverlay} onClick={() => setListaEmergenciaSede(null)}>
-          <div style={s.averiaListaCard} onClick={e => e.stopPropagation()}>
-            <div style={s.averiaListaHeader}>
-              <span style={{ fontSize: "14px", color: "#DC2626" }}>⚠</span>
-              <span style={s.averiaListaTitulo}>Equipos con emergencia</span>
-              <span style={s.badgeEmergenciaCount}>{listaEmergenciaSede.length}</span>
+          <div style={s.listaCard} onClick={e => e.stopPropagation()}>
+            <div style={s.listaHeader}>
+              <span style={{ fontSize: "15px" }}>⚠</span>
+              <span style={s.listaTitulo}>Equipos con emergencia</span>
+              <span style={s.listaBadgeCount}>{listaEmergenciaSede.length}</span>
               <button style={s.btnCerrarX} onClick={() => setListaEmergenciaSede(null)}>✕</button>
             </div>
-            <div style={s.averiaListaBody}>
+            <div style={s.listaBody}>
               {listaEmergenciaSede.map(a => {
                 const eq = equipos.find(e => e.id === a.equipoId);
                 return (
-                  <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.averiaListaItem}>
-                    <div style={s.averiaListaItemLeft}>
-                      <div style={s.averiaListaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
-                      <div style={s.averiaListaItemMeta}>
-                        {a.piso ? `Piso ${a.piso}` : ""}{eq?.serie ? ` · Serie ${eq.serie}` : ""}
-                      </div>
+                  <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.listaItem}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
+                      <div style={s.listaItemMeta}>{a.piso ? `Piso ${a.piso}` : ""}{eq?.serie ? ` · Serie ${eq.serie}` : ""}</div>
                     </div>
-                    <div style={s.averiaListaItemRight}>
-                      <span style={s.averiaListaItemFecha}>{a.fecha?.toDate ? a.fecha.toDate().toLocaleDateString("es-PE") + ", " + a.fecha.toDate().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : ""}</span>
-                      <span style={s.averiaListaChevron}>›</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, whiteSpace: "nowrap" }}>
+                      <span style={s.listaItemFecha}>{a.fecha?.toDate ? a.fecha.toDate().toLocaleDateString("es-PE") + ", " + a.fecha.toDate().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : ""}</span>
+                      <span style={s.chevron}>›</span>
                     </div>
                   </div>
                 );
@@ -845,34 +674,34 @@ export default function PanelCliente() {
         </div>
       )}
 
-      {/* Modal historial de averías atendidas */}
+      {/* Modal historial */}
       {historialAbierto && (
         <div style={s.modalOverlay} onClick={() => setHistorialAbierto(false)}>
-          <div style={s.averiaListaCard} onClick={e => e.stopPropagation()}>
-            <div style={s.averiaListaHeader}>
-              <span style={{ fontSize: "14px", color: "#8E8E93" }}>🕘</span>
-              <span style={s.averiaListaTitulo}>Historial de averías{historialSedeFiltro ? ` — ${historialSedeFiltro.nombre}` : ""}</span>
+          <div style={s.listaCard} onClick={e => e.stopPropagation()}>
+            <div style={s.listaHeader}>
+              <span style={{ fontSize: "15px", color: "#8a92a6" }}>🕘</span>
+              <span style={s.listaTitulo}>Historial de averías{historialSedeFiltro ? ` — ${historialSedeFiltro.nombre}` : ""}</span>
               <button style={s.btnCerrarX} onClick={() => setHistorialAbierto(false)}>✕</button>
             </div>
-            <div style={s.averiaListaBody}>
+            <div style={s.listaBody}>
               {cargandoHistorial ? (
-                <div style={{ fontSize: "12px", color: "#888", textAlign: "center", padding: "20px 0" }}>Cargando historial...</div>
+                <div style={{ fontSize: "12.5px", color: "#8a92a6", textAlign: "center", padding: "20px 0" }}>Cargando historial...</div>
               ) : historialFiltrado.length === 0 ? (
-                <div style={{ fontSize: "12px", color: "#aaa", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>Sin averías atendidas registradas</div>
+                <div style={{ fontSize: "12.5px", color: "#aab1c2", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>Sin averías atendidas registradas</div>
               ) : historialFiltrado
                   .slice()
                   .sort((a, b) => (b.atendidaEn?.toDate ? b.atendidaEn.toDate().getTime() : 0) - (a.atendidaEn?.toDate ? a.atendidaEn.toDate().getTime() : 0))
                   .map(a => {
                     const eq = equipos.find(e => e.id === a.equipoId);
                     return (
-                      <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.averiaListaItem}>
-                        <div style={s.averiaListaItemLeft}>
-                          <div style={s.averiaListaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
-                          <div style={s.averiaListaItemMeta}>{a.sede ? `${a.sede} · ` : ""}{a.piso ? `Piso ${a.piso}` : ""}</div>
+                      <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.listaItem}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
+                          <div style={s.listaItemMeta}>{a.sede ? `${a.sede} · ` : ""}{a.piso ? `Piso ${a.piso}` : ""}</div>
                         </div>
-                        <div style={s.averiaListaItemRight}>
-                          <span style={s.badgeAtendidaChip}>Atendida</span>
-                          <span style={s.averiaListaChevron}>›</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                          <span style={s.atendidaChip}>Atendida</span>
+                          <span style={s.chevron}>›</span>
                         </div>
                       </div>
                     );
@@ -882,14 +711,14 @@ export default function PanelCliente() {
         </div>
       )}
 
-      {/* Modal compacto de detalle de avería (activa o del historial) */}
+      {/* Modal detalle de avería */}
       {detalleAveria && (() => {
         const eq = equipos.find(e => e.id === detalleAveria.equipoId);
         const numObsAbiertas = eq ? getObs(eq).length : 0;
         const atendida = !!detalleAveria.atendida;
         return (
           <div style={s.modalOverlay} onClick={cerrarDetalleAveria}>
-            <div style={{ ...s.averiaCard, border: atendida ? "0.5px solid #a5d6a7" : "0.5px solid #ef9a9a" }} onClick={e => e.stopPropagation()}>
+            <div style={{ ...s.averiaCard, border: `1px solid ${atendida ? "#c3ecd2" : "#f6d3d3"}` }} onClick={e => e.stopPropagation()}>
               <div style={s.averiaHeaderRow}>
                 <div>
                   <div style={s.averiaTitulo}>{eq?.tipoEquipo || "Equipo"} — {(detalleAveria.ambiente || eq?.ambiente || "").toString().toLowerCase()}</div>
@@ -897,44 +726,25 @@ export default function PanelCliente() {
                 </div>
                 <span style={atendida ? s.badgeAtendida : s.badgeEmergencia}>{atendida ? "Atendida" : "Con emergencia"}</span>
               </div>
-
               <div style={s.averiaTabla}>
                 <div style={s.averiaFila}><span style={s.averiaLabel}>N° de serie</span><span style={s.averiaValor}>{eq?.serie || "-"}</span></div>
                 <div style={s.averiaFila}><span style={s.averiaLabel}>Estado</span><span style={s.averiaValor}>{eq?.estado || "-"}</span></div>
                 <div style={s.averiaFila}><span style={s.averiaLabel}>Últ. mantenimiento</span><span style={s.averiaValor}>{eq?.ultimoMantenimiento || "Sin registro"}</span></div>
                 <div style={s.averiaFila}><span style={s.averiaLabel}>Observaciones abiertas</span><span style={s.averiaValor}>{numObsAbiertas}</span></div>
               </div>
-
               <div style={s.averiaDivider}></div>
-
-              <div style={{ ...s.averiaMsgLabel, color: atendida ? "#16A34A" : "#DC2626" }}>
-                {atendida ? "✓ Avería atendida" : "⚠ Mensaje de emergencia"}
-              </div>
-              <div style={{ ...s.averiaMsgBox, background: atendida ? "#DCFCE7" : "#FEE2E2", border: atendida ? "1px solid #86EFAC" : "1px solid #FCA5A5" }}>
+              <div style={{ ...s.averiaMsgLabel, color: atendida ? "#1c7a44" : "#a52b2b" }}>{atendida ? "✓ Avería atendida" : "⚠ Mensaje de emergencia"}</div>
+              <div style={{ ...s.averiaMsgBox, background: atendida ? "#e6f7ec" : "#fdeeee", border: `1px solid ${atendida ? "#c3ecd2" : "#f6d3d3"}` }}>
                 <div style={s.averiaMsgTxt}>{detalleAveria.mensaje}</div>
-                <div style={{ ...s.averiaMsgFecha, color: atendida ? "#2e7d32" : "#c62828" }}>
-                  🕐 {detalleAveria.fecha?.toDate ? detalleAveria.fecha.toDate().toLocaleString("es-PE") : ""}
-                </div>
+                <div style={{ fontSize: "11px", color: "#8a92a6" }}>🕐 {detalleAveria.fecha?.toDate ? detalleAveria.fecha.toDate().toLocaleString("es-PE") : ""}</div>
               </div>
-
               {atendida ? (
-                <div style={s.averiaAtendidaTxt}>
-                  ✓ Atendida: {detalleAveria.atendidaEn?.toDate ? detalleAveria.atendidaEn.toDate().toLocaleString("es-PE") : "-"}
-                </div>
+                <div style={s.averiaAtendidaTxt}>✓ Atendida: {detalleAveria.atendidaEn?.toDate ? detalleAveria.atendidaEn.toDate().toLocaleString("es-PE") : "-"}</div>
               ) : (
                 <>
                   <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
-                    {eq && (
-                      <button
-                        style={s.btnVerProtocolo}
-                        onClick={() => navigate(`/protocolo?equipo=${eq.id}&origen=cliente${sedeActual ? `&sede=${encodeURIComponent(sedeActual.id)}` : ""}`)}
-                      >
-                        Ver protocolo
-                      </button>
-                    )}
-                    <button style={s.btnMarcarAtendida} onClick={() => marcarAveriaAtendida(detalleAveria.id)}>
-                      Marcar como atendida
-                    </button>
+                    {eq && <button style={s.btnVerProtocolo} onClick={() => navigate(`/protocolo?equipo=${eq.id}&origen=cliente${sedeActual ? `&sede=${encodeURIComponent(sedeActual.id)}` : ""}`)}>Ver protocolo</button>}
+                    <button style={s.btnMarcarAtendida} onClick={() => marcarAveriaAtendida(detalleAveria.id)}>Marcar como atendida</button>
                   </div>
                   <div style={s.averiaCaption}>No se elimina: pasa a historial de averías atendidas y deja de contar en el badge de emergencia.</div>
                 </>
@@ -943,243 +753,84 @@ export default function PanelCliente() {
           </div>
         );
       })()}
-
-      {/* Modal ficha técnica completa (botón "Info" de la tabla de equipos) */}
-      {modalEquipo && (
-        <div style={s.modalOverlay} onClick={cerrarModalEquipo}>
-          <div style={s.modalCard} onClick={e => e.stopPropagation()}>
-            <div style={s.modalHeader}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>
-                  {modalTipo === "info" ? "Ficha técnica" : "Observaciones"}
-                </span>
-                {modalEquipo.codigo && <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "20px", background: "#f3e5f5", color: "#6a1b9a", fontFamily: "monospace", fontWeight: 700 }}>{modalEquipo.codigo}</span>}
-                <span style={{ fontSize: "11px", padding: "3px 10px", borderRadius: "20px", background: modalEquipo.estado === "Operativo" ? "#e8f5e9" : modalEquipo.estado === "Operativo con observaciones" ? "#fff8e1" : "#ffebee", color: modalEquipo.estado === "Operativo" ? "#2e7d32" : modalEquipo.estado === "Operativo con observaciones" ? "#e65100" : "#c62828", fontWeight: 500 }}>{modalEquipo.estado === "Operativo con observaciones" ? "Con obs." : modalEquipo.estado || "Operativo"}</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <button style={{ background: "#c62828", color: "white", border: "none", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer", fontWeight: 500 }} onClick={() => generarPDFFicha(modalEquipo)}>Descargar PDF</button>
-                <button style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#888" }} onClick={cerrarModalEquipo}>X</button>
-              </div>
-            </div>
-
-            <div style={{ overflowY: "auto", maxHeight: "65vh" }}>
-              {modalTipo === "info" ? (
-                <>
-                  <div style={s.modalSec}>
-                    <div style={s.modalSecTitulo}>Datos del equipo</div>
-                    <div style={s.grid3}>
-                      <div style={s.campo}><span style={s.campoLabel}>Cliente</span><span style={s.campoVal}>{modalEquipo.cliente || "-"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Sede</span><span style={modalEquipo.sede ? s.campoVal : s.campoVacio}>{modalEquipo.sede || "Sin sede"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Piso</span><span style={s.campoVal}>{modalEquipo.piso || "-"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Ambiente</span><span style={s.campoVal}>{modalEquipo.ambiente || "-"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Marca</span><span style={modalEquipo.marca ? s.campoVal : s.campoVacio}>{modalEquipo.marca || "Sin registrar"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Modelo</span><span style={modalEquipo.modelo ? s.campoVal : s.campoVacio}>{modalEquipo.modelo || "Sin registrar"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>N° de Serie</span><span style={modalEquipo.serie ? s.campoVal : s.campoVacio}>{modalEquipo.serie || "Sin registrar"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Capacidad</span><span style={modalEquipo.capacidad ? s.campoVal : s.campoVacio}>{modalEquipo.capacidad ? `${modalEquipo.capacidad} ${GRUPO_POR_TIPO_PDF[modalEquipo.tipoEquipo] === "ventilacion" ? "CFM" : "BTU"}` : "Sin registrar"}</span></div>
-                    </div>
-                    <div style={{ ...s.grid3, marginTop: "10px" }}>
-                      {GRUPO_POR_TIPO_PDF[modalEquipo.tipoEquipo] !== "ventilacion" && (
-                        <div style={s.campo}><span style={s.campoLabel}>Refrigerante</span><span style={modalEquipo.tipoRefrigerante ? s.campoVal : s.campoVacio}>{modalEquipo.tipoRefrigerante || "Sin registrar"}</span></div>
-                      )}
-                      <div style={s.campo}><span style={s.campoLabel}>Voltaje de placa</span><span style={modalEquipo.voltaje ? s.campoVal : s.campoVacio}>{modalEquipo.voltaje ? `${modalEquipo.voltaje}V` : "Sin registrar"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Amperaje nominal</span><span style={modalEquipo.amperaje ? s.campoVal : s.campoVacio}>{modalEquipo.amperaje ? `${modalEquipo.amperaje}A` : "Sin registrar"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Fases</span><span style={s.campoVal}>{modalEquipo.fases || "Monofásico"}</span></div>
-                      {modalEquipo.condVoltaje && <div style={s.campo}><span style={s.campoLabel}>Voltaje cond.</span><span style={s.campoVal}>{modalEquipo.condVoltaje}V</span></div>}
-                      {modalEquipo.condAmperaje && <div style={s.campo}><span style={s.campoLabel}>Amperaje cond.</span><span style={s.campoVal}>{modalEquipo.condAmperaje}A</span></div>}
-                      {modalEquipo.modeloCompresor && <div style={s.campo}><span style={s.campoLabel}>Modelo compresor</span><span style={s.campoVal}>{modalEquipo.modeloCompresor}</span></div>}
-                    </div>
-                    {(modalEquipo.contrato || modalEquipo.modeloFaja || modalEquipo.numFajas || modalEquipo.marcaMotor || modalEquipo.modeloMotor || modalEquipo.serieMotor) && (
-                      <div style={{ ...s.grid3, marginTop: "10px" }}>
-                        {modalEquipo.contrato && <div style={s.campo}><span style={s.campoLabel}>Contrato</span><span style={s.campoVal}>{modalEquipo.contrato}</span></div>}
-                        {modalEquipo.modeloFaja && <div style={s.campo}><span style={s.campoLabel}>Modelo de faja</span><span style={s.campoVal}>{modalEquipo.modeloFaja}</span></div>}
-                        {modalEquipo.numFajas && <div style={s.campo}><span style={s.campoLabel}>N° de fajas</span><span style={s.campoVal}>{modalEquipo.numFajas}</span></div>}
-                        {modalEquipo.marcaMotor && <div style={s.campo}><span style={s.campoLabel}>Marca motor</span><span style={s.campoVal}>{modalEquipo.marcaMotor}</span></div>}
-                        {modalEquipo.modeloMotor && <div style={s.campo}><span style={s.campoLabel}>Modelo motor</span><span style={s.campoVal}>{modalEquipo.modeloMotor}</span></div>}
-                        {modalEquipo.serieMotor && <div style={s.campo}><span style={s.campoLabel}>N° serie motor</span><span style={s.campoVal}>{modalEquipo.serieMotor}</span></div>}
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={s.modalSec}>
-                    <div style={s.modalSecTitulo}>Mantenimiento</div>
-                    <div style={s.grid2}>
-                      <div style={s.campo}><span style={s.campoLabel}>Estado</span><span style={{ fontSize: "13px", fontWeight: 500, color: modalEquipo.estado === "Operativo" ? "#2e7d32" : modalEquipo.estado === "Operativo con observaciones" ? "#e65100" : "#c62828" }}>{modalEquipo.estado || "Operativo"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Último mantenimiento</span><span style={modalEquipo.ultimoMantenimiento ? s.campoVal : s.campoVacio}>{modalEquipo.ultimoMantenimiento || "Sin registro"}</span></div>
-                      <div style={s.campo}><span style={s.campoLabel}>Fecha de registro</span><span style={s.campoVal}>{modalEquipo.fechaRegistro || "-"}</span></div>
-                    </div>
-                  </div>
-
-                  {modalEquipo.cronograma && modalEquipo.cronograma.length > 0 && (
-                    <div style={s.modalSec}>
-                      <div style={s.modalSecTitulo}>Cronograma de mantenimiento</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "8px" }}>
-                        {modalEquipo.cronograma.map((trim, i) => {
-                          const col = getCronColor(trim.estado);
-                          return (
-                            <div key={i} style={{ background: col.bg, border: `0.5px solid ${col.border}`, borderRadius: "8px", padding: "8px", textAlign: "center" }}>
-                              <div style={{ fontSize: "10px", color: col.color, fontWeight: 500, marginBottom: "4px" }}>{trim.label}</div>
-                              <div style={{ fontSize: "11px", color: col.color }}>{trim.fecha || "-"}</div>
-                              <div style={{ fontSize: "10px", color: col.color, marginTop: "3px" }}>{col.label}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={s.modalSec}>
-                    <div style={{ ...s.modalSecTitulo, display: "flex", alignItems: "center", gap: "8px" }}>
-                      Observación · Causa · Recomendación
-                      {modalEquipo.ultimoProtocolo && (
-                        <span style={{ fontSize: "9px", padding: "1px 6px", borderRadius: "20px", background: "#e8f5e9", color: "#2e7d32", border: "0.5px solid #a5d6a7" }}>
-                          {modalEquipo.ultimoProtocolo}
-                        </span>
-                      )}
-                    </div>
-                    {getObs(modalEquipo).length > 0 ? (
-                      <>
-                        <div style={{ display: "grid", gridTemplateColumns: "20px 1fr 1fr 1fr", gap: "6px", marginBottom: "4px" }}>
-                          <span></span>
-                          <span style={{ fontSize: "8px", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>Observación</span>
-                          <span style={{ fontSize: "8px", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>Causa</span>
-                          <span style={{ fontSize: "8px", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>Recomendación</span>
-                        </div>
-                        {getObs(modalEquipo).map((o, i) => {
-                          const recs = getRec(modalEquipo);
-                          return (
-                            <div key={i} style={{ display: "grid", gridTemplateColumns: "20px 1fr 1fr 1fr", gap: "6px", marginBottom: "7px", alignItems: "start" }}>
-                              <div style={{ fontSize: "10px", color: "#aaa", fontWeight: 700, paddingTop: "8px", textAlign: "center" }}>{i + 1}</div>
-                              <div>
-                                <div style={{ fontSize: "11px", color: "#e65100", background: "#fff8e1", padding: "6px 8px", borderRadius: "6px", border: "0.5px solid #ffa726" }}>{o.texto}</div>
-                                {(o.fecha || o.tecnico) && <div style={{ fontSize: "9px", color: "#aaa", marginTop: "2px" }}>{o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico ? "Téc: " + o.tecnico : ""}</div>}
-                              </div>
-                              <div style={{ fontSize: "11px", color: "#c62828", background: "#fef0f0", padding: "6px 8px", borderRadius: "6px", border: "0.5px solid #ef9a9a" }}>{o.causa || "—"}</div>
-                              <div style={{ fontSize: "11px", color: "#2e7d32", background: "#e8f5e9", padding: "6px 8px", borderRadius: "6px", border: "0.5px solid #66bb6a" }}>
-                                {recs[i] ? (typeof recs[i] === "string" ? recs[i] : recs[i].texto || "—") : "—"}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </>
-                    ) : <div style={s.vaciomsg}>Sin observaciones registradas</div>}
-                  </div>
-
-                  <div style={{ ...s.modalSec, borderBottom: "none" }}>
-                    <div style={s.modalSecTitulo}>Correctivos realizados</div>
-                    {getCor(modalEquipo).length > 0 ? getCor(modalEquipo).map((c, i) => (
-                      <div key={i} style={s.corItem}>
-                        <span>{c.descripcion}</span>
-                        {c.fecha && <span style={{ fontSize: "11px", color: "#888", flexShrink: 0, marginLeft: "10px" }}>{c.fecha}</span>}
-                      </div>
-                    )) : <div style={s.vaciomsg}>Sin correctivos registrados</div>}
-                  </div>
-                </>
-              ) : (
-                <div style={s.modalSec}>
-                  <div style={s.modalSecTitulo}>Observaciones — {modalEquipo.codigo || modalEquipo.ambiente}</div>
-                  {getObs(modalEquipo).length > 0 ? getObs(modalEquipo).map((o, i) => (
-                    <div key={i} style={s.obsItem}>
-                      <div>{o.texto}</div>
-                      {(o.fecha||o.tecnico)&&<div style={{fontSize:"10px",color:"#888",marginTop:"3px"}}>{o.fecha}{o.fecha&&o.tecnico?" · ":""}{o.tecnico?"Técnico: "+o.tecnico:""}</div>}
-                    </div>
-                  )) : <div style={s.vaciomsg}>Sin observaciones registradas</div>}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-const iosFont = '-apple-system, "SF Pro Text", Inter, sans-serif';
-
 const s = {
-  page: { minHeight: "100vh", background: "#f0f4f8", fontFamily: `${iosFont}, Arial, sans-serif` },
-  navbar: { background: "white", borderBottom: "0.5px solid #e0e0e0", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
-  navLeft: { display: "flex", alignItems: "center", gap: "12px" },
-  logo: { fontFamily: "'Arial Black', sans-serif", fontWeight: 900, fontSize: "20px", display: "flex", alignItems: "baseline", letterSpacing: "1px" },
-  divider: { width: "1px", height: "18px", background: "#e0e0e0" },
-  btnBack: { background: "none", border: "none", color: "#1a5fa8", cursor: "pointer", fontSize: "13px", fontWeight: 500, padding: 0 },
-  navTitle: { fontSize: "13px", color: "#555", fontWeight: 500 },
-  navEmpresa: { fontSize: "14px", fontWeight: 500, color: "#222" },
-  btnSalir: { background: "#c62828", color: "white", border: "none", borderRadius: "8px", padding: "6px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
-  btnExcel: { fontSize: "12px", padding: "5px 12px", background: "#1e7e34", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: 500 },
-  btnPdf: { fontSize: "12px", padding: "5px 12px", background: "#c62828", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: 500 },
-  content: { maxWidth: "1200px", margin: "0 auto", padding: "20px 24px" },
-  sedesGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" },
-  sedeCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", overflow: "hidden" },
-  sedeHeader: { padding: "12px 14px", borderBottom: "0.5px solid #f0f0f0", display: "flex", alignItems: "center", gap: "10px" },
-  sedeIcon: { width: "32px", height: "32px", borderRadius: "8px", background: "#e8f0fe", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" },
-  sedeNombre: { fontSize: "13px", fontWeight: 500, color: "#222" },
-  sedeDireccion: { fontSize: "11px", color: "#888", marginTop: "2px" },
-  miniStats: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "6px", padding: "10px 14px" },
-  mini: { textAlign: "center", padding: "6px", borderRadius: "8px" },
-  miniNum: { fontSize: "16px", fontWeight: 500 },
-  miniLabel: { fontSize: "10px", marginTop: "1px" },
-  barraWrap: { padding: "0 14px 10px" },
-  barra: { display: "flex", height: "5px", borderRadius: "3px", overflow: "hidden", background: "#f0f0f0" },
-  btnVerSede: { width: "100%", padding: "10px", border: "none", borderTop: "0.5px solid #f0f0f0", cursor: "pointer", fontSize: "13px", fontWeight: 500, background: "white", color: "#1a5fa8" },
-  statsGrid5: { display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: "12px", marginBottom: "16px" },
-  barrasCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "14px 16px", marginBottom: "16px" },
-  tablaCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", overflow: "hidden" },
-  tablaHeader: { padding: "12px 16px", borderBottom: "0.5px solid #f0f0f0", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" },
-  btnInfo: { fontSize: "11px", padding: "4px 10px", background: "#1a5fa8", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: 500 },
-  btnProto: { fontSize: "11px", padding: "4px 10px", background: "#c62828", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap" },
-  btnObs: { fontSize: "11px", padding: "4px 10px", background: "#fff8e1", color: "#e65100", border: "0.5px solid #ffe082", borderRadius: "5px", cursor: "pointer", fontWeight: 500 },
-  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px" },
-  modalCard: { background: "white", borderRadius: "12px", width: "100%", maxWidth: "520px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", overflow: "hidden" },
-  modalHeader: { padding: "14px 20px", borderBottom: "0.5px solid #e0e0e0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8f9fa" },
-  modalSec: { padding: "14px 20px", borderBottom: "0.5px solid #f0f0f0" },
-  modalSecTitulo: { fontSize: "10px", color: "#888", textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 500, marginBottom: "12px" },
-  grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" },
-  grid3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" },
-  campo: { display: "flex", flexDirection: "column", gap: "3px" },
-  campoLabel: { fontSize: "10px", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" },
-  campoVal: { fontSize: "13px", fontWeight: 500, color: "#222" },
-  campoVacio: { fontSize: "13px", color: "#aaa", fontStyle: "italic", fontWeight: 400 },
-  obsItem: { background: "#fff8e1", borderLeft: "3px solid #ffa726", borderRadius: "0 8px 8px 0", padding: "7px 12px", fontSize: "12px", color: "#555", marginBottom: "6px" },
-  recItem: { background: "#e8f5e9", borderLeft: "3px solid #43a047", borderRadius: "0 8px 8px 0", padding: "7px 12px", fontSize: "12px", color: "#555", marginBottom: "6px" },
-  corItem: { background: "#f0f4f8", borderLeft: "3px solid #1a5fa8", borderRadius: "0 8px 8px 0", padding: "7px 12px", fontSize: "12px", color: "#555", marginBottom: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" },
-  vaciomsg: { fontSize: "12px", color: "#aaa", fontStyle: "italic", textAlign: "center", padding: "6px 0" },
-  vacio: { textAlign: "center", padding: "3rem", background: "white", borderRadius: "12px", color: "#888", border: "0.5px solid #e0e0e0" },
-  centro: { textAlign: "center", padding: "3rem", fontSize: "16px", color: "#888" },
+  page: { minHeight: "100vh", width: "100%", background: "#eef1f6", fontFamily: FONT, boxSizing: "border-box" },
+  topbar: { background: "white", borderBottom: "1px solid #e7ebf3", padding: "14px clamp(16px,4vw,32px)", display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" },
+  logoBox: { width: "44px", height: "44px", minWidth: "44px", borderRadius: "10px", background: "#1a4fc0", display: "flex", alignItems: "center", justifyContent: "center" },
+  logoImg: { width: "28px", height: "28px", objectFit: "contain", filter: "brightness(0) invert(1)" },
+  breadcrumb: { display: "flex", alignItems: "center", gap: "10px", color: "#6b7488", fontWeight: 600, fontSize: "13.5px" },
+  breadcrumbLink: { color: "#1a4fc0", textDecoration: "none", fontWeight: 700 },
+  topbarBtns: { marginLeft: "auto", display: "flex", gap: "10px", flexWrap: "wrap" },
+  btnExcel: { background: "#e6f7ec", color: "#1c7a44", border: "none", borderRadius: "10px", padding: "9px 16px", fontFamily: "inherit", fontWeight: 700, fontSize: "13px", cursor: "pointer" },
+  btnPdf: { background: "#fdeeee", color: "#a52b2b", border: "none", borderRadius: "10px", padding: "9px 16px", fontFamily: "inherit", fontWeight: 700, fontSize: "13px", cursor: "pointer" },
+  btnSalir: { background: "#f4f6fb", color: "#6b7488", border: "1px solid #e7ebf3", borderRadius: "10px", padding: "9px 16px", fontFamily: "inherit", fontWeight: 700, fontSize: "13px", cursor: "pointer" },
+  content: { padding: "clamp(16px,4vw,32px)", display: "flex", flexDirection: "column", gap: "20px", maxWidth: "1400px", margin: "0 auto" },
 
-  // ---- Modal compacto de detalle de avería (estilo iOS) ----
-  averiaCard: { background: "white", borderRadius: "16px", width: "100%", maxWidth: "420px", padding: "18px", border: "1px solid #F0F0F0", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", fontFamily: iosFont },
+  sedesGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" },
+  sedeCard: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", overflow: "hidden" },
+  sedeHeader: { padding: "14px 16px", borderBottom: "1px solid #f2f4f8", display: "flex", alignItems: "center", gap: "10px" },
+  sedeIconBox: { width: "34px", height: "34px", borderRadius: "9px", background: "#1a4fc0", display: "flex", alignItems: "center", justifyContent: "center" },
+  sedeNombre: { fontSize: "13.5px", fontWeight: 700, color: "#12245e" },
+  sedeDireccion: { fontSize: "11.5px", color: "#8a92a6", marginTop: "2px" },
+  miniStats: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "6px", padding: "12px 14px" },
+  mini: { textAlign: "center", padding: "7px", borderRadius: "9px" },
+  miniNum: { fontSize: "16px", fontWeight: 700 },
+  miniLabel: { fontSize: "10px", marginTop: "1px", fontWeight: 600 },
+  btnVerSede: { width: "100%", padding: "11px", border: "none", borderTop: "1px solid #f2f4f8", cursor: "pointer", fontSize: "13px", fontWeight: 700, background: "white", color: "#1a4fc0", fontFamily: "inherit" },
+
+  statGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "14px" },
+  progressCard: { background: "white", border: "1px solid #e7ebf3", borderRadius: "18px", padding: "clamp(16px,3vw,24px)", display: "flex", flexDirection: "column", gap: "16px" },
+
+  tablaCard: { background: "white", border: "1px solid #e7ebf3", borderRadius: "18px", padding: "clamp(16px,3vw,24px)", display: "flex", flexDirection: "column", gap: "16px" },
+  tablaHeader: { display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", justifyContent: "space-between" },
+  filterLabel: { fontSize: "12.5px", fontWeight: 600, color: "#6b7488" },
+  filterSelect: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", minWidth: "140px", justifyContent: "space-between", fontFamily: "inherit" },
+  filterSelectNative: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", fontFamily: "inherit" },
+  tablaColHead: { display: "grid", gridTemplateColumns: "36px 84px 56px 1.4fr 1.1fr 1.2fr 110px 100px 300px", gap: "8px", borderBottom: "2px solid #eef1f6", paddingBottom: "10px" },
+  tablaFila: { display: "grid", gridTemplateColumns: "36px 84px 56px 1.4fr 1.1fr 1.2fr 110px 100px 300px", gap: "8px", alignItems: "center", borderBottom: "1px solid #f2f4f8", padding: "14px 0" },
+  codigoChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "12px", padding: "3px 9px", borderRadius: "7px" },
+  ultMantChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "11.5px", padding: "3px 9px", borderRadius: "20px", whiteSpace: "nowrap" },
+  btnInfo: { background: "#1a4fc0", color: "white", border: "none", borderRadius: "9px", padding: "8px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: "12px", cursor: "pointer" },
+  btnObs: { background: "#fff8e6", color: "#8a5b0a", border: "1px solid #f3dfa3", borderRadius: "9px", padding: "8px 10px", fontFamily: "inherit", fontWeight: 700, fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap" },
+  btnProto: { background: "#a52b2b", color: "white", border: "none", borderRadius: "9px", padding: "8px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: "12px", cursor: "pointer", whiteSpace: "nowrap" },
+
+  modalOverlay: { position: "fixed", inset: 0, background: "rgba(10,25,70,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px", boxSizing: "border-box" },
+
+  listaCard: { background: "white", borderRadius: "18px", width: "100%", maxWidth: "420px", boxShadow: "0 20px 50px rgba(0,10,40,0.3)", overflow: "hidden", fontFamily: FONT },
+  listaHeader: { display: "flex", alignItems: "center", gap: "8px", padding: "16px 18px", borderBottom: "1px solid #f2f4f8" },
+  listaTitulo: { fontSize: "14px", fontWeight: 700, color: "#12245e", flex: 1 },
+  listaBadgeCount: { fontSize: "11px", minWidth: "20px", height: "20px", padding: "0 6px", borderRadius: "10px", background: "#a52b2b", color: "white", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" },
+  btnCerrarX: { background: "none", border: "none", fontSize: "15px", cursor: "pointer", color: "#8a92a6", padding: 0, marginLeft: "6px" },
+  listaBody: { padding: "12px 14px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "60vh", overflowY: "auto" },
+  listaItem: { background: "white", border: "1px solid #eef1f6", borderRadius: "12px", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", cursor: "pointer" },
+  listaItemNombre: { fontSize: "13.5px", fontWeight: 700, color: "#0f1b3d" },
+  listaItemMeta: { fontSize: "11.5px", color: "#8a92a6", marginTop: "3px", fontWeight: 600 },
+  listaItemFecha: { fontSize: "11px", color: "#a52b2b", fontWeight: 700, whiteSpace: "nowrap" },
+  chevron: { fontSize: "16px", color: "#c3cad9" },
+  atendidaChip: { fontSize: "11px", padding: "3px 9px", borderRadius: "20px", background: "#e6f7ec", color: "#1c7a44", fontWeight: 700, whiteSpace: "nowrap" },
+
+  averiaCard: { background: "white", borderRadius: "16px", width: "100%", maxWidth: "420px", padding: "20px", boxShadow: "0 20px 50px rgba(0,10,40,0.3)", boxSizing: "border-box", fontFamily: FONT },
   averiaHeaderRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px", gap: "10px" },
-  averiaTitulo: { fontSize: "15px", fontWeight: 600, color: "#1C1C1E", lineHeight: 1.3, textAlign: "left" },
-  averiaSub: { fontSize: "12px", color: "#8E8E93", marginTop: "3px", textAlign: "left" },
-  badgeEmergencia: { fontSize: "11px", padding: "3px 9px", background: "#FEE2E2", color: "#DC2626", borderRadius: "20px", fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 },
-  badgeAtendida: { fontSize: "11px", padding: "3px 9px", background: "#DCFCE7", color: "#16A34A", borderRadius: "20px", fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 },
+  averiaTitulo: { fontSize: "15px", fontWeight: 700, color: "#12245e", textAlign: "left" },
+  averiaSub: { fontSize: "12px", color: "#8a92a6", marginTop: "3px", textAlign: "left", fontWeight: 600 },
+  badgeEmergencia: { fontSize: "11px", padding: "3px 9px", background: "#fdeeee", color: "#a52b2b", borderRadius: "20px", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 },
+  badgeAtendida: { fontSize: "11px", padding: "3px 9px", background: "#e6f7ec", color: "#1c7a44", borderRadius: "20px", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 },
   averiaTabla: { display: "flex", flexDirection: "column", gap: "10px", marginBottom: "14px" },
   averiaFila: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  averiaLabel: { fontSize: "12px", color: "#8E8E93", fontWeight: 400 },
-  averiaValor: { fontSize: "13px", color: "#1C1C1E", fontWeight: 600 },
-  averiaDivider: { height: "1px", background: "#F0F0F0", margin: "2px 0 14px" },
-  averiaMsgLabel: { fontSize: "12px", fontWeight: 600, marginBottom: "7px", display: "flex", alignItems: "center", gap: "6px" },
-  averiaMsgBox: { borderRadius: "12px", padding: "12px", border: "1px solid #FCA5A5" },
-  averiaMsgTxt: { fontSize: "12px", color: "#1C1C1E", marginBottom: "6px", lineHeight: 1.4 },
-  averiaMsgFecha: { fontSize: "11px", color: "#8E8E93" },
-  averiaAtendidaTxt: { fontSize: "12px", color: "#16A34A", fontWeight: 500, marginTop: "10px" },
-  btnVerProtocolo: { flex: 1, height: "42px", borderRadius: "10px", border: "1px solid #D1D1D6", background: "white", color: "#1C1C1E", fontSize: "13px", fontWeight: 500, cursor: "pointer" },
-  btnMarcarAtendida: { flex: 1, height: "42px", borderRadius: "10px", border: "none", background: "#DC2626", color: "white", fontSize: "13px", fontWeight: 500, cursor: "pointer" },
-  averiaCaption: { fontSize: "11px", color: "#8E8E93", textAlign: "center", marginTop: "10px", lineHeight: 1.4 },
+  averiaLabel: { fontSize: "12px", color: "#8a92a6", fontWeight: 600 },
+  averiaValor: { fontSize: "13px", color: "#12245e", fontWeight: 700 },
+  averiaDivider: { height: "1px", background: "#eef1f6", margin: "2px 0 14px" },
+  averiaMsgLabel: { fontSize: "12px", fontWeight: 700, marginBottom: "7px" },
+  averiaMsgBox: { borderRadius: "12px", padding: "12px" },
+  averiaMsgTxt: { fontSize: "12.5px", color: "#0f1b3d", marginBottom: "6px", lineHeight: 1.4, fontWeight: 500 },
+  averiaAtendidaTxt: { fontSize: "12px", color: "#1c7a44", fontWeight: 700, marginTop: "10px" },
+  btnVerProtocolo: { flex: 1, height: "42px", borderRadius: "10px", border: "1px solid #dfe6f5", background: "white", color: "#12245e", fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+  btnMarcarAtendida: { flex: 1, height: "42px", borderRadius: "10px", border: "none", background: "#a52b2b", color: "white", fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+  averiaCaption: { fontSize: "11px", color: "#8a92a6", textAlign: "center", marginTop: "10px", lineHeight: 1.4, fontWeight: 600 },
 
-  // ---- Modal lista (emergencias activas / historial) estilo iOS ----
-  averiaListaCard: { background: "white", borderRadius: "16px", width: "100%", maxWidth: "420px", border: "1px solid #F0F0F0", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", overflow: "hidden", fontFamily: iosFont },
-  averiaListaHeader: { display: "flex", alignItems: "center", gap: "8px", padding: "14px 16px", borderBottom: "1px solid #F0F0F0" },
-  averiaListaTitulo: { fontSize: "14px", fontWeight: 600, color: "#1C1C1E", flex: 1, textAlign: "left" },
-  badgeEmergenciaCount: { fontSize: "11px", minWidth: "20px", height: "20px", padding: "0 6px", borderRadius: "10px", background: "#DC2626", color: "white", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" },
-  btnCerrarX: { background: "none", border: "none", fontSize: "16px", cursor: "pointer", color: "#8E8E93", padding: 0, marginLeft: "6px" },
-  averiaListaBody: { padding: "12px 14px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "60vh", overflowY: "auto" },
-  averiaListaItem: { background: "white", border: "1px solid #F0F0F0", borderRadius: "12px", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", cursor: "pointer" },
-  averiaListaItemLeft: { minWidth: 0, flex: 1, textAlign: "left" },
-  averiaListaItemNombre: { fontSize: "13px", fontWeight: 600, color: "#1C1C1E", textAlign: "left" },
-  averiaListaItemMeta: { fontSize: "11px", color: "#8E8E93", marginTop: "3px", textAlign: "left" },
-  averiaListaItemRight: { display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, whiteSpace: "nowrap" },
-  averiaListaItemFecha: { fontSize: "11px", color: "#DC2626", fontWeight: 500, whiteSpace: "nowrap" },
-  averiaListaChevron: { fontSize: "16px", color: "#C7C7CC", lineHeight: 1 },
-  badgeAtendidaChip: { fontSize: "11px", padding: "3px 8px", borderRadius: "20px", background: "#DCFCE7", color: "#16A34A", fontWeight: 500, whiteSpace: "nowrap" },
+  centro: { textAlign: "center", padding: "3rem", fontSize: "15px", color: "#8a92a6", fontFamily: FONT },
 };
