@@ -578,8 +578,8 @@ export default function PanelCliente() {
                 </div>
               </div>
 
-              <div style={{ overflowX: "auto" }}>
-                <div style={{ minWidth: "1020px" }}>
+              <div style={{ overflowX: "auto", paddingRight: "12px" }}>
+                <div style={{ minWidth: "1080px" }}>
                   <div style={s.tablaColHead}>
                     {["#", "CÓDIGO", "PISO", "AMBIENTE", "TIPO EQUIPO", "MARCA/MODELO", "SERIE", "ESTADO", "ÚLT. MANT.", "ACCIONES"].map(h => (
                       <div key={h} style={{ fontWeight: 700, fontSize: "11.5px", color: "#8a92a6", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</div>
@@ -595,11 +595,11 @@ export default function PanelCliente() {
                           <div style={{ fontWeight: 700, color: "#8a92a6", fontSize: "13.5px" }}>{i + 1}</div>
                           <div>{equipo.codigo ? <span style={s.codigoChip}>{equipo.codigo}</span> : null}</div>
                           <div style={{ fontWeight: 600, color: "#26314d", fontSize: "13.5px" }}>{equipo.piso || "-"}</div>
-                          <div style={{ fontWeight: 700, color: "#0f1b3d", fontSize: "14px" }}>{equipo.ambiente || "-"}</div>
-                          <div style={{ fontWeight: 600, color: "#26314d", fontSize: "13.5px" }}>{equipo.tipoEquipo || "-"}</div>
+                          <div style={{ fontWeight: 700, color: "#0f1b3d", fontSize: "12.5px", lineHeight: 1.3 }}>{equipo.ambiente || "-"}</div>
+                          <div style={{ fontWeight: 600, color: "#26314d", fontSize: "12px" }}>{equipo.tipoEquipo || "-"}</div>
                           <div style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, fontSize: "13px", color: "#0f1b3d", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={equipo.marca || ""}>{equipo.marca || "-"}</div>
-                            <div style={{ fontWeight: 600, fontSize: "11.5px", color: "#9aa2b3", marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={equipo.modelo || ""}>{equipo.modelo || "-"}</div>
+                            <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#0f1b3d", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={equipo.marca || ""}>{equipo.marca || "-"}</div>
+                            <div style={{ fontWeight: 600, fontSize: "10px", color: "#9aa2b3", marginTop: "2px", whiteSpace: "normal", wordBreak: "break-all", lineHeight: 1.3 }}>{equipo.modelo || "-"}</div>
                           </div>
                           <div style={{ fontWeight: 600, color: "#6b7488", fontSize: "12.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={equipo.serie || ""}>{equipo.serie || "—"}</div>
                           <div>{getBadge(equipo.estado)}</div>
@@ -791,8 +791,8 @@ const s = {
   filterLabel: { fontSize: "12.5px", fontWeight: 600, color: "#6b7488" },
   filterSelect: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", minWidth: "140px", justifyContent: "space-between", fontFamily: "inherit" },
   filterSelectNative: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", fontFamily: "inherit" },
-  tablaColHead: { display: "grid", gridTemplateColumns: "32px 80px 50px 1.3fr 0.9fr 1fr 100px 100px 90px 250px", gap: "8px", borderBottom: "2px solid #eef1f6", paddingBottom: "10px" },
-  tablaFila: { display: "grid", gridTemplateColumns: "32px 80px 50px 1.3fr 0.9fr 1fr 100px 100px 90px 250px", gap: "8px", alignItems: "center", borderBottom: "1px solid #f2f4f8", padding: "14px 0" },
+  tablaColHead: { display: "grid", gridTemplateColumns: "26px 72px 42px 150px 88px 128px 88px 88px 78px 220px", gap: "8px", borderBottom: "2px solid #eef1f6", paddingBottom: "10px" },
+  tablaFila: { display: "grid", gridTemplateColumns: "26px 72px 42px 150px 88px 128px 88px 88px 78px 220px", gap: "8px", alignItems: "center", borderBottom: "1px solid #f2f4f8", padding: "14px 0" },
   codigoChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "12px", padding: "3px 9px", borderRadius: "7px" },
   ultMantChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "11.5px", padding: "3px 9px", borderRadius: "20px", whiteSpace: "nowrap" },
   btnInfo: { background: "#1a4fc0", color: "white", border: "none", borderRadius: "8px", padding: "6px 10px", fontFamily: "inherit", fontWeight: 700, fontSize: "11px", cursor: "pointer" },
