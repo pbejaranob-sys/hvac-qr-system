@@ -579,7 +579,7 @@ export default function PanelCliente() {
               </div>
 
               <div style={{ overflowX: "auto", paddingRight: "4px" }}>
-                <div style={{ minWidth: "905px" }}>
+                <div style={{ minWidth: "925px" }}>
                   <div style={s.tablaColHead}>
                     {["#", "CÓDIGO", "PISO", "AMBIENTE", "TIPO EQUIPO", "MARCA/MODELO", "SERIE", "ESTADO", "ÚLT. MANT.", "ACCIONES"].map(h => (
                       <div key={h} style={{ fontWeight: 700, fontSize: "11.5px", color: "#8a92a6", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</div>
@@ -604,7 +604,7 @@ export default function PanelCliente() {
                           <div style={{ fontWeight: 600, color: "#6b7488", fontSize: "12.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={equipo.serie || ""}>{equipo.serie || "—"}</div>
                           <div style={{ minWidth: 0, overflow: "hidden" }}>{getBadge(equipo.estado)}</div>
                           <div style={{ minWidth: 0, overflow: "hidden" }}>{equipo.ultimoMantenimiento ? <span style={s.ultMantChip}>{fechaAMesAnio(equipo.ultimoMantenimiento) || equipo.ultimoMantenimiento}</span> : <span style={{ fontSize: "11px", color: "#c3cad9" }}>—</span>}</div>
-                          <div style={{ display: "flex", gap: "5px", flexWrap: "nowrap", justifyContent: "flex-end", minWidth: 0 }}>
+                          <div style={{ display: "flex", gap: "10px", flexWrap: "nowrap", justifyContent: "flex-end", minWidth: 0, paddingLeft: "10px" }}>
                             <button style={s.btnInfo} onClick={() => window.open(`/equipo/${equipo.id}?noqr=1`, "_blank")}>Info</button>
                             <button style={{ ...s.btnObs, ...(abierto ? { background: "#8a5b0a", color: "white" } : {}), opacity: numObs === 0 ? 0.5 : 1 }} onClick={() => setObsAbierto(abierto ? null : equipo.id)}>
                               Obs <span style={{ background: abierto ? "white" : "#f3dfa3", color: "#8a5b0a", borderRadius: "20px", padding: "1px 5px", fontSize: "10px" }}>{numObs}</span>
@@ -791,13 +791,13 @@ const s = {
   filterLabel: { fontSize: "12.5px", fontWeight: 600, color: "#6b7488" },
   filterSelect: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", minWidth: "140px", justifyContent: "space-between", fontFamily: "inherit" },
   filterSelectNative: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", fontFamily: "inherit" },
-  tablaColHead: { display: "grid", gridTemplateColumns: "24px 66px 38px 140px 78px 118px 78px 78px 84px 145px", gap: "6px", borderBottom: "2px solid #eef1f6", paddingBottom: "10px" },
-  tablaFila: { display: "grid", gridTemplateColumns: "24px 66px 38px 140px 78px 118px 78px 78px 84px 145px", gap: "6px", alignItems: "center", borderBottom: "1px solid #f2f4f8", padding: "14px 0" },
+  tablaColHead: { display: "grid", gridTemplateColumns: "24px 66px 38px 140px 78px 118px 78px 78px 84px 165px", gap: "6px", borderBottom: "2px solid #eef1f6", paddingBottom: "10px" },
+  tablaFila: { display: "grid", gridTemplateColumns: "24px 66px 38px 140px 78px 118px 78px 78px 84px 165px", gap: "6px", alignItems: "center", borderBottom: "1px solid #f2f4f8", padding: "14px 0" },
   codigoChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "12px", padding: "3px 9px", borderRadius: "7px" },
   ultMantChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "11px", padding: "3px 9px", borderRadius: "20px", whiteSpace: "nowrap", display: "inline-block" },
-  btnInfo: { background: "#1a4fc0", color: "white", border: "none", borderRadius: "7px", padding: "5px 8px", fontFamily: "inherit", fontWeight: 700, fontSize: "10px", cursor: "pointer" },
-  btnObs: { background: "#fff8e6", color: "#8a5b0a", border: "1px solid #f3dfa3", borderRadius: "7px", padding: "5px 7px", fontFamily: "inherit", fontWeight: 700, fontSize: "10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" },
-  btnProto: { background: "#a52b2b", color: "white", border: "none", borderRadius: "7px", padding: "5px 8px", fontFamily: "inherit", fontWeight: 700, fontSize: "10px", cursor: "pointer", whiteSpace: "nowrap" },
+  btnInfo: { background: "#1a4fc0", color: "white", border: "none", borderRadius: "7px", padding: "4px 7px", fontFamily: "inherit", fontWeight: 700, fontSize: "9.5px", cursor: "pointer" },
+  btnObs: { background: "#fff8e6", color: "#8a5b0a", border: "1px solid #f3dfa3", borderRadius: "7px", padding: "4px 6px", fontFamily: "inherit", fontWeight: 700, fontSize: "9.5px", cursor: "pointer", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" },
+  btnProto: { background: "#a52b2b", color: "white", border: "none", borderRadius: "7px", padding: "4px 7px", fontFamily: "inherit", fontWeight: 700, fontSize: "9.5px", cursor: "pointer", whiteSpace: "nowrap" },
 
   modalOverlay: { position: "fixed", inset: 0, background: "rgba(10,25,70,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px", boxSizing: "border-box" },
 
