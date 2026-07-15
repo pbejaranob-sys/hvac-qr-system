@@ -44,9 +44,17 @@ export default function VistaEquipo() {
   const [authChecked, setAuthChecked] = useState(false);
   const [pdfGenerado, setPdfGenerado] = useState(false);
 
-  // Quita el margen por defecto del body y aplica el mismo fondo gris de la página,
+  // Carga la fuente Manrope (igual que AccesoEquipo.jsx y PanelCliente.jsx) y
+  // quita el margen por defecto del body aplicando el mismo fondo gris de la página,
   // así no queda un borde blanco alrededor (efecto de "página cortada").
   useEffect(() => {
+    if (!document.getElementById("font-manrope")) {
+      const link = document.createElement("link");
+      link.id = "font-manrope";
+      link.rel = "stylesheet";
+      link.href = "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap";
+      document.head.appendChild(link);
+    }
     const prevMargin = document.body.style.margin;
     const prevBg = document.body.style.background;
     document.body.style.margin = "0";
