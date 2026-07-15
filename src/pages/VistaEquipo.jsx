@@ -304,7 +304,6 @@ export default function VistaEquipo() {
 
       <div style={s.content}>
         <div style={s.headerRow}>
-          <img src="/assets/hvac-isotipo-blue.png" alt="HVAC" style={{ width: 22, height: 22, objectFit: "contain" }} />
           <div style={s.headerTitulo}>Ficha técnica de equipo</div>
           <span style={s.headerFecha}>Reporte generado · {fechaReporte}</span>
         </div>
@@ -314,7 +313,7 @@ export default function VistaEquipo() {
           <div style={s.sidebar}>
             <div style={s.sCardCenter}>
               <div style={s.sLogoBox}>
-                <img src="/assets/hvac-isotipo-filled.png" alt="" style={s.sLogoImg} />
+                <IconEquipoTipo grupo={GRUPO_POR_TIPO[equipo.tipoEquipo]} size={30} color="white" />
               </div>
               <div style={s.sNombre}>{equipo.marca || "-"} / {equipo.modelo || "-"}</div>
               <span style={s.sTipo}>{equipo.tipoEquipo || "-"}</span>
@@ -511,6 +510,41 @@ const SvgDownload = ({ color = "currentColor" }) => (
     <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+// Ícono grande de la tarjeta lateral, según el grupo del equipo (fancoil/expansión/ventilación/vrv)
+const IconEquipoTipo = ({ grupo, size = 30, color = "white" }) => {
+  if (grupo === "fancoil") return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M4 17s1.5-2 4-2 3 2 5 2 4-2 4-2M4 12s1.5-2 4-2 3 2 5 2 4-2 4-2" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 3v4" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="12" cy="3" r="1.3" fill={color} />
+    </svg>
+  );
+  if (grupo === "expansion") return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M12 3l-2 2M12 3l2 2M12 21l-2-2M12 21l2-2" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+  if (grupo === "ventilacion") return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M12 12c0-4 2-7 5-7a3 3 0 1 1-2 5.2" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 12c-4 0-7 2-7 5a3 3 0 1 0 5.2-2" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 12c4 0 6-3 6-6" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+      <circle cx="12" cy="12" r="1.6" fill={color} />
+    </svg>
+  );
+  if (grupo === "vrv") return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M4 12a8 8 0 0 1 13.5-5.8M20 12a8 8 0 0 1-13.5 5.8" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M17 3v3.5h-3.5M7 21v-3.5h3.5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M14.7 6.3a3 3 0 0 1-3.9 3.9L5 16v3h3l5.8-5.8a3 3 0 0 1 3.9-3.9l-2.2 2.2-1.4-1.4 2.2-2.2z" stroke={color} strokeWidth="1.7" strokeLinejoin="round" />
+    </svg>
+  );
+};
 const SvgFicha = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
     <rect x="4.5" y="4" width="15" height="17" rx="1.6" stroke="#c23b1c" strokeWidth="1.7" />
