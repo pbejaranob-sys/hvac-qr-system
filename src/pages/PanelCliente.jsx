@@ -622,14 +622,14 @@ export default function PanelCliente() {
                             ) : (
                               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                 {(() => { const recArr = getRec(equipo); return obsArr.filter(o => o.texto?.trim()).map((o, idx) => (
-                                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "22px 1fr 1fr 1fr", gap: "6px", alignItems: "start" }}>
-                                    <div style={{ fontSize: "10px", color: "#8a92a6", paddingTop: "8px", textAlign: "center" }}>{idx + 1}</div>
-                                    <div style={{ background: "#fff8e6", border: "1px solid #f3dfa3", borderRadius: "9px", padding: "7px 9px", minWidth: 0 }}>
-                                      <div style={{ fontSize: "11.5px", color: "#26314d", lineHeight: 1.35 }}>{o.texto}</div>
-                                      {(o.fecha || o.tecnico) && <div style={{ fontSize: "9px", color: "#aab1c2", marginTop: "3px" }}>{o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico}</div>}
+                                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "20px 1fr 1fr 1fr", gap: "5px", alignItems: "start" }}>
+                                    <div style={{ fontSize: "10px", color: "#8a92a6", paddingTop: "7px", textAlign: "center" }}>{idx + 1}</div>
+                                    <div style={{ background: "#fff8e6", border: "1px solid #f3dfa3", borderRadius: "8px", padding: "6px 8px", minWidth: 0, overflow: "hidden" }}>
+                                      <div style={{ fontSize: "10.5px", color: "#26314d", lineHeight: 1.3 }}>{o.texto}</div>
+                                      {(o.fecha || o.tecnico) && <div style={{ fontSize: "8.5px", color: "#aab1c2", marginTop: "3px" }}>{o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico}</div>}
                                     </div>
-                                    <div style={{ background: "#fdeeee", border: "1px solid #f6d3d3", borderRadius: "9px", padding: "7px 9px", fontSize: "11.5px", color: "#a52b2b", minWidth: 0 }}>{o.causa || "—"}</div>
-                                    <div style={{ background: "#e6f7ec", border: "1px solid #c3ecd2", borderRadius: "9px", padding: "7px 9px", fontSize: "11.5px", color: "#1c7a44", minWidth: 0 }}>{recArr[idx] ? (typeof recArr[idx] === "string" ? recArr[idx] : recArr[idx].texto || "—") : "—"}</div>
+                                    <div style={{ background: "#fdeeee", border: "1px solid #f6d3d3", borderRadius: "8px", padding: "6px 8px", fontSize: "10.5px", color: "#a52b2b", minWidth: 0, overflow: "hidden" }}>{o.causa || "—"}</div>
+                                    <div style={{ background: "#e6f7ec", border: "1px solid #c3ecd2", borderRadius: "8px", padding: "6px 8px", fontSize: "10.5px", color: "#1c7a44", minWidth: 0, overflow: "hidden" }}>{recArr[idx] ? (typeof recArr[idx] === "string" ? recArr[idx] : recArr[idx].texto || "—") : "—"}</div>
                                   </div>
                                 )); })()}
                               </div>
