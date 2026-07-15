@@ -615,14 +615,14 @@ export default function PanelCliente() {
                           </div>
                         </div>
                         {abierto && (
-                          <div style={{ background: "white", borderBottom: "1px solid #f2f4f8", padding: "14px 0 18px" }}>
+                          <div style={{ background: "white", borderBottom: "1px solid #f2f4f8", padding: "14px 0 18px", width: "100%", boxSizing: "border-box" }}>
                             <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#8a5b0a", marginBottom: "10px" }}>{numObs} observación{numObs !== 1 ? "es" : ""} — {equipo.codigo || equipo.ambiente}</div>
                             {numObs === 0 ? (
                               <div style={{ fontSize: "12.5px", color: "#aab1c2", fontStyle: "italic" }}>Sin observaciones registradas</div>
                             ) : (
-                              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%", boxSizing: "border-box" }}>
                                 {(() => { const recArr = getRec(equipo); return obsArr.filter(o => o.texto?.trim()).map((o, idx) => (
-                                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "20px 1fr 1fr 1fr", gap: "5px", alignItems: "start" }}>
+                                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "20px 1fr 1fr 1fr", gap: "5px", alignItems: "start", width: "100%", boxSizing: "border-box" }}>
                                     <div style={{ fontSize: "10px", color: "#8a92a6", paddingTop: "7px", textAlign: "center" }}>{idx + 1}</div>
                                     <div style={{ background: "#fff8e6", border: "1px solid #f3dfa3", borderRadius: "8px", padding: "6px 8px", minWidth: 0, overflow: "hidden" }}>
                                       <div style={{ fontSize: "10.5px", color: "#26314d", lineHeight: 1.3 }}>{o.texto}</div>
