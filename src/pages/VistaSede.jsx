@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
 import { collection, getDocs, query, where, deleteDoc, doc } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
@@ -6,7 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 const parsePiso = (p) => {
   if (!p) return [99, 0];
   const s = String(p).toLowerCase().trim();
-  const sotanoMatch = s.match(/s[oó]tano\s*(\d*)/);
+  const sotanoMatch = s.match(/s[oÃ³]tano\s*(\d*)/);
   if (sotanoMatch) return [-1, -(parseInt(sotanoMatch[1]) || 1)];
   const num = parseFloat(s);
   if (!isNaN(num)) return [0, num];
@@ -47,7 +47,7 @@ export default function VistaSede() {
   };
 
   const handleEliminar = async (equipoId) => {
-    if (!window.confirm("¿Eliminar este equipo? Esta acción no se puede deshacer.")) return;
+    if (!window.confirm("Â¿Eliminar este equipo? Esta acciÃ³n no se puede deshacer.")) return;
     await deleteDoc(doc(db, "equipos", equipoId));
     setEquipos(prev => prev.filter(e => e.id !== equipoId));
   };
@@ -60,7 +60,7 @@ export default function VistaSede() {
   const pObs = total ? Math.round((obs / total) * 100) : 0;
   const pFs = total ? Math.round((fs / total) * 100) : 0;
 
-  // Helper: convierte fecha a "Mes Año" para mostrar y filtrar
+  // Helper: convierte fecha a "Mes AÃ±o" para mostrar y filtrar
   const fechaAMesAnio = (fecha) => {
     if (!fecha) return null;
     const d = new Date(fecha.includes("/") ? fecha.split("/").reverse().join("-") : fecha);
@@ -106,7 +106,7 @@ export default function VistaSede() {
       return pasaPiso && pasaEstado && pasaMes;
     })
     .sort((a, b) => {
-      // Primero por fecha más reciente, luego por piso
+      // Primero por fecha mÃ¡s reciente, luego por piso
       const fa = fechaATimestamp(a.ultimoMantenimiento);
       const fb = fechaATimestamp(b.ultimoMantenimiento);
       if (fb !== fa) return fb - fa;
@@ -124,9 +124,9 @@ export default function VistaSede() {
             <span style={{ color: "#1a5fa8", marginLeft: "-2px" }}>C</span>
           </div>
           <div style={s.divider}></div>
-          <button style={s.btnBack} onClick={() => navigate(`/cliente/${clienteNombre}`)}>← {cliente}</button>
+          <button style={s.btnBack} onClick={() => navigate(`/cliente/${clienteNombre}`)}>â† {cliente}</button>
           <div style={s.divider}></div>
-          <span style={s.navTitle}>🏢 {sede}</span>
+          <span style={s.navTitle}>ðŸ¢ {sede}</span>
         </div>
         <div style={s.navBtns}>
           <button style={s.btnPrimary} onClick={() => navigate(`/registrar?cliente=${encodeURIComponent(cliente)}&sede=${encodeURIComponent(sede)}`)}>
@@ -184,7 +184,7 @@ export default function VistaSede() {
         {/* Tabla */}
         {total === 0 ? (
           <div style={s.empty}>
-            <div style={{ fontSize: "36px", marginBottom: "10px" }}>📋</div>
+            <div style={{ fontSize: "36px", marginBottom: "10px" }}>ðŸ“‹</div>
             <div style={{ fontSize: "14px", color: "#555", marginBottom: "12px" }}>No hay equipos en esta sede</div>
             <button style={s.btnPrimary} onClick={() => navigate(`/registrar?cliente=${encodeURIComponent(cliente)}&sede=${encodeURIComponent(sede)}`)}>
               + Registrar primer equipo
@@ -208,20 +208,20 @@ export default function VistaSede() {
                 </select>
                 {mesFiltro !== "Todos" && (
                   <button onClick={() => setMesFiltro("Todos")} style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "20px", background: "#1a5fa8", color: "white", border: "none", cursor: "pointer" }}>
-                    {mesFiltro} ✕
+                    {mesFiltro} âœ•
                   </button>
                 )}
               </div>
             </div>
             <div style={{ ...s.tablaHeader, gridTemplateColumns: "40px 80px 70px 100px 110px 130px 100px 90px 1fr" }}>
               <span style={s.thCell}>#</span>
-              <span style={s.thCell}>Código</span>
+              <span style={s.thCell}>CÃ³digo</span>
               <span style={s.thCell}>Piso</span>
               <span style={s.thCell}>Ambiente</span>
               <span style={s.thCell}>Tipo</span>
               <span style={s.thCell}>Marca/Modelo</span>
               <span style={s.thCell}>Estado</span>
-              <span style={s.thCell}>Últ. mant.</span>
+              <span style={s.thCell}>Ãšlt. mant.</span>
               <span style={s.thCell}>Acciones</span>
             </div>
             {equiposFiltrados.map((eq, i) => {
@@ -248,14 +248,14 @@ export default function VistaSede() {
                 <span style={s.tdCell}>
                   {mesAnio
                     ? <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "10px", background: fc.bg, color: fc.color, border: `0.5px solid ${fc.border}`, whiteSpace: "nowrap" }}>{mesAnio}</span>
-                    : <span style={{ fontSize: "10px", color: "#aaa" }}>—</span>}
+                    : <span style={{ fontSize: "10px", color: "#aaa" }}>â€”</span>}
                 </span>
                 <span style={s.tdCell}>
                   <div style={{ display: "flex", gap: "4px" }}>
                     <button style={s.btnInfo} onClick={() => navigate(`/equipo/${eq.id}`)}>Info</button>
                     <button style={s.btnEditar} onClick={() => navigate(`/registrar?id=${eq.id}`)}>Editar</button>
                     <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${eq.id}`)}>Protocolo</button>
-                    <button style={s.btnEliminar} onClick={() => handleEliminar(eq.id)}>🗑</button>
+                    <button style={s.btnEliminar} onClick={() => handleEliminar(eq.id)}>ðŸ—‘</button>
                   </div>
                 </span>
               </div>
@@ -304,3 +304,4 @@ const s = {
   selectFiltro: { fontSize: "12px", padding: "4px 8px", border: "0.5px solid #ddd", borderRadius: "6px", background: "white", color: "#333" },
   empty: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "40px", textAlign: "center" },
 };
+

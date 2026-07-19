@@ -4,6 +4,28 @@ import { collection, getDocs, query, where, doc, getDoc, deleteDoc } from "fireb
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
+const FONT = "'Manrope', -apple-system, sans-serif";
+
+function useManropeAndBodyReset() {
+  useEffect(() => {
+    if (!document.getElementById("font-manrope")) {
+      const link = document.createElement("link");
+      link.id = "font-manrope";
+      link.rel = "stylesheet";
+      link.href = "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap";
+      document.head.appendChild(link);
+    }
+    const prevMargin = document.body.style.margin;
+    const prevBg = document.body.style.background;
+    document.body.style.margin = "0";
+    document.body.style.background = "#eef1f6";
+    return () => {
+      document.body.style.margin = prevMargin;
+      document.body.style.background = prevBg;
+    };
+  }, []);
+}
+
 const initiales = (nombre) => {
   const words = nombre.trim().split(" ");
   if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
@@ -12,12 +34,12 @@ const initiales = (nombre) => {
 
 const colorAvatar = (nombre) => {
   const colores = [
-    { bg: "#e8f0fe", color: "#1a5fa8" },
-    { bg: "#e8f5e9", color: "#2e7d32" },
-    { bg: "#f3e5f5", color: "#6a1b9a" },
-    { bg: "#fff8e1", color: "#e65100" },
-    { bg: "#fce4ec", color: "#c62828" },
-    { bg: "#e0f2f1", color: "#00695c" },
+    { bg: "#e5f0ff", color: "#1a4fc0" },
+    { bg: "#e6f7ec", color: "#1c7a44" },
+    { bg: "#f1e9fb", color: "#7c3fb8" },
+    { bg: "#fff3d6", color: "#a8720b" },
+    { bg: "#fdeeee", color: "#a52b2b" },
+    { bg: "#e0f4f2", color: "#0d7a6c" },
   ];
   let sum = 0;
   for (let i = 0; i < nombre.length; i++) sum += nombre.charCodeAt(i);
@@ -25,6 +47,8 @@ const colorAvatar = (nombre) => {
 };
 
 export default function PanelAdminNormal() {
+  useManropeAndBodyReset();
+
   const [equipos, setEquipos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [nombreAdmin, setNombreAdmin] = useState("");
@@ -41,7 +65,7 @@ export default function PanelAdminNormal() {
     return () => unsubscribe();
   }, []);
 
-const cargarDatos = async (adminUid) => {
+  const cargarDatos = async (adminUid) => {
     const qClientes = query(collection(db, "clientes"), where("adminid", "==", adminUid));
     const snapClientes = await getDocs(qClientes);
     const listaClientes = snapClientes.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -78,14 +102,11 @@ const cargarDatos = async (adminUid) => {
     <div style={s.page}>
       <div style={s.navbar}>
         <div style={s.navLeft}>
-          <div style={s.logo}>
-            <span style={{ color: "#1a5fa8" }}>H</span>
-            <span style={{ color: "#1a5fa8", marginRight: "-8px" }}>V</span>
-            <span style={{ color: "#f0c040" }}>A</span>
-            <span style={{ color: "#1a5fa8", marginLeft: "-2px" }}>C</span>
+          <div style={s.logoBox}>
+            <img src="/assets/hvac-isotipo-filled.png" alt="HVAC" style={s.logoImg} />
           </div>
           <div style={s.navDivider}></div>
-          <span style={s.navTitle}>Panel Admin {nombreAdmin ? `· ${nombreAdmin}` : ""}</span>
+          <span style={s.navTitle}>Panel Admin{nombreAdmin ? ` · ${nombreAdmin}` : ""}</span>
         </div>
         <div style={s.navBtns}>
           <button style={s.btnPrimary} onClick={() => navigate("/crear-cliente")}>+ Crear cliente</button>
@@ -95,10 +116,10 @@ const cargarDatos = async (adminUid) => {
 
       <div style={s.content}>
         <div style={s.statsGrid}>
-          <div style={s.statCard}><div style={{ ...s.statNum, color: "#1a5fa8" }}>{clientes.length}</div><div style={s.statLabel}>Clientes</div></div>
-          <div style={s.statCard}><div style={s.statNum}>{equipos.length}</div><div style={s.statLabel}>Equipos</div></div>
-          <div style={s.statCard}><div style={{ ...s.statNum, color: "#e65100" }}>{equipos.filter(e => e.estado === "Operativo con observaciones").length}</div><div style={s.statLabel}>Con obs.</div></div>
-          <div style={s.statCard}><div style={{ ...s.statNum, color: "#c62828" }}>{equipos.filter(e => e.estado === "Fuera de servicio").length}</div><div style={s.statLabel}>Fuera serv.</div></div>
+          <div style={s.statCard}><div style={{ ...s.statNum, color: "#1a4fc0" }}>{clientes.length}</div><div style={s.statLabel}>Clientes</div></div>
+          <div style={s.statCard}><div style={{ ...s.statNum, color: "#12245e" }}>{equipos.length}</div><div style={s.statLabel}>Equipos</div></div>
+          <div style={s.statCard}><div style={{ ...s.statNum, color: "#a8720b" }}>{equipos.filter(e => e.estado === "Operativo con observaciones").length}</div><div style={s.statLabel}>Con obs.</div></div>
+          <div style={s.statCard}><div style={{ ...s.statNum, color: "#a52b2b" }}>{equipos.filter(e => e.estado === "Fuera de servicio").length}</div><div style={s.statLabel}>Fuera serv.</div></div>
         </div>
 
         <div style={s.cardsGrid}>
@@ -124,30 +145,30 @@ const cargarDatos = async (adminUid) => {
                     <div style={s.cardEmail}>{cliente.email}</div>
                     <div style={s.cardSub}>{total} equipo{total !== 1 ? "s" : ""}</div>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <button style={s.btnEditarCard} onClick={() => navigate(`/editar-cliente/${cliente.id}`)}>✏️</button>
                     <button style={s.btnEliminarCard} onClick={() => handleEliminarCliente(cliente.id, cliente.empresa)}>🗑</button>
                   </div>
                 </div>
                 <div style={s.miniStats}>
-                  <div style={{ ...s.miniStat, background: op > 0 ? "#e8f5e9" : "#f5f5f5" }}>
-                    <div style={{ ...s.miniNum, color: op > 0 ? "#2e7d32" : "#aaa" }}>{op}</div>
-                    <div style={{ ...s.miniLabel, color: op > 0 ? "#2e7d32" : "#aaa" }}>Operativo</div>
+                  <div style={{ ...s.miniStat, background: op > 0 ? "#e6f7ec" : "#f4f6fb" }}>
+                    <div style={{ ...s.miniNum, color: op > 0 ? "#1c7a44" : "#9aa2b3" }}>{op}</div>
+                    <div style={{ ...s.miniLabel, color: op > 0 ? "#1c7a44" : "#9aa2b3" }}>Operativo</div>
                   </div>
-                  <div style={{ ...s.miniStat, background: obs > 0 ? "#fff8e1" : "#f5f5f5" }}>
-                    <div style={{ ...s.miniNum, color: obs > 0 ? "#e65100" : "#aaa" }}>{obs}</div>
-                    <div style={{ ...s.miniLabel, color: obs > 0 ? "#e65100" : "#aaa" }}>Con obs.</div>
+                  <div style={{ ...s.miniStat, background: obs > 0 ? "#fff3d6" : "#f4f6fb" }}>
+                    <div style={{ ...s.miniNum, color: obs > 0 ? "#a8720b" : "#9aa2b3" }}>{obs}</div>
+                    <div style={{ ...s.miniLabel, color: obs > 0 ? "#a8720b" : "#9aa2b3" }}>Con obs.</div>
                   </div>
-                  <div style={{ ...s.miniStat, background: fs > 0 ? "#ffebee" : "#f5f5f5" }}>
-                    <div style={{ ...s.miniNum, color: fs > 0 ? "#c62828" : "#aaa" }}>{fs}</div>
-                    <div style={{ ...s.miniLabel, color: fs > 0 ? "#c62828" : "#aaa" }}>Fuera serv.</div>
+                  <div style={{ ...s.miniStat, background: fs > 0 ? "#fdeeee" : "#f4f6fb" }}>
+                    <div style={{ ...s.miniNum, color: fs > 0 ? "#a52b2b" : "#9aa2b3" }}>{fs}</div>
+                    <div style={{ ...s.miniLabel, color: fs > 0 ? "#a52b2b" : "#9aa2b3" }}>Fuera serv.</div>
                   </div>
                 </div>
                 <div style={s.barraWrap}>
                   <div style={s.barra}>
-                    {pOp > 0 && <div style={{ width: `${pOp}%`, background: "#43a047", height: "100%" }}></div>}
-                    {pObs > 0 && <div style={{ width: `${pObs}%`, background: "#ffa726", height: "100%" }}></div>}
-                    {pFs > 0 && <div style={{ width: `${pFs}%`, background: "#ef5350", height: "100%" }}></div>}
+                    {pOp > 0 && <div style={{ width: `${pOp}%`, background: "#1c9a53", height: "100%" }}></div>}
+                    {pObs > 0 && <div style={{ width: `${pObs}%`, background: "#e8a020", height: "100%" }}></div>}
+                    {pFs > 0 && <div style={{ width: `${pFs}%`, background: "#c23b3b", height: "100%" }}></div>}
                   </div>
                 </div>
                 <button style={s.btnVerLista} onClick={() => navigate(`/cliente/${encodeURIComponent(cliente.empresa)}`)}>
@@ -158,8 +179,8 @@ const cargarDatos = async (adminUid) => {
           })}
 
           <div style={s.cardAgregar} onClick={() => navigate("/crear-cliente")}>
-            <div style={{ fontSize: "28px", marginBottom: "8px" }}>+</div>
-            <div style={{ fontSize: "13px" }}>Crear cliente</div>
+            <div style={s.plusCircle}>+</div>
+            <div style={{ fontSize: "13.5px", fontWeight: 700 }}>Crear cliente</div>
           </div>
         </div>
       </div>
@@ -168,37 +189,39 @@ const cargarDatos = async (adminUid) => {
 }
 
 const s = {
-  page: { minHeight: "100vh", background: "#f0f4f8", fontFamily: "Inter, Arial, sans-serif" },
-  navbar: { background: "white", borderBottom: "0.5px solid #e0e0e0", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
+  page: { minHeight: "100vh", width: "100%", background: "#eef1f6", fontFamily: FONT, boxSizing: "border-box" },
+  navbar: { background: "white", borderBottom: "1px solid #e7ebf3", padding: "14px clamp(16px,4vw,32px)", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, flexWrap: "wrap", gap: "12px" },
   navLeft: { display: "flex", alignItems: "center", gap: "12px" },
-  logo: { fontFamily: "'Arial Black', sans-serif", fontWeight: 900, fontSize: "20px", display: "flex", alignItems: "baseline" },
-  navDivider: { width: "1px", height: "18px", background: "#e0e0e0" },
-  navTitle: { fontSize: "13px", color: "#888" },
-  navBtns: { display: "flex", gap: "8px" },
-  btnPrimary: { background: "#1a5fa8", color: "white", border: "none", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
-  btnDanger: { background: "#ffebee", color: "#c62828", border: "0.5px solid #ef9a9a", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
-  content: { maxWidth: "1200px", margin: "0 auto", padding: "20px 24px" },
-  statsGrid: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "20px" },
-  statCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "14px", textAlign: "center" },
-  statNum: { fontSize: "28px", fontWeight: 500, color: "#333" },
-  statLabel: { fontSize: "10px", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "2px" },
+  logoBox: { width: "40px", height: "40px", minWidth: "40px", borderRadius: "10px", background: "#1a4fc0", display: "flex", alignItems: "center", justifyContent: "center" },
+  logoImg: { width: "25px", height: "25px", objectFit: "contain", filter: "brightness(0) invert(1)" },
+  navDivider: { width: "1px", height: "18px", background: "#e7ebf3" },
+  navTitle: { fontSize: "14.5px", color: "#26314d", fontWeight: 700 },
+  navBtns: { display: "flex", gap: "10px" },
+  btnPrimary: { background: "#1a4fc0", color: "white", border: "none", borderRadius: "10px", padding: "9px 16px", cursor: "pointer", fontSize: "13px", fontWeight: 700, fontFamily: "inherit" },
+  btnDanger: { background: "#fdeeee", color: "#a52b2b", border: "none", borderRadius: "10px", padding: "9px 16px", cursor: "pointer", fontSize: "13px", fontWeight: 700, fontFamily: "inherit" },
+  content: { maxWidth: "1300px", margin: "0 auto", padding: "clamp(16px,4vw,32px)" },
+  statsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "14px", marginBottom: "20px" },
+  statCard: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", padding: "20px", textAlign: "center" },
+  statNum: { fontSize: "clamp(26px,3.5vw,32px)", fontWeight: 800 },
+  statLabel: { fontSize: "11px", color: "#8a92a6", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "4px", fontWeight: 700 },
   cardsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" },
-  card: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", overflow: "hidden" },
-  cardAgregar: { background: "white", border: "1.5px dashed #c5d5e8", borderRadius: "12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "160px", cursor: "pointer", color: "#aaa" },
-  cardHeader: { padding: "14px 16px", borderBottom: "0.5px solid #f0f0f0", display: "flex", alignItems: "flex-start", gap: "10px" },
-  avatar: { width: "38px", height: "38px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 500, flexShrink: 0 },
-  cardInfo: { flex: 1 },
-  cardNombre: { fontSize: "14px", fontWeight: 500, color: "#222" },
-  cardContacto: { fontSize: "11px", color: "#555", marginTop: "2px" },
-  cardEmail: { fontSize: "11px", color: "#888", marginTop: "1px" },
-  cardSub: { fontSize: "11px", color: "#aaa", marginTop: "4px" },
-  btnEditarCard: { fontSize: "13px", padding: "4px 8px", background: "#e8f0fe", color: "#1a5fa8", border: "0.5px solid #c5d5e8", borderRadius: "6px", cursor: "pointer" },
-  btnEliminarCard: { fontSize: "13px", padding: "4px 8px", background: "#ffebee", color: "#c62828", border: "0.5px solid #ef9a9a", borderRadius: "6px", cursor: "pointer" },
-  miniStats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", padding: "12px 16px" },
-  miniStat: { textAlign: "center", padding: "8px", borderRadius: "8px" },
-  miniNum: { fontSize: "20px", fontWeight: 500 },
-  miniLabel: { fontSize: "10px", marginTop: "2px" },
-  barraWrap: { padding: "0 16px 12px" },
-  barra: { display: "flex", height: "6px", borderRadius: "3px", overflow: "hidden", background: "#f0f0f0" },
-  btnVerLista: { width: "100%", padding: "10px", border: "none", borderTop: "0.5px solid #f0f0f0", cursor: "pointer", fontSize: "13px", fontWeight: 500, background: "white", color: "#1a5fa8" },
+  card: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", overflow: "hidden" },
+  cardAgregar: { background: "white", border: "1.5px dashed #c3d6fb", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "180px", cursor: "pointer", color: "#1a4fc0", gap: "10px" },
+  plusCircle: { width: "40px", height: "40px", borderRadius: "50%", background: "#e5f0ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", color: "#1a4fc0", fontWeight: 700 },
+  cardHeader: { padding: "16px 18px", borderBottom: "1px solid #f2f4f8", display: "flex", alignItems: "flex-start", gap: "10px" },
+  avatar: { width: "40px", height: "40px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 800, flexShrink: 0 },
+  cardInfo: { flex: 1, minWidth: 0 },
+  cardNombre: { fontSize: "14.5px", fontWeight: 800, color: "#12245e" },
+  cardContacto: { fontSize: "12px", color: "#6b7488", marginTop: "2px", fontWeight: 600 },
+  cardEmail: { fontSize: "11.5px", color: "#9aa2b3", marginTop: "1px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  cardSub: { fontSize: "11.5px", color: "#c3cad9", marginTop: "4px", fontWeight: 700 },
+  btnEditarCard: { fontSize: "13px", padding: "5px 9px", background: "#fff3d6", border: "none", borderRadius: "8px", cursor: "pointer" },
+  btnEliminarCard: { fontSize: "13px", padding: "5px 9px", background: "#fdeeee", border: "none", borderRadius: "8px", cursor: "pointer" },
+  miniStats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", padding: "14px 18px" },
+  miniStat: { textAlign: "center", padding: "9px", borderRadius: "10px" },
+  miniNum: { fontSize: "19px", fontWeight: 800 },
+  miniLabel: { fontSize: "10px", marginTop: "2px", fontWeight: 700 },
+  barraWrap: { padding: "0 18px 14px" },
+  barra: { display: "flex", height: "7px", borderRadius: "4px", overflow: "hidden", background: "#eef1f6" },
+  btnVerLista: { width: "100%", padding: "12px", border: "none", borderTop: "1px solid #f2f4f8", cursor: "pointer", fontSize: "13.5px", fontWeight: 700, background: "white", color: "#1a4fc0", fontFamily: "inherit" },
 };

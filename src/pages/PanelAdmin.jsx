@@ -1,8 +1,30 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
 import { collection, getDocs, deleteDoc, doc, query, where } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+
+const FONT = "'Manrope', -apple-system, sans-serif";
+
+function useManropeAndBodyReset() {
+  useEffect(() => {
+    if (!document.getElementById("font-manrope")) {
+      const link = document.createElement("link");
+      link.id = "font-manrope";
+      link.rel = "stylesheet";
+      link.href = "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap";
+      document.head.appendChild(link);
+    }
+    const prevMargin = document.body.style.margin;
+    const prevBg = document.body.style.background;
+    document.body.style.margin = "0";
+    document.body.style.background = "#eef1f6";
+    return () => {
+      document.body.style.margin = prevMargin;
+      document.body.style.background = prevBg;
+    };
+  }, []);
+}
 
 const initiales = (nombre) => {
   const words = nombre.trim().split(" ");
@@ -12,12 +34,12 @@ const initiales = (nombre) => {
 
 const colorAvatar = (nombre) => {
   const colores = [
-    { bg: "#e8f0fe", color: "#1a5fa8" },
-    { bg: "#e8f5e9", color: "#2e7d32" },
-    { bg: "#f3e5f5", color: "#6a1b9a" },
-    { bg: "#fff8e1", color: "#e65100" },
-    { bg: "#fce4ec", color: "#c62828" },
-    { bg: "#e0f2f1", color: "#00695c" },
+    { bg: "#e5f0ff", color: "#1a4fc0" },
+    { bg: "#e6f7ec", color: "#1c7a44" },
+    { bg: "#f1e9fb", color: "#7c3fb8" },
+    { bg: "#fff3d6", color: "#a8720b" },
+    { bg: "#fdeeee", color: "#a52b2b" },
+    { bg: "#e0f4f2", color: "#0d7a6c" },
   ];
   let sum = 0;
   for (let i = 0; i < nombre.length; i++) sum += nombre.charCodeAt(i);
@@ -25,6 +47,8 @@ const colorAvatar = (nombre) => {
 };
 
 export default function PanelAdmin() {
+  useManropeAndBodyReset();
+
   const [admins, setAdmins] = useState([]);
   const [totalClientes, setTotalClientes] = useState(0);
   const [totalEquipos, setTotalEquipos] = useState(0);
@@ -63,9 +87,9 @@ export default function PanelAdmin() {
         };
       });
 
-     setAdmins(adminsConDatos);
-setTotalClientes(adminsConDatos.reduce((acc, a) => acc + a.numClientes, 0));
-setTotalEquipos(adminsConDatos.reduce((acc, a) => acc + a.numEquipos, 0));  // ← corregida
+      setAdmins(adminsConDatos);
+      setTotalClientes(adminsConDatos.reduce((acc, a) => acc + a.numClientes, 0));
+      setTotalEquipos(adminsConDatos.reduce((acc, a) => acc + a.numEquipos, 0));
     } catch (err) {
       console.error("Error cargando admins:", err);
     }
@@ -90,41 +114,38 @@ setTotalEquipos(adminsConDatos.reduce((acc, a) => acc + a.numEquipos, 0));  // �
     setCargandoVista(false);
   };
 
-const handleEliminar = async (admin, nombre) => {
-  if (!window.confirm(`¿Eliminar al admin ${nombre} y todos sus clientes, equipos y sedes? Esta acción no se puede deshacer.`)) return;
-  const adminId = admin.id;
-  const adminUid = admin.uid || admin.id;
-  try {
-    const borrarQuery = async (col) => {
-      const snap = await getDocs(query(collection(db, col), where("adminid", "==", adminUid)));
-      await Promise.all(snap.docs.map(d => deleteDoc(doc(db, col, d.id))));
-      return snap.size;
-    };
+  const handleEliminar = async (admin, nombre) => {
+    if (!window.confirm(`¿Eliminar al admin ${nombre} y todos sus clientes, equipos y sedes? Esta acción no se puede deshacer.`)) return;
+    const adminId = admin.id;
+    const adminUid = admin.uid || admin.id;
+    try {
+      const borrarQuery = async (col) => {
+        const snap = await getDocs(query(collection(db, col), where("adminid", "==", adminUid)));
+        await Promise.all(snap.docs.map(d => deleteDoc(doc(db, col, d.id))));
+        return snap.size;
+      };
 
-    await borrarQuery("equipos");
-    await borrarQuery("sedes");
+      await borrarQuery("equipos");
+      await borrarQuery("sedes");
 
-    const snapUsuariosCliente = await getDocs(query(collection(db, "usuarios"), where("adminid", "==", adminUid)));
-    await Promise.all(snapUsuariosCliente.docs.map(d => deleteDoc(doc(db, "usuarios", d.id))));
+      const snapUsuariosCliente = await getDocs(query(collection(db, "usuarios"), where("adminid", "==", adminUid)));
+      await Promise.all(snapUsuariosCliente.docs.map(d => deleteDoc(doc(db, "usuarios", d.id))));
 
-    await borrarQuery("clientes");
-    await deleteDoc(doc(db, "usuarios", adminId));
+      await borrarQuery("clientes");
+      await deleteDoc(doc(db, "usuarios", adminId));
 
-    // ✅ Actualizar lista y recalcular contadores
-    setAdmins(prev => {
-      const nuevaLista = prev.filter(a => a.id !== adminId);
-      setTotalClientes(nuevaLista.reduce((acc, a) => acc + a.numClientes, 0));
-      setTotalEquipos(nuevaLista.reduce((acc, a) => acc + a.numEquipos, 0));
-      return nuevaLista;
-    });
+      setAdmins(prev => {
+        const nuevaLista = prev.filter(a => a.id !== adminId);
+        setTotalClientes(nuevaLista.reduce((acc, a) => acc + a.numClientes, 0));
+        setTotalEquipos(nuevaLista.reduce((acc, a) => acc + a.numEquipos, 0));
+        return nuevaLista;
+      });
 
-    // Cerrar modal si estaba viendo ese admin
-    if (viendoAdmin?.id === adminId) setViendoAdmin(null);
-
-  } catch (err) {
-    alert("Error al eliminar: " + err.message);
-  }
-};
+      if (viendoAdmin?.id === adminId) setViendoAdmin(null);
+    } catch (err) {
+      alert("Error al eliminar: " + err.message);
+    }
+  };
 
   const handleBackup = async () => {
     try {
@@ -160,12 +181,7 @@ const handleEliminar = async (admin, nombre) => {
     <div style={s.page}>
       <div style={s.navbar}>
         <div style={s.navLeft}>
-          <div style={s.logo}>
-            <span style={{ color: "#1a5fa8" }}>H</span>
-            <span style={{ color: "#1a5fa8", marginRight: "-8px" }}>V</span>
-            <span style={{ color: "#f0c040" }}>A</span>
-            <span style={{ color: "#1a5fa8", marginLeft: "-2px" }}>C</span>
-          </div>
+          <div style={s.logoBox}><img src="/assets/hvac-isotipo-filled.png" alt="HVAC" style={s.logoImg} /></div>
           <div style={s.navDivider}></div>
           <span style={s.navTitle}>Panel Maestro</span>
         </div>
@@ -179,15 +195,15 @@ const handleEliminar = async (admin, nombre) => {
       <div style={s.content}>
         <div style={s.statsGrid}>
           <div style={s.statCard}>
-            <div style={{ ...s.statNum, color: "#1a5fa8" }}>{admins.length}</div>
+            <div style={{ ...s.statNum, color: "#1a4fc0" }}>{admins.length}</div>
             <div style={s.statLabel}>Admins</div>
           </div>
           <div style={s.statCard}>
-            <div style={s.statNum}>{totalClientes}</div>
+            <div style={{ ...s.statNum, color: "#12245e" }}>{totalClientes}</div>
             <div style={s.statLabel}>Clientes totales</div>
           </div>
           <div style={s.statCard}>
-            <div style={{ ...s.statNum, color: "#2e7d32" }}>{totalEquipos}</div>
+            <div style={{ ...s.statNum, color: "#1c7a44" }}>{totalEquipos}</div>
             <div style={s.statLabel}>Equipos totales</div>
           </div>
         </div>
@@ -225,43 +241,43 @@ const handleEliminar = async (admin, nombre) => {
       {viendoAdmin && (
         <div style={s.modalOverlay}>
           <div style={s.modalCard}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
               <div>
-                <div style={{ fontSize: "15px", fontWeight: 500, color: "#222" }}>{viendoAdmin.nombre}</div>
-                <div style={{ fontSize: "12px", color: "#888" }}>{viendoAdmin.email}</div>
+                <div style={{ fontSize: "15.5px", fontWeight: 800, color: "#12245e" }}>{viendoAdmin.nombre}</div>
+                <div style={{ fontSize: "12.5px", color: "#8a92a6", fontWeight: 600 }}>{viendoAdmin.email}</div>
               </div>
               <button style={s.btnCerrar} onClick={() => setViendoAdmin(null)}>✕</button>
             </div>
 
             {cargandoVista ? (
-              <div style={{ textAlign: "center", color: "#888", padding: "20px" }}>Cargando...</div>
+              <div style={{ textAlign: "center", color: "#8a92a6", padding: "20px" }}>Cargando...</div>
             ) : (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "18px" }}>
                   <div style={s.miniStatCard}>
-                    <div style={{ fontSize: "22px", fontWeight: 500, color: "#1a5fa8" }}>{clientesAdmin.length}</div>
-                    <div style={{ fontSize: "10px", color: "#888", textTransform: "uppercase" }}>Clientes</div>
+                    <div style={{ fontSize: "22px", fontWeight: 800, color: "#1a4fc0" }}>{clientesAdmin.length}</div>
+                    <div style={{ fontSize: "10.5px", color: "#8a92a6", textTransform: "uppercase", fontWeight: 700 }}>Clientes</div>
                   </div>
                   <div style={s.miniStatCard}>
-                    <div style={{ fontSize: "22px", fontWeight: 500, color: "#2e7d32" }}>{equiposAdmin.length}</div>
-                    <div style={{ fontSize: "10px", color: "#888", textTransform: "uppercase" }}>Equipos</div>
+                    <div style={{ fontSize: "22px", fontWeight: 800, color: "#1c7a44" }}>{equiposAdmin.length}</div>
+                    <div style={{ fontSize: "10.5px", color: "#8a92a6", textTransform: "uppercase", fontWeight: 700 }}>Equipos</div>
                   </div>
                 </div>
 
                 <div style={s.secTitle}>Clientes</div>
                 {clientesAdmin.length === 0 ? (
-                  <div style={{ fontSize: "12px", color: "#aaa", marginBottom: "12px" }}>Sin clientes registrados</div>
+                  <div style={{ fontSize: "12.5px", color: "#c3cad9", marginBottom: "14px" }}>Sin clientes registrados</div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "7px", marginBottom: "18px" }}>
                     {clientesAdmin.map(c => {
                       const equiposCliente = equiposAdmin.filter(e => e.cliente === c.empresa);
                       return (
                         <div key={c.id} style={s.itemRow}>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: "13px", fontWeight: 500, color: "#222" }}>{c.empresa}</div>
-                            <div style={{ fontSize: "11px", color: "#888" }}>{c.nombre} · {c.email}</div>
+                            <div style={{ fontSize: "13px", fontWeight: 700, color: "#12245e" }}>{c.empresa}</div>
+                            <div style={{ fontSize: "11.5px", color: "#8a92a6", fontWeight: 600 }}>{c.nombre} · {c.email}</div>
                           </div>
-                          <span style={{ fontSize: "11px", color: "#888" }}>{equiposCliente.length} equipos</span>
+                          <span style={{ fontSize: "11.5px", color: "#8a92a6", fontWeight: 700 }}>{equiposCliente.length} equipos</span>
                         </div>
                       );
                     })}
@@ -270,14 +286,14 @@ const handleEliminar = async (admin, nombre) => {
 
                 <div style={s.secTitle}>Equipos recientes</div>
                 {equiposAdmin.length === 0 ? (
-                  <div style={{ fontSize: "12px", color: "#aaa" }}>Sin equipos registrados</div>
+                  <div style={{ fontSize: "12.5px", color: "#c3cad9" }}>Sin equipos registrados</div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "200px", overflowY: "auto" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "7px", maxHeight: "200px", overflowY: "auto" }}>
                     {equiposAdmin.slice(0, 10).map(e => (
                       <div key={e.id} style={s.itemRow}>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: "12px", fontWeight: 500, color: "#222" }}>{e.marca} {e.modelo}</div>
-                          <div style={{ fontSize: "11px", color: "#888" }}>{e.cliente} · {e.tipoEquipo || "-"}</div>
+                          <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#12245e" }}>{e.marca} {e.modelo}</div>
+                          <div style={{ fontSize: "11.5px", color: "#8a92a6", fontWeight: 600 }}>{e.cliente} · {e.tipoEquipo || "-"}</div>
                         </div>
                         <span style={e.estado === "Operativo" ? s.badgeOp : e.estado === "Operativo con observaciones" ? s.badgeObs : s.badgeFs}>
                           {e.estado === "Operativo" ? "Op." : e.estado === "Operativo con observaciones" ? "Obs." : "F.S."}
@@ -296,37 +312,38 @@ const handleEliminar = async (admin, nombre) => {
 }
 
 const s = {
-  page: { minHeight: "100vh", background: "#f0f4f8", fontFamily: "Inter, Arial, sans-serif" },
-  navbar: { background: "white", borderBottom: "0.5px solid #e0e0e0", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
+  page: { minHeight: "100vh", width: "100%", background: "#eef1f6", fontFamily: FONT, boxSizing: "border-box" },
+  navbar: { background: "white", borderBottom: "1px solid #e7ebf3", padding: "14px clamp(16px,4vw,32px)", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, flexWrap: "wrap", gap: "12px" },
   navLeft: { display: "flex", alignItems: "center", gap: "12px" },
-  logo: { fontFamily: "'Arial Black', sans-serif", fontWeight: 900, fontSize: "20px", display: "flex", alignItems: "baseline" },
-  navDivider: { width: "1px", height: "18px", background: "#e0e0e0" },
-  navTitle: { fontSize: "13px", color: "#888" },
-  navBtns: { display: "flex", gap: "8px" },
-  btnSuccess: { background: "#e8f5e9", color: "#2e7d32", border: "0.5px solid #a5d6a7", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
-  btnWarning: { background: "#fff8e1", color: "#e65100", border: "0.5px solid #ffe082", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
-  btnDanger: { background: "#ffebee", color: "#c62828", border: "0.5px solid #ef9a9a", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
-  content: { maxWidth: "900px", margin: "0 auto", padding: "20px 24px" },
-  statsGrid: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "24px" },
-  statCard: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "20px", textAlign: "center" },
-  statNum: { fontSize: "32px", fontWeight: 500, color: "#333" },
-  statLabel: { fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "4px" },
-  secTitle: { fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "12px", fontWeight: 500 },
-  adminRow: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "12px 16px", display: "flex", alignItems: "center", gap: "12px" },
-  avatar: { width: "38px", height: "38px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 500, flexShrink: 0 },
+  logoBox: { width: "40px", height: "40px", minWidth: "40px", borderRadius: "10px", background: "#1a4fc0", display: "flex", alignItems: "center", justifyContent: "center" },
+  logoImg: { width: "25px", height: "25px", objectFit: "contain", filter: "brightness(0) invert(1)" },
+  navDivider: { width: "1px", height: "18px", background: "#e7ebf3" },
+  navTitle: { fontSize: "14.5px", color: "#26314d", fontWeight: 700 },
+  navBtns: { display: "flex", gap: "10px" },
+  btnSuccess: { background: "#e6f7ec", color: "#1c7a44", border: "none", borderRadius: "10px", padding: "9px 16px", cursor: "pointer", fontSize: "13px", fontWeight: 700, fontFamily: "inherit" },
+  btnWarning: { background: "#fff3d6", color: "#a8720b", border: "none", borderRadius: "10px", padding: "9px 16px", cursor: "pointer", fontSize: "13px", fontWeight: 700, fontFamily: "inherit" },
+  btnDanger: { background: "#fdeeee", color: "#a52b2b", border: "none", borderRadius: "10px", padding: "9px 16px", cursor: "pointer", fontSize: "13px", fontWeight: 700, fontFamily: "inherit" },
+  content: { maxWidth: "900px", margin: "0 auto", padding: "clamp(16px,4vw,32px)" },
+  statsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "14px", marginBottom: "26px" },
+  statCard: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", padding: "22px", textAlign: "center" },
+  statNum: { fontSize: "clamp(28px,4vw,34px)", fontWeight: 800, color: "#333" },
+  statLabel: { fontSize: "11px", color: "#8a92a6", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "4px", fontWeight: 700 },
+  secTitle: { fontSize: "11px", color: "#8a92a6", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "12px", fontWeight: 700 },
+  adminRow: { background: "white", border: "1px solid #e7ebf3", borderRadius: "14px", padding: "13px 16px", display: "flex", alignItems: "center", gap: "12px" },
+  avatar: { width: "38px", height: "38px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 800, flexShrink: 0 },
   adminInfo: { flex: 1 },
-  adminNombre: { fontSize: "14px", fontWeight: 500, color: "#222" },
-  adminSub: { fontSize: "11px", color: "#888", marginTop: "2px" },
-  badge: { fontSize: "11px", padding: "3px 10px", borderRadius: "20px", background: "#e8f0fe", color: "#1a5fa8" },
-  btnIcon: { background: "white", border: "0.5px solid #ddd", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "13px" },
-  btnIconDanger: { background: "#ffebee", border: "0.5px solid #ef9a9a", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "13px" },
-  empty: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "30px", textAlign: "center", color: "#888", fontSize: "14px" },
-  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
-  modalCard: { background: "white", borderRadius: "12px", padding: "24px", width: "100%", maxWidth: "520px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", maxHeight: "80vh", overflowY: "auto" },
-  btnCerrar: { background: "none", border: "none", fontSize: "16px", cursor: "pointer", color: "#888", padding: "4px 8px" },
-  miniStatCard: { background: "#f8f9fa", border: "0.5px solid #e0e0e0", borderRadius: "8px", padding: "12px", textAlign: "center" },
-  itemRow: { background: "#f8f9fa", border: "0.5px solid #e0e0e0", borderRadius: "8px", padding: "8px 12px", display: "flex", alignItems: "center", gap: "10px" },
-  badgeOp: { fontSize: "10px", padding: "2px 6px", borderRadius: "20px", background: "#e8f5e9", color: "#2e7d32", whiteSpace: "nowrap" },
-  badgeObs: { fontSize: "10px", padding: "2px 6px", borderRadius: "20px", background: "#fff8e1", color: "#e65100", whiteSpace: "nowrap" },
-  badgeFs: { fontSize: "10px", padding: "2px 6px", borderRadius: "20px", background: "#ffebee", color: "#c62828", whiteSpace: "nowrap" },
+  adminNombre: { fontSize: "14px", fontWeight: 800, color: "#12245e" },
+  adminSub: { fontSize: "11.5px", color: "#8a92a6", marginTop: "2px", fontWeight: 600 },
+  badge: { fontSize: "11px", padding: "4px 11px", borderRadius: "20px", background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700 },
+  btnIcon: { background: "white", border: "1px solid #dfe6f5", borderRadius: "9px", padding: "7px 11px", cursor: "pointer", fontSize: "13px" },
+  btnIconDanger: { background: "#fdeeee", border: "none", borderRadius: "9px", padding: "7px 11px", cursor: "pointer", fontSize: "13px" },
+  empty: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", padding: "34px", textAlign: "center", color: "#8a92a6", fontSize: "14px", fontWeight: 600 },
+  modalOverlay: { position: "fixed", inset: 0, background: "rgba(10,25,70,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px", boxSizing: "border-box" },
+  modalCard: { background: "white", borderRadius: "18px", padding: "26px", width: "100%", maxWidth: "520px", boxShadow: "0 20px 50px rgba(0,10,40,0.3)", maxHeight: "80vh", overflowY: "auto", boxSizing: "border-box" },
+  btnCerrar: { background: "none", border: "none", fontSize: "16px", cursor: "pointer", color: "#8a92a6", padding: "4px 8px" },
+  miniStatCard: { background: "#f9fafc", border: "1px solid #e7ebf3", borderRadius: "12px", padding: "14px", textAlign: "center" },
+  itemRow: { background: "#f9fafc", border: "1px solid #e7ebf3", borderRadius: "10px", padding: "9px 13px", display: "flex", alignItems: "center", gap: "10px" },
+  badgeOp: { fontSize: "10px", padding: "3px 8px", borderRadius: "20px", background: "#e6f7ec", color: "#1c7a44", fontWeight: 700, whiteSpace: "nowrap" },
+  badgeObs: { fontSize: "10px", padding: "3px 8px", borderRadius: "20px", background: "#fff3d6", color: "#a8720b", fontWeight: 700, whiteSpace: "nowrap" },
+  badgeFs: { fontSize: "10px", padding: "3px 8px", borderRadius: "20px", background: "#fdeeee", color: "#a52b2b", fontWeight: 700, whiteSpace: "nowrap" },
 };
