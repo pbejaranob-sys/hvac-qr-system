@@ -271,7 +271,7 @@ export default function RegistrarEquipo() {
         <div style={s.navbar}>
           <div style={s.navLeft}>
             <div style={s.logoBox}><img src="/assets/hvac-isotipo-blue.png" alt="HVAC" style={s.logoImg} /></div>
-            <span style={s.navBrand}>HVAC CONTROL</span>
+            <span style={s.navBrand}>{form.cliente || clienteParam || "HVAC"}{(form.sede || sedeParam) ? ` / ${form.sede || sedeParam}` : ""}</span>
             <button type="button" style={s.btnBack} onClick={irAtras}><SvgFlecha /> Volver</button>
             <div style={s.navDivider}></div>
             <span style={s.navTitle}>{equipoId ? "Editar equipo" : "Registrar equipo"}</span>
@@ -456,70 +456,6 @@ export default function RegistrarEquipo() {
                 </div>
               </div>
 
-              {/* Observaciones */}
-              <div style={s.seccion}>
-                <div style={s.secTitulo}><SvgAlerta /> Observaciones</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {observaciones.map((o, i) => (
-                    <div key={i} style={s.filaDinamica}>
-                      {observaciones.length > 1 && (
-                        <button type="button" style={s.btnEliminar} onClick={() => removeObs(i)}><SvgEliminar /></button>
-                      )}
-                      <div style={s.grid3}>
-                        <div style={{ gridColumn: "span 2" }}>
-                          <label style={s.label}>Observación</label>
-                          <input style={s.input} placeholder="Describe la observación..." value={o.texto} onChange={e => updateObs(i, "texto", e.target.value)} />
-                        </div>
-                        <div><label style={s.label}>Fecha</label><input style={s.input} type="date" value={o.fecha} onChange={e => updateObs(i, "fecha", e.target.value)} /></div>
-                      </div>
-                      <div style={{ marginTop: "8px" }}>
-                        <label style={s.label}>Técnico</label>
-                        <input style={s.input} placeholder="Nombre del técnico" value={o.tecnico} onChange={e => updateObs(i, "tecnico", e.target.value)} />
-                      </div>
-                    </div>
-                  ))}
-                  <button type="button" style={{ ...s.btnAgregar, background: "#fff3d6", color: "#a8720b" }} onClick={addObs}><SvgMas />Agregar observación</button>
-                </div>
-              </div>
-
-              {/* Correctivos */}
-              <div style={s.seccion}>
-                <div style={s.secTitulo}><SvgLlave /> Correctivos realizados</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {correctivos.map((c, i) => (
-                    <div key={i} style={s.filaDinamica}>
-                      {correctivos.length > 1 && (
-                        <button type="button" style={s.btnEliminar} onClick={() => removeCor(i)}><SvgEliminar /></button>
-                      )}
-                      <div style={s.grid3}>
-                        <div style={{ gridColumn: "span 2" }}>
-                          <label style={s.label}>Descripción</label>
-                          <input style={s.input} placeholder="Descripción del correctivo..." value={c.descripcion} onChange={e => updateCor(i, "descripcion", e.target.value)} />
-                        </div>
-                        <div><label style={s.label}>Fecha</label><input style={s.input} type="date" value={c.fecha} onChange={e => updateCor(i, "fecha", e.target.value)} /></div>
-                      </div>
-                    </div>
-                  ))}
-                  <button type="button" style={{ ...s.btnAgregar, background: "#e5f0ff", color: "#1a4fc0" }} onClick={addCor}><SvgMas />Agregar correctivo</button>
-                </div>
-              </div>
-
-              {/* Recomendaciones */}
-              <div style={s.seccion}>
-                <div style={s.secTitulo}><SvgFicha /> Recomendaciones</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {recomendaciones.map((r, i) => (
-                    <div key={i} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                      <input style={{ ...s.input, marginBottom: 0, flex: 1 }} placeholder="Recomendación para el cliente..." value={r} onChange={e => updateRec(i, e.target.value)} />
-                      {recomendaciones.length > 1 && (
-                        <button type="button" style={s.btnEliminar} onClick={() => removeRec(i)}><SvgEliminar /></button>
-                      )}
-                    </div>
-                  ))}
-                  <button type="button" style={{ ...s.btnAgregar, background: "#e6f7ec", color: "#1c7a44" }} onClick={addRec}><SvgMas />Agregar recomendación</button>
-                </div>
-              </div>
-
               {/* Cronograma dinámico */}
               <div style={s.seccion}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
@@ -596,7 +532,7 @@ const s = {
   sideIconBox: { width: "64px", height: "64px", borderRadius: "16px", background: "#e5f0ff", display: "flex", alignItems: "center", justifyContent: "center" },
   sideCard: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", padding: "18px 20px" },
   sideLabel: { fontWeight: 700, fontSize: "11.5px", color: "#8a92a6", letterSpacing: "0.06em" },
-  sideVal: { fontSize: "13.5px", color: "#12245e", fontWeight: 700 },
+  sideVal: { fontSize: "13.5px", color: "#12245e", fontWeight: 700, textAlign: "left" },
   codigoTag: { background: "#f3e8ff", color: "#7c3fd8", fontWeight: 800, fontSize: "13px", padding: "4px 14px", borderRadius: "8px" },
   badgeEstado: { fontSize: "12.5px", padding: "8px 14px", borderRadius: "10px", fontWeight: 700, display: "inline-block", textAlign: "center", lineHeight: 1.4, marginTop: "8px" },
   btnGuardar: { width: "100%", boxSizing: "border-box", background: "#1a4fc0", color: "white", border: "none", borderRadius: "12px", padding: "13px 16px", fontFamily: "inherit", fontWeight: 700, fontSize: "14px", cursor: "pointer", boxShadow: "0 8px 20px rgba(26,79,192,0.25)", display: "flex", alignItems: "center", justifyContent: "center" },
