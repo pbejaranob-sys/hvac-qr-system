@@ -46,6 +46,22 @@ const colorAvatar = (nombre) => {
   return colores[sum % colores.length];
 };
 
+const SvgEditar = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgEliminar = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgFlechaDer = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ display: "inline", verticalAlign: "-2px" }}>
+    <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export default function PanelAdminNormal() {
   useManropeAndBodyReset();
 
@@ -146,8 +162,8 @@ export default function PanelAdminNormal() {
                     <div style={s.cardSub}>{total} equipo{total !== 1 ? "s" : ""}</div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <button style={s.btnEditarCard} onClick={() => navigate(`/editar-cliente/${cliente.id}`)}>✏️</button>
-                    <button style={s.btnEliminarCard} onClick={() => handleEliminarCliente(cliente.id, cliente.empresa)}>🗑</button>
+                    <button style={s.btnEditarCard} onClick={() => navigate(`/editar-cliente/${cliente.id}`)}><SvgEditar /></button>
+                    <button style={s.btnEliminarCard} onClick={() => handleEliminarCliente(cliente.id, cliente.empresa)}><SvgEliminar /></button>
                   </div>
                 </div>
                 <div style={s.miniStats}>
@@ -172,7 +188,7 @@ export default function PanelAdminNormal() {
                   </div>
                 </div>
                 <button style={s.btnVerLista} onClick={() => navigate(`/cliente/${encodeURIComponent(cliente.empresa)}`)}>
-                  Ver sedes y equipos →
+                  Ver sedes y equipos <SvgFlechaDer />
                 </button>
               </div>
             );

@@ -41,6 +41,44 @@ const sortPiso = (a, b) => {
   return ta !== tb ? ta - tb : na - nb;
 };
 
+const SvgFlecha = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ display: "inline", verticalAlign: "-2px" }}>
+    <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgFlechaDer = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ display: "inline", verticalAlign: "-2px" }}>
+    <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgEliminar = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgEditar = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgAlerta = ({ color = "currentColor" }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M12 3l9 16H3l9-16z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M12 10v4M12 17h.01" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+const SvgSede = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6" stroke="#1a4fc0" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgGuardar = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ verticalAlign: "-2px", marginRight: "4px" }}>
+    <path d="M5 4h11l3 3v13H5V4z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    <path d="M8 4v5h7V4M8 14h8v6H8v-6z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+  </svg>
+);
+
 export default function VistaCliente() {
   useManropeAndBodyReset();
 
@@ -234,7 +272,7 @@ export default function VistaCliente() {
         <div style={s.navLeft}>
           <div style={s.logoBox}><img src="/assets/hvac-isotipo-filled.png" alt="HVAC" style={s.logoImg} /></div>
           <div style={s.divider}></div>
-          <button style={s.btnBack} onClick={() => navigate("/panel-admin")}>← Panel Admin</button>
+          <button style={s.btnBack} onClick={() => navigate("/panel-admin")}><SvgFlecha /> Panel Admin</button>
           <div style={s.divider}></div>
           <span style={s.navTitle}>{nombre}</span>
         </div>
@@ -321,7 +359,7 @@ export default function VistaCliente() {
 
             {equipos.length === 0 ? (
               <div style={s.empty}>
-                <div style={{ fontSize: "36px", marginBottom: "10px" }}>📋</div>
+                <div style={{ fontSize: "14px", fontWeight: 700, color: "#c3cad9", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Sin equipos</div>
                 <div style={{ fontSize: "14px", color: "#6b7488", marginBottom: "14px", fontWeight: 600 }}>No hay equipos registrados</div>
                 <button style={s.btnPrimary} onClick={() => navigate(`/registrar?cliente=${encodeURIComponent(nombre)}`)}>+ Registrar primer equipo</button>
               </div>
@@ -343,7 +381,7 @@ export default function VistaCliente() {
                     </select>
                     {mesFiltro !== "Todos" && (
                       <button onClick={() => setMesFiltro("Todos")} style={{ fontSize: "10.5px", padding: "4px 9px", borderRadius: "20px", background: "#1a4fc0", color: "white", border: "none", cursor: "pointer", fontWeight: 700 }}>
-                        {mesFiltro} ✕
+                        {mesFiltro} X
                       </button>
                     )}
                   </div>
@@ -395,13 +433,13 @@ export default function VistaCliente() {
                                 </button>
                                 <button style={s.btnEditar} onClick={() => navigate(`/registrar?id=${eq.id}`)}>Editar</button>
                                 <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${eq.id}`)}>Protocolo</button>
-                                <button style={s.btnEliminar} onClick={() => handleEliminarEquipo(eq.id)}>🗑</button>
+                                <button style={s.btnEliminar} onClick={() => handleEliminarEquipo(eq.id)}><SvgEliminar /></button>
                               </div>
                             </span>
                           </div>
                           {abierta && (
                             <div style={s.obsPanel}>
-                              <div style={s.obsTitulo}>⚠ {numObs} observación{numObs !== 1 ? "es" : ""} — {eq.codigo || eq.marca}</div>
+                              <div style={s.obsTitulo}>{numObs} observación{numObs !== 1 ? "es" : ""} — {eq.codigo || eq.marca}</div>
                               {numObs === 0 ? (
                                 <div style={{ fontSize: "12.5px", color: "#c3cad9", textAlign: "center", padding: "8px 0" }}>Sin observaciones registradas</div>
                               ) : (
@@ -436,14 +474,14 @@ export default function VistaCliente() {
               return (
                 <div key={sede.id} style={s.sedeCard}>
                   <div style={s.sedeHeader}>
-                    <div style={s.sedeIcon}>🏢</div>
+                    <div style={s.sedeIcon}><SvgSede /></div>
                     <div style={{ flex: 1 }}>
                       <div style={s.sedeNombre}>{sede.nombre}</div>
                       <div style={s.sedeDireccion}>{sede.direccion}</div>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <button style={s.btnEditarSede} onClick={() => setEditandoSede(sede)}>✏️</button>
-                      <button style={s.btnEliminarSede} onClick={() => handleEliminarSede(sede.id, sede.nombre)}>🗑</button>
+                      <button style={s.btnEditarSede} onClick={() => setEditandoSede(sede)}><SvgEditar /></button>
+                      <button style={s.btnEliminarSede} onClick={() => handleEliminarSede(sede.id, sede.nombre)}><SvgEliminar /></button>
                     </div>
                   </div>
                   <div style={s.miniStats}>
@@ -461,7 +499,7 @@ export default function VistaCliente() {
                     </div>
                   </div>
                   <button style={s.btnVerSede} onClick={() => navigate(`/cliente/${encodeURIComponent(nombre)}/sede/${encodeURIComponent(sede.nombre)}`)}>
-                    Ver equipos →
+                    Ver equipos <SvgFlechaDer />
                   </button>
                 </div>
               );
@@ -478,7 +516,7 @@ export default function VistaCliente() {
       {editandoSede && (
         <div style={s.modalOverlay}>
           <div style={s.modalCard}>
-            <div style={s.formTitle}>✏️ Editar sede</div>
+            <div style={s.formTitle}><SvgEditar /> Editar sede</div>
             <form onSubmit={handleEditarSede}>
               <div style={{ marginBottom: "14px" }}>
                 <label style={s.label}>Nombre de la sede</label>
@@ -497,7 +535,7 @@ export default function VistaCliente() {
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
                 <button type="submit" style={s.btnPrimary} disabled={guardando}>
-                  {guardando ? "Guardando..." : "💾 Guardar"}
+                  {guardando ? "Guardando..." : <><SvgGuardar />Guardar</>}
                 </button>
                 <button type="button" style={s.btnDefault} onClick={() => setEditandoSede(null)}>
                   Cancelar

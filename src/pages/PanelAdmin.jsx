@@ -46,6 +46,23 @@ const colorAvatar = (nombre) => {
   return colores[sum % colores.length];
 };
 
+const SvgDescargar = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ verticalAlign: "-2px", marginRight: "4px" }}>
+    <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgOjo = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
+  </svg>
+);
+const SvgEliminar = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export default function PanelAdmin() {
   useManropeAndBodyReset();
 
@@ -187,7 +204,7 @@ export default function PanelAdmin() {
         </div>
         <div style={s.navBtns}>
           <button style={s.btnSuccess} onClick={() => navigate("/crear-usuario")}>+ Crear usuario</button>
-          <button style={s.btnWarning} onClick={handleBackup}>⬇ Backup</button>
+          <button style={s.btnWarning} onClick={handleBackup}><SvgDescargar />Backup</button>
           <button style={s.btnDanger} onClick={handleLogout}>Salir</button>
         </div>
       </div>
@@ -228,8 +245,8 @@ export default function PanelAdmin() {
                     <div style={s.adminSub}>{admin.email} · {admin.numClientes} cliente{admin.numClientes !== 1 ? "s" : ""} · {admin.numEquipos} equipo{admin.numEquipos !== 1 ? "s" : ""}</div>
                   </div>
                   <span style={s.badge}>Admin</span>
-                  <button style={s.btnIcon} onClick={() => handleVerAdmin(admin)}>👁</button>
-                  <button style={s.btnIconDanger} onClick={() => handleEliminar(admin, admin.nombre)}>🗑</button>
+                  <button style={s.btnIcon} onClick={() => handleVerAdmin(admin)}><SvgOjo /></button>
+                  <button style={s.btnIconDanger} onClick={() => handleEliminar(admin, admin.nombre)}><SvgEliminar /></button>
                 </div>
               );
             })}
@@ -246,7 +263,7 @@ export default function PanelAdmin() {
                 <div style={{ fontSize: "15.5px", fontWeight: 800, color: "#12245e" }}>{viendoAdmin.nombre}</div>
                 <div style={{ fontSize: "12.5px", color: "#8a92a6", fontWeight: 600 }}>{viendoAdmin.email}</div>
               </div>
-              <button style={s.btnCerrar} onClick={() => setViendoAdmin(null)}>✕</button>
+              <button style={s.btnCerrar} onClick={() => setViendoAdmin(null)}>X</button>
             </div>
 
             {cargandoVista ? (
