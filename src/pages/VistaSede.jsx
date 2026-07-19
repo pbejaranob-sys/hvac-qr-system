@@ -327,9 +327,9 @@ export default function VistaSede() {
               </div>
             </div>
             <div style={{ overflowX: "auto" }}>
-              <div style={{ minWidth: "900px" }}>
+              <div style={{ minWidth: "1080px" }}>
                 <div style={s.tablaHeader}>
-                  {["#", "Código", "Piso", "Ambiente", "Tipo", "Marca/Modelo", "Estado", "Últ. mant.", "Acciones"].map(h => (
+                  {["#", "Código", "Piso", "Ambiente", "Tipo", "Marca/Modelo", "Serie", "Estado", "Últ. mant.", "Acciones"].map(h => (
                     <span key={h} style={s.thCell}>{h}</span>
                   ))}
                 </div>
@@ -343,10 +343,11 @@ export default function VistaSede() {
                       <span style={s.tdCell}>{eq.piso || "-"}</span>
                       <span style={{ ...s.tdCell, fontWeight: 700, color: "#0f1b3d" }}>{eq.ambiente || "-"}</span>
                       <span style={s.tdCell}>{eq.tipoEquipo || "-"}</span>
-                      <span style={s.tdCell}>
-                        <div style={{ fontWeight: 700, fontSize: "12px", color: "#0f1b3d" }}>{eq.marca}</div>
-                        <div style={{ fontSize: "10.5px", color: "#9aa2b3" }}>{eq.modelo}</div>
+                      <span style={{ ...s.tdCell, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: "12.5px", color: "#0f1b3d", whiteSpace: "nowrap" }}>{eq.marca}</div>
+                        <div style={{ fontSize: "11px", color: "#9aa2b3", whiteSpace: "nowrap" }}>{eq.modelo}</div>
                       </span>
+                      <span style={{ ...s.tdCell, whiteSpace: "nowrap" }}>{eq.serie || "—"}</span>
                       <span style={s.tdCell}>
                         <span style={eq.estado === "Operativo" ? s.badgeOp : eq.estado === "Operativo con observaciones" ? s.badgeObs : s.badgeFs}>
                           {eq.estado === "Operativo" ? "Operativo" : eq.estado === "Operativo con observaciones" ? "Con obs." : "Fuera serv."}
@@ -508,8 +509,8 @@ const s = {
   barraTrack: { flex: 1, height: "8px", background: "#eef1f6", borderRadius: "4px", overflow: "hidden" },
   barraNum: { fontSize: "13px", fontWeight: 700, width: "60px", textAlign: "right" },
   tablaWrap: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", overflow: "hidden" },
-  tablaHeader: { display: "grid", gridTemplateColumns: "36px 80px 60px 120px 90px 130px 90px 90px 220px", gap: "8px", padding: "12px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
-  tablaRow: { display: "grid", gridTemplateColumns: "36px 80px 60px 120px 90px 130px 90px 90px 220px", gap: "8px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
+  tablaHeader: { display: "grid", gridTemplateColumns: "32px 76px 50px 140px 88px 150px 110px 90px 90px 220px", gap: "8px", padding: "12px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
+  tablaRow: { display: "grid", gridTemplateColumns: "32px 76px 50px 140px 88px 150px 110px 90px 90px 220px", gap: "8px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
   thCell: { fontSize: "10.5px", color: "#8a92a6", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700, whiteSpace: "nowrap" },
   tdCell: { fontSize: "12.5px", color: "#26314d" },
   codigo: { fontSize: "11px", padding: "3px 8px", borderRadius: "7px", background: "#e5f0ff", color: "#1a4fc0", fontFamily: "monospace", fontWeight: 700 },
