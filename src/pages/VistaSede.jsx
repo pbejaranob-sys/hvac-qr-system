@@ -71,6 +71,7 @@ export default function VistaSede() {
   const sede = decodeURIComponent(sedeNombre);
   const [equipos, setEquipos] = useState([]);
   const [pisoFiltro, setPisoFiltro] = useState("Todos");
+  const [tipoFiltro, setTipoFiltro] = useState("Todos");
   const [estadoFiltro, setEstadoFiltro] = useState("Todos");
   const [mesFiltro, setMesFiltro] = useState("Todos");
 
@@ -208,9 +209,12 @@ export default function VistaSede() {
     return ta !== tb ? ta - tb : na - nb;
   })];
 
+  const tiposEquipo = ["Todos", ...[...new Set(equipos.map(e => e.tipoEquipo).filter(Boolean))].sort()];
+
   const equiposFiltrados = equipos
     .filter(e => {
       const pasaPiso = pisoFiltro === "Todos" || e.piso === pisoFiltro;
+      const pasaTipo = tipoFiltro === "Todos" || (e.tipoEquipo || "Sin tipo") === tipoFiltro;
       const pasaEstado = estadoFiltro === "Todos" ||
         (estadoFiltro === "Operativo" && e.estado === "Operativo") ||
         (estadoFiltro === "Con obs." && e.estado === "Operativo con observaciones") ||
@@ -218,7 +222,7 @@ export default function VistaSede() {
       const pasaMes = mesFiltro === "Todos" ||
         (mesFiltro === "Sin fecha" && !e.ultimoMantenimiento) ||
         fechaAMesAnio(e.ultimoMantenimiento) === mesFiltro;
-      return pasaPiso && pasaEstado && pasaMes;
+      return pasaPiso && pasaTipo && pasaEstado && pasaMes;
     })
     .sort((a, b) => {
       const fa = fechaATimestamp(a.ultimoMantenimiento);
@@ -314,7 +318,11 @@ export default function VistaSede() {
                 <select style={s.selectFiltro} value={pisoFiltro} onChange={e => setPisoFiltro(e.target.value)}>
                   {pisos.map(p => <option key={p}>{p}</option>)}
                 </select>
-                <span style={s.filterLabel}>Mant.:</span>
+                <span style={s.filterLabel}>Equipo:</span>
+                <select style={s.selectFiltro} value={tipoFiltro} onChange={e => setTipoFiltro(e.target.value)}>
+                  {tiposEquipo.map(t => <option key={t} value={t}>{t === "Todos" ? "Todos los equipos" : t}</option>)}
+                </select>
+                <span style={s.filterLabel}>Periodo:</span>
                 <select style={s.selectFiltro} value={mesFiltro} onChange={e => setMesFiltro(e.target.value)}>
                   {mesesDisponibles.map(m => <option key={m}>{m}</option>)}
                   <option value="Sin fecha">Sin fecha</option>
@@ -327,7 +335,7 @@ export default function VistaSede() {
               </div>
             </div>
             <div style={{ overflowX: "auto" }}>
-              <div style={{ minWidth: "1080px" }}>
+              <div style={{ minWidth: "0" }}>
                 <div style={s.tablaHeader}>
                   {["#", "Código", "Piso", "Ambiente", "Tipo", "Marca/Modelo", "Serie", "Estado", "Últ. mant.", "Acciones"].map(h => (
                     <span key={h} style={s.thCell}>{h}</span>
@@ -341,25 +349,25 @@ export default function VistaSede() {
                       <span style={s.tdCell}>{i + 1}</span>
                       <span style={s.tdCell}>{eq.codigo ? <span style={s.codigo}>{eq.codigo}</span> : <span style={{ color: "#c3cad9" }}>-</span>}</span>
                       <span style={s.tdCell}>{eq.piso || "-"}</span>
-                      <span style={{ ...s.tdCell, fontWeight: 700, color: "#0f1b3d" }}>{eq.ambiente || "-"}</span>
-                      <span style={s.tdCell}>{eq.tipoEquipo || "-"}</span>
-                      <span style={{ ...s.tdCell, minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: "12.5px", color: "#0f1b3d", whiteSpace: "nowrap" }}>{eq.marca}</div>
-                        <div style={{ fontSize: "11px", color: "#9aa2b3", whiteSpace: "nowrap" }}>{eq.modelo}</div>
+                      <span style={{ ...s.tdCell, fontWeight: 700, color: "#0f1b3d", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={eq.ambiente || ""}>{eq.ambiente || "-"}</span>
+                      <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={eq.tipoEquipo || ""}>{eq.tipoEquipo || "-"}</span>
+                      <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden" }}>
+                        <div style={{ fontWeight: 700, fontSize: "12px", color: "#0f1b3d", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={eq.marca || ""}>{eq.marca}</div>
+                        <div style={{ fontSize: "10.5px", color: "#9aa2b3", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={eq.modelo || ""}>{eq.modelo}</div>
                       </span>
-                      <span style={{ ...s.tdCell, whiteSpace: "nowrap" }}>{eq.serie || "—"}</span>
-                      <span style={s.tdCell}>
+                      <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={eq.serie || ""}>{eq.serie || "—"}</span>
+                      <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden" }}>
                         <span style={eq.estado === "Operativo" ? s.badgeOp : eq.estado === "Operativo con observaciones" ? s.badgeObs : s.badgeFs}>
                           {eq.estado === "Operativo" ? "Operativo" : eq.estado === "Operativo con observaciones" ? "Con obs." : "Fuera serv."}
                         </span>
                       </span>
-                      <span style={s.tdCell}>
+                      <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden" }}>
                         {mesAnio
                           ? <span style={{ fontSize: "11px", padding: "3px 9px", borderRadius: "20px", background: fc.bg, color: fc.color, border: `1px solid ${fc.border}`, whiteSpace: "nowrap", fontWeight: 700 }}>{mesAnio}</span>
                           : <span style={{ fontSize: "11px", color: "#c3cad9" }}>—</span>}
                       </span>
-                      <span style={s.tdCell}>
-                        <div style={{ display: "flex", gap: "5px" }}>
+                      <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden" }}>
+                        <div style={{ display: "flex", gap: "4px" }}>
                           <button style={s.btnInfo} onClick={() => navigate(`/equipo/${eq.id}`)}>Info</button>
                           <button style={s.btnEditar} onClick={() => navigate(`/registrar?id=${eq.id}`)}>Editar</button>
                           <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${eq.id}`)}>Protocolo</button>
@@ -509,18 +517,18 @@ const s = {
   barraTrack: { flex: 1, height: "8px", background: "#eef1f6", borderRadius: "4px", overflow: "hidden" },
   barraNum: { fontSize: "13px", fontWeight: 700, width: "60px", textAlign: "right" },
   tablaWrap: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", overflow: "hidden" },
-  tablaHeader: { display: "grid", gridTemplateColumns: "32px 76px 50px 140px 88px 150px 110px 90px 90px 220px", gap: "8px", padding: "12px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
-  tablaRow: { display: "grid", gridTemplateColumns: "32px 76px 50px 140px 88px 150px 110px 90px 90px 220px", gap: "8px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
+  tablaHeader: { display: "grid", gridTemplateColumns: "24px 64px 40px 1.1fr 0.8fr 1fr 0.85fr 76px 76px 200px", gap: "6px", padding: "12px 16px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
+  tablaRow: { display: "grid", gridTemplateColumns: "24px 64px 40px 1.1fr 0.8fr 1fr 0.85fr 76px 76px 200px", gap: "6px", padding: "12px 16px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
   thCell: { fontSize: "10.5px", color: "#8a92a6", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700, whiteSpace: "nowrap" },
   tdCell: { fontSize: "12.5px", color: "#26314d" },
   codigo: { fontSize: "11px", padding: "3px 8px", borderRadius: "7px", background: "#e5f0ff", color: "#1a4fc0", fontFamily: "monospace", fontWeight: 700 },
   badgeOp: { fontSize: "11px", padding: "4px 10px", borderRadius: "20px", background: "#e6f7ec", color: "#1c7a44", fontWeight: 700, whiteSpace: "nowrap" },
   badgeObs: { fontSize: "11px", padding: "4px 10px", borderRadius: "20px", background: "#fff3d6", color: "#a8720b", fontWeight: 700, whiteSpace: "nowrap" },
   badgeFs: { fontSize: "11px", padding: "4px 10px", borderRadius: "20px", background: "#fdeeee", color: "#a52b2b", fontWeight: 700, whiteSpace: "nowrap" },
-  btnInfo: { fontSize: "10.5px", padding: "5px 9px", background: "#1a4fc0", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
-  btnEditar: { fontSize: "10.5px", padding: "5px 9px", background: "#a8720b", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
-  btnProto: { fontSize: "10.5px", padding: "5px 9px", background: "#a52b2b", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
-  btnEliminar: { fontSize: "10.5px", padding: "5px 8px", background: "#fdeeee", color: "#a52b2b", border: "none", borderRadius: "7px", cursor: "pointer" },
+  btnInfo: { fontSize: "10px", padding: "5px 7px", background: "#1a4fc0", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
+  btnEditar: { fontSize: "10px", padding: "5px 7px", background: "#a8720b", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
+  btnProto: { fontSize: "10px", padding: "5px 7px", background: "#a52b2b", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
+  btnEliminar: { fontSize: "10px", padding: "5px 7px", background: "#fdeeee", color: "#a52b2b", border: "none", borderRadius: "7px", cursor: "pointer" },
   filterLabel: { fontSize: "12.5px", color: "#6b7488", fontWeight: 600 },
   selectFiltro: { fontSize: "12.5px", padding: "6px 10px", border: "1px solid #dfe6f5", borderRadius: "8px", background: "#f9fafc", color: "#26314d", fontFamily: "inherit", fontWeight: 600 },
   empty: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", padding: "48px", textAlign: "center" },
