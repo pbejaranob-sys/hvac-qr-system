@@ -203,6 +203,10 @@ export default function VistaSede() {
     const equipoViejoId = modalReemplazoAbierto.id;
     try {
       const nuevoRef = doc(collection(db, "equipos"));
+      const movRef = (formReemplazo.kgRecuperados && Number(formReemplazo.kgRecuperados) > 0)
+        ? doc(collection(db, "movimientosRefrigerante"))
+        : null;
+
       await runTransaction(db, async (tx) => {
         const viejoRef = doc(db, "equipos", equipoViejoId);
         const viejoSnap = await tx.get(viejoRef);
@@ -231,21 +235,21 @@ export default function VistaSede() {
           fechaBaja: hoy,
           equipoReemplazoId: nuevoRef.id,
         });
-      });
 
-      if (formReemplazo.kgRecuperados && Number(formReemplazo.kgRecuperados) > 0) {
-        await addDoc(collection(db, "movimientosRefrigerante"), {
-          equipoId: equipoViejoId,
-          equipoAmbiente: modalReemplazoAbierto.ambiente || "",
-          equipoCodigo: modalReemplazoAbierto.codigo || "",
-          cliente, sede,
-          tipo: "recuperacion_baja",
-          kg: Number(formReemplazo.kgRecuperados),
-          fecha: new Date().toISOString().split("T")[0],
-          tecnico: "",
-          fechaRegistro: serverTimestamp(),
-        });
-      }
+        if (movRef) {
+          tx.set(movRef, {
+            equipoId: equipoViejoId,
+            equipoAmbiente: viejo.ambiente || "",
+            equipoCodigo: viejo.codigo || "",
+            cliente, sede,
+            tipo: "recuperacion_baja",
+            kg: Number(formReemplazo.kgRecuperados),
+            fecha: hoy,
+            tecnico: "",
+            fechaRegistro: serverTimestamp(),
+          });
+        }
+      });
 
       setModalReemplazoAbierto(null);
       setHistorialesEquipo({});
