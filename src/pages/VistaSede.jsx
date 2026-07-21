@@ -121,6 +121,7 @@ export default function VistaSede() {
 
   const [vista, setVista] = useState("equipos"); // "equipos" | "refrigerantes"
   const [movimientos, setMovimientos] = useState(null); // null = aún no cargado
+  const [kgRecuperadosHistorico, setKgRecuperadosHistorico] = useState(null); // null = aún no cargado
   const [cargandoMovimientos, setCargandoMovimientos] = useState(false);
   const [modalCargaAbierto, setModalCargaAbierto] = useState(false);
   const [formCarga, setFormCarga] = useState({ equipoId: "", tipo: "carga", kg: "", fecha: new Date().toISOString().split("T")[0], tecnico: "" });
@@ -293,6 +294,8 @@ export default function VistaSede() {
         [ownerId]: (prev[ownerId] || []).map(h => h.id === item.id ? { ...h, ...datosEquipo, kgRecuperados: Number(kgRecuperados) || 0 } : h),
       }));
       setEditandoHistorialItem(null);
+      setKgRecuperadosHistorico(null);
+      cargarRecuperacionHistorica(true);
     } catch (err) {
       alert("Error al guardar: " + err.message);
     }
@@ -422,6 +425,10 @@ export default function VistaSede() {
       setHistorialesEquipo({});
       setHistorialEquipoAbierto({});
       cargarEquipos(auth.currentUser?.uid);
+      if (movRecuperacionRef) {
+        setKgRecuperadosHistorico(null);
+        cargarRecuperacionHistorica(true);
+      }
     } catch (err) {
       alert("Error al reemplazar el equipo: " + err.message);
     }
@@ -450,9 +457,28 @@ export default function VistaSede() {
     setCargandoMovimientos(false);
   };
 
+  // El gas recuperado queda enlazado al equipo VIEJO (ya reemplazado, fuera de la lista de
+  // equipos activos), así que se consulta por sede + tipo directamente, no por equipoId.
+  const cargarRecuperacionHistorica = async (force = false) => {
+    if (kgRecuperadosHistorico !== null && !force) return;
+    try {
+      const snap = await getDocs(query(
+        collection(db, "movimientosRefrigerante"),
+        where("sede", "==", sede),
+        where("tipo", "==", "recuperacion_baja")
+      ));
+      const total = snap.docs.reduce((acc, d) => acc + (Number(d.data().kg) || 0), 0);
+      setKgRecuperadosHistorico(total);
+    } catch (e) {
+      console.error("Error cargando recuperación histórica:", e);
+      setKgRecuperadosHistorico(0);
+    }
+  };
+
   const irARefrigerantes = () => {
     setVista("refrigerantes");
     cargarMovimientos();
+    cargarRecuperacionHistorica();
   };
 
   const [editandoMovimiento, setEditandoMovimiento] = useState(null); // movimiento siendo editado, o null = creando nuevo
@@ -901,6 +927,12 @@ export default function VistaSede() {
               <div style={{ ...s.statCard, background: enAlerta > 0 ? "#fdeeee" : "white" }}>
                 <div style={{ ...s.statNum, color: enAlerta > 0 ? "#a52b2b" : "#8a92a6" }}>{enAlerta} / {equiposConGas.length}</div>
                 <div style={s.statLabel}>En alerta</div>
+              </div>
+              <div style={s.statCard}>
+                <div style={{ ...s.statNum, color: "#7c3fd8" }}>
+                  {kgRecuperadosHistorico === null ? "…" : kgRecuperadosHistorico.toFixed(1)}
+                </div>
+                <div style={s.statLabel}>Kg recuperados (histórico)</div>
               </div>
             </div>
 
