@@ -845,7 +845,7 @@ export default function VistaSede() {
               ) : (
                 <div>
                   <div style={s.tablaHeaderRef}>
-                    {["Equipo", "Gas", "Carga nominal", "Añadido 12m", "Fuga", "Estado", ""].map(h => (
+                    {["Código", "Piso", "Equipo", "Gas", "Carga nominal", "Añadido 12m", "Fuga", "Estado", ""].map(h => (
                       <span key={h} style={s.thCell}>{h}</span>
                     ))}
                   </div>
@@ -855,7 +855,12 @@ export default function VistaSede() {
                     return (
                     <React.Fragment key={r.equipo.id}>
                     <div style={{ ...s.tablaRowRef, background: i % 2 === 0 ? "white" : "#fafbfd" }}>
-                      <span style={{ ...s.tdCell, fontWeight: 700, color: "#0f1b3d" }}>{r.equipo.tipoEquipo} — {r.equipo.ambiente || "-"}</span>
+                      <span style={s.tdCell}>{r.equipo.codigo ? <span style={s.codigo}>{r.equipo.codigo}</span> : <span style={{ color: "#c3cad9" }}>-</span>}</span>
+                      <span style={s.tdCell}>{r.equipo.piso || "-"}</span>
+                      <span style={{ ...s.tdCell, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, color: "#0f1b3d" }}>{r.equipo.tipoEquipo} — {r.equipo.ambiente || "-"}</div>
+                        <div style={{ fontSize: "10.5px", color: "#9aa2b3", marginTop: "2px" }}>{r.equipo.marca || ""} {r.equipo.modelo || ""}{r.equipo.serie ? ` · ${r.equipo.serie}` : ""}</div>
+                      </span>
                       <span style={s.tdCell}>{r.equipo.tipoRefrigerante || "—"}</span>
                       <span style={s.tdCell}>{r.nominal > 0 ? `${r.nominal.toFixed(1)} kg` : "Sin dato"}</span>
                       <span style={s.tdCell}>{r.anadido.toFixed(1)} kg</span>
@@ -1230,8 +1235,8 @@ const s = {
   tabBtn: { display: "flex", alignItems: "center", gap: "7px", background: "white", color: "#6b7488", border: "1px solid #e7ebf3", borderRadius: "11px", padding: "10px 18px", fontFamily: "inherit", fontWeight: 700, fontSize: "13px", cursor: "pointer" },
   tabBtnActiva: { background: "#12245e", color: "white", border: "1px solid #12245e" },
   tabBtnActivaRef: { background: "#1a4fc0", color: "white", border: "1px solid #1a4fc0" },
-  tablaHeaderRef: { display: "grid", gridTemplateColumns: "1.4fr 0.7fr 0.9fr 0.9fr 0.7fr 0.8fr 140px", gap: "8px", padding: "10px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
-  tablaRowRef: { display: "grid", gridTemplateColumns: "1.4fr 0.7fr 0.9fr 0.9fr 0.7fr 0.8fr 140px", gap: "8px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
+  tablaHeaderRef: { display: "grid", gridTemplateColumns: "76px 50px 1.3fr 0.7fr 0.9fr 0.9fr 0.7fr 0.8fr 140px", gap: "8px", padding: "10px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
+  tablaRowRef: { display: "grid", gridTemplateColumns: "76px 50px 1.3fr 0.7fr 0.9fr 0.9fr 0.7fr 0.8fr 140px", gap: "8px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
   btnRegistrarChico: { fontSize: "10.5px", padding: "5px 9px", background: "#e5f0ff", color: "#1a4fc0", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", whiteSpace: "nowrap" },
   btnHistorialChico: { fontSize: "10.5px", padding: "5px 8px", background: "#fff3d6", color: "#a8720b", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" },
   historialCargasPanel: { background: "#fafbfd", borderBottom: "1px solid #f2f4f8", padding: "10px 18px 14px 18px", display: "flex", flexDirection: "column", gap: "7px" },
