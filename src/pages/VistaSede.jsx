@@ -183,6 +183,19 @@ export default function VistaSede() {
         cadena.push(data);
         cursorId = data.equipoAnteriorId || null;
       }
+      // Para cada equipo dado de baja, buscar cuánto gas se recuperó al reemplazarlo.
+      await Promise.all(cadena.map(async (h) => {
+        try {
+          const movSnap = await getDocs(query(
+            collection(db, "movimientosRefrigerante"),
+            where("equipoId", "==", h.id),
+            where("tipo", "==", "recuperacion_baja")
+          ));
+          h.kgRecuperados = movSnap.docs.reduce((acc, d) => acc + (Number(d.data().kg) || 0), 0);
+        } catch {
+          h.kgRecuperados = null;
+        }
+      }));
       setHistorialesEquipo(prev => ({ ...prev, [eq.id]: cadena }));
     } catch (e) {
       console.error("Error cargando historial del equipo:", e);
@@ -659,6 +672,11 @@ export default function VistaSede() {
                                   </div>
                                   <span style={s.chipReemplazado}>Reemplazado</span>
                                 </div>
+                                {h.kgRecuperados > 0 && (
+                                  <div style={s.chipRecuperado}>
+                                    <SvgGota color="#a8720b" /> Recuperación final: {h.kgRecuperados.toFixed(1)} kg {h.tipoRefrigerante || ""} al dar de baja
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -992,6 +1010,7 @@ const s = {
   historialLinea: { display: "flex", flexDirection: "column", gap: "8px", paddingLeft: "14px", borderLeft: "2px dashed #d3d1c7" },
   historialItem: { border: "1px dashed #d3d1c7", borderRadius: "10px", padding: "9px 12px", opacity: 0.75, background: "white" },
   chipReemplazado: { fontSize: "9.5px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", background: "#f4f6fb", color: "#8a92a6", whiteSpace: "nowrap" },
+  chipRecuperado: { display: "flex", alignItems: "center", gap: "6px", fontSize: "10.5px", color: "#a8720b", fontWeight: 600, background: "#fff3d6", border: "1px solid #f3dfa3", borderRadius: "9px", padding: "7px 10px", marginTop: "9px" },
   filterLabel: { fontSize: "12.5px", color: "#6b7488", fontWeight: 600 },
   selectFiltro: { fontSize: "12.5px", padding: "6px 10px", border: "1px solid #dfe6f5", borderRadius: "8px", background: "#f9fafc", color: "#26314d", fontFamily: "inherit", fontWeight: 600 },
   empty: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", padding: "48px", textAlign: "center" },
