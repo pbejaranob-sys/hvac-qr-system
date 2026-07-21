@@ -127,6 +127,7 @@ export default function VistaSede() {
   const [modalReemplazoAbierto, setModalReemplazoAbierto] = useState(null); // equipo a reemplazar, o null
   const [formReemplazo, setFormReemplazo] = useState({ marca: "", modelo: "", serie: "", cargaNominal: "", kgRecuperados: "" });
   const [guardandoReemplazo, setGuardandoReemplazo] = useState(false);
+  const [historialCargasAbierto, setHistorialCargasAbierto] = useState({}); // { equipoId: bool }
 
   const navigate = useNavigate();
 
@@ -748,19 +749,44 @@ export default function VistaSede() {
                       <span key={h} style={s.thCell}>{h}</span>
                     ))}
                   </div>
-                  {refrigerantesData.map((r, i) => (
-                    <div key={r.equipo.id} style={{ ...s.tablaRowRef, background: i % 2 === 0 ? "white" : "#fafbfd" }}>
+                  {refrigerantesData.map((r, i) => {
+                    const movsEquipo = (movimientos || []).filter(m => m.equipoId === r.equipo.id).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                    const abierto = historialCargasAbierto[r.equipo.id];
+                    return (
+                    <React.Fragment key={r.equipo.id}>
+                    <div style={{ ...s.tablaRowRef, background: i % 2 === 0 ? "white" : "#fafbfd" }}>
                       <span style={{ ...s.tdCell, fontWeight: 700, color: "#0f1b3d" }}>{r.equipo.tipoEquipo} — {r.equipo.ambiente || "-"}</span>
                       <span style={s.tdCell}>{r.equipo.tipoRefrigerante || "—"}</span>
                       <span style={s.tdCell}>{r.nominal > 0 ? `${r.nominal.toFixed(1)} kg` : "Sin dato"}</span>
                       <span style={s.tdCell}>{r.anadido.toFixed(1)} kg</span>
                       <span style={{ ...s.tdCell, fontWeight: 700, color: r.estado.color }}>{r.pct === null ? "—" : `${r.pct.toFixed(1)}%`}</span>
                       <span style={s.tdCell}><span style={{ fontSize: "11px", padding: "3px 9px", borderRadius: "20px", background: r.estado.bg, color: r.estado.color, fontWeight: 700 }}>{r.estado.label}</span></span>
-                      <span style={s.tdCell}>
+                      <span style={{ ...s.tdCell, display: "flex", gap: "5px" }}>
                         <button style={s.btnRegistrarChico} onClick={() => abrirModalCarga(r.equipo.id)}>+ Carga</button>
+                        {movsEquipo.length > 0 && (
+                          <button style={s.btnHistorialChico} onClick={() => setHistorialCargasAbierto(prev => ({ ...prev, [r.equipo.id]: !prev[r.equipo.id] }))}>
+                            <SvgHistorial /> {movsEquipo.length}
+                          </button>
+                        )}
                       </span>
                     </div>
-                  ))}
+                    {abierto && (
+                      <div style={s.historialCargasPanel}>
+                        {movsEquipo.map(m => (
+                          <div key={m.id} style={s.historialCargaItem}>
+                            <span style={{ ...s.chipMovimiento, ...(m.tipo === "carga" ? s.chipCarga : m.tipo === "recuperacion_baja" ? s.chipRecuperacionBaja : s.chipRecuperacion) }}>
+                              {m.tipo === "carga" ? "Carga" : m.tipo === "recuperacion_baja" ? "Recuperación (baja)" : "Recuperación"}
+                            </span>
+                            <span style={{ fontSize: "12px", fontWeight: 700, color: "#0f1b3d" }}>{Number(m.kg).toFixed(1)} kg</span>
+                            <span style={{ fontSize: "11.5px", color: "#8a92a6" }}>{m.fecha}</span>
+                            <span style={{ fontSize: "11.5px", color: "#8a92a6" }}>{m.tecnico || "—"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    </React.Fragment>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1053,9 +1079,16 @@ const s = {
   tabBtn: { display: "flex", alignItems: "center", gap: "7px", background: "white", color: "#6b7488", border: "1px solid #e7ebf3", borderRadius: "11px", padding: "10px 18px", fontFamily: "inherit", fontWeight: 700, fontSize: "13px", cursor: "pointer" },
   tabBtnActiva: { background: "#12245e", color: "white", border: "1px solid #12245e" },
   tabBtnActivaRef: { background: "#1a4fc0", color: "white", border: "1px solid #1a4fc0" },
-  tablaHeaderRef: { display: "grid", gridTemplateColumns: "1.4fr 0.7fr 0.9fr 0.9fr 0.7fr 0.8fr 90px", gap: "8px", padding: "10px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
-  tablaRowRef: { display: "grid", gridTemplateColumns: "1.4fr 0.7fr 0.9fr 0.9fr 0.7fr 0.8fr 90px", gap: "8px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
+  tablaHeaderRef: { display: "grid", gridTemplateColumns: "1.4fr 0.7fr 0.9fr 0.9fr 0.7fr 0.8fr 140px", gap: "8px", padding: "10px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
+  tablaRowRef: { display: "grid", gridTemplateColumns: "1.4fr 0.7fr 0.9fr 0.9fr 0.7fr 0.8fr 140px", gap: "8px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
   btnRegistrarChico: { fontSize: "10.5px", padding: "5px 9px", background: "#e5f0ff", color: "#1a4fc0", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", whiteSpace: "nowrap" },
+  btnHistorialChico: { fontSize: "10.5px", padding: "5px 8px", background: "#fff3d6", color: "#a8720b", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" },
+  historialCargasPanel: { background: "#fafbfd", borderBottom: "1px solid #f2f4f8", padding: "10px 18px 14px 18px", display: "flex", flexDirection: "column", gap: "7px" },
+  historialCargaItem: { display: "grid", gridTemplateColumns: "140px 70px 100px 1fr", gap: "10px", alignItems: "center", background: "white", border: "1px solid #eef1f6", borderRadius: "9px", padding: "8px 12px" },
+  chipMovimiento: { fontSize: "10px", fontWeight: 700, padding: "3px 9px", borderRadius: "20px", width: "fit-content", whiteSpace: "nowrap" },
+  chipCarga: { background: "#e6f7ec", color: "#1c7a44" },
+  chipRecuperacion: { background: "#e5f0ff", color: "#1a4fc0" },
+  chipRecuperacionBaja: { background: "#fff3d6", color: "#a8720b" },
   labelModal: { display: "block", fontWeight: 700, fontSize: "12px", color: "#26314d", marginBottom: "5px" },
   inputModal: { width: "100%", boxSizing: "border-box", border: "1px solid #dfe6f5", borderRadius: "10px", padding: "9px 11px", fontFamily: "inherit", fontSize: "13.5px", color: "#0f1b3d", background: "#f9fafc" },
 };
