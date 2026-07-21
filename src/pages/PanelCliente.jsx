@@ -400,6 +400,14 @@ export default function PanelCliente() {
   const getRec = (e) => e.recomendacionesArray?.filter(Boolean) ||
     e.recomendaciones?.split(/\n|;/).map(r => r.trim()).filter(Boolean) || [];
 
+  const equiposMostrados = sedeActual
+    ? equipos.filter(e => e.sede === sedeActual.nombre)
+    : equipos;
+
+  const averiasSedeActual = sedeActual
+    ? averias.filter(a => a.sede === sedeActual.nombre)
+    : averias;
+
   // ---- Refrigerantes (solo lectura) ----
   const equiposConGas = equiposMostrados.filter(e => TIPOS_CON_GAS.includes(e.tipoEquipo));
 
@@ -506,14 +514,6 @@ export default function PanelCliente() {
     }
     setCargandoHistorialEquipo(prev => ({ ...prev, [eq.id]: false }));
   };
-
-  const equiposMostrados = sedeActual
-    ? equipos.filter(e => e.sede === sedeActual.nombre)
-    : equipos;
-
-  const averiasSedeActual = sedeActual
-    ? averias.filter(a => a.sede === sedeActual.nombre)
-    : averias;
 
   const fechaAMesAnio = (fecha) => {
     if (!fecha) return null;
