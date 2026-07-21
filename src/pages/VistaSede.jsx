@@ -221,7 +221,7 @@ export default function VistaSede() {
     setCargandoHistorialEquipo(prev => ({ ...prev, [eq.id]: false }));
   };
 
-  const abrirEditarHistorialItem = (ownerId, item) => {
+  const abrirEditarHistorialItem = async (ownerId, item) => {
     setEditandoHistorialItem({ ownerId, item });
     setFormEditHistorial({
       marca: item.marca || "", modelo: item.modelo || "", serie: item.serie || "",
@@ -229,7 +229,26 @@ export default function VistaSede() {
       fases: item.fases || "Monofásico", voltaje: item.voltaje || "", amperaje: item.amperaje || "",
       cargaNominal: item.cargaNominal || "",
       fechaInstalacion: item.fechaInstalacion || "", fechaBaja: item.fechaBaja || "",
+      cargaAdicionalInstalacion: "", cargaAdicionalMovId: null,
+      kgRecuperados: "", kgRecuperadosMovId: null,
     });
+    // Busca los movimientos reales de este equipo (carga inicial al instalarlo,
+    // recuperación al darlo de baja) para poder editarlos, no solo el equipo.
+    try {
+      const snap = await getDocs(query(collection(db, "movimientosRefrigerante"), where("equipoId", "==", item.id)));
+      const movs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const cargaInicial = movs.find(m => m.tipo === "carga");
+      const recuperacion = movs.find(m => m.tipo === "recuperacion_baja");
+      setFormEditHistorial(prev => ({
+        ...prev,
+        cargaAdicionalInstalacion: cargaInicial ? String(cargaInicial.kg) : "",
+        cargaAdicionalMovId: cargaInicial ? cargaInicial.id : null,
+        kgRecuperados: recuperacion ? String(recuperacion.kg) : "",
+        kgRecuperadosMovId: recuperacion ? recuperacion.id : null,
+      }));
+    } catch (e) {
+      console.error("Error cargando movimientos del historial:", e);
+    }
   };
 
   const guardarEditHistorial = async (e) => {
@@ -238,10 +257,40 @@ export default function VistaSede() {
     setGuardandoEditHistorial(true);
     try {
       const { ownerId, item } = editandoHistorialItem;
-      await updateDoc(doc(db, "equipos", item.id), { ...formEditHistorial });
+      const { cargaAdicionalInstalacion, cargaAdicionalMovId, kgRecuperados, kgRecuperadosMovId, ...datosEquipo } = formEditHistorial;
+      await updateDoc(doc(db, "equipos", item.id), datosEquipo);
+
+      // Carga inicial: actualiza el movimiento si ya existía, o lo crea si no.
+      if (cargaAdicionalInstalacion && Number(cargaAdicionalInstalacion) > 0) {
+        if (cargaAdicionalMovId) {
+          await updateDoc(doc(db, "movimientosRefrigerante", cargaAdicionalMovId), { kg: Number(cargaAdicionalInstalacion) });
+        } else {
+          await addDoc(collection(db, "movimientosRefrigerante"), {
+            equipoId: item.id, equipoAmbiente: item.ambiente || "", equipoCodigo: item.codigo || "",
+            cliente, sede, tipo: "carga", kg: Number(cargaAdicionalInstalacion),
+            fecha: datosEquipo.fechaInstalacion || new Date().toISOString().split("T")[0],
+            tecnico: "", fechaRegistro: serverTimestamp(),
+          });
+        }
+      }
+
+      // Recuperación al dar de baja: mismo patrón.
+      if (kgRecuperados && Number(kgRecuperados) > 0) {
+        if (kgRecuperadosMovId) {
+          await updateDoc(doc(db, "movimientosRefrigerante", kgRecuperadosMovId), { kg: Number(kgRecuperados) });
+        } else {
+          await addDoc(collection(db, "movimientosRefrigerante"), {
+            equipoId: item.id, equipoAmbiente: item.ambiente || "", equipoCodigo: item.codigo || "",
+            cliente, sede, tipo: "recuperacion_baja", kg: Number(kgRecuperados),
+            fecha: datosEquipo.fechaBaja || new Date().toISOString().split("T")[0],
+            tecnico: "", fechaRegistro: serverTimestamp(),
+          });
+        }
+      }
+
       setHistorialesEquipo(prev => ({
         ...prev,
-        [ownerId]: (prev[ownerId] || []).map(h => h.id === item.id ? { ...h, ...formEditHistorial } : h),
+        [ownerId]: (prev[ownerId] || []).map(h => h.id === item.id ? { ...h, ...datosEquipo, kgRecuperados: Number(kgRecuperados) || 0 } : h),
       }));
       setEditandoHistorialItem(null);
     } catch (err) {
@@ -1051,6 +1100,16 @@ export default function VistaSede() {
                   <label style={s.labelModal}>Carga nominal (kg)</label>
                   <input style={s.inputModal} type="number" step="0.1" value={formEditHistorial.cargaNominal} onChange={e => setFormEditHistorial({ ...formEditHistorial, cargaNominal: e.target.value })} />
                 </div>
+                <div>
+                  <label style={s.labelModal}>Carga adicional por instalación (kg)</label>
+                  <input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formEditHistorial.cargaAdicionalInstalacion} onChange={e => setFormEditHistorial({ ...formEditHistorial, cargaAdicionalInstalacion: e.target.value })} />
+                </div>
+              </div>
+
+              <div style={{ ...s.seccionLabel, color: "#a52b2b" }}>Baja del equipo</div>
+              <div>
+                <label style={s.labelModal}>Kg de refrigerante recuperados al dar de baja</label>
+                <input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formEditHistorial.kgRecuperados} onChange={e => setFormEditHistorial({ ...formEditHistorial, kgRecuperados: e.target.value })} />
               </div>
 
               <div style={s.seccionLabel}>Fechas de servicio</div>
