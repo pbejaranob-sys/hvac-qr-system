@@ -128,7 +128,7 @@ export default function RegistrarEquipo() {
 
   const [form, setForm] = useState({
     cliente: clienteParam, sede: sedeParam, codigo: "", piso: "", ambiente: "", tipoEquipo: "",
-    marca: "", modelo: "", serie: "", capacidad: "", tipoRefrigerante: "",
+    marca: "", modelo: "", serie: "", capacidad: "", tipoRefrigerante: "", cargaNominal: "",
     voltaje: "", amperaje: "", fases: "Monofásico", ubicacion: "",
     condVoltaje: "", condAmperaje: "", modeloCompresor: "",
     fancoilNum: "", contrato: "", modeloFaja: "", numFajas: "", marcaMotor: "", modeloMotor: "", serieMotor: "",
@@ -157,7 +157,7 @@ export default function RegistrarEquipo() {
         piso: data.piso || "", ambiente: data.ambiente || "",
         tipoEquipo: data.tipoEquipo || "", marca: data.marca || "",
         modelo: data.modelo || "", serie: data.serie || "",
-        capacidad: data.capacidad || "", tipoRefrigerante: data.tipoRefrigerante || "",
+        capacidad: data.capacidad || "", tipoRefrigerante: data.tipoRefrigerante || "", cargaNominal: data.cargaNominal || "",
         voltaje: data.voltaje || "", amperaje: data.amperaje || "",
         condVoltaje: data.condVoltaje || "", condAmperaje: data.condAmperaje || "",
         modeloCompresor: data.modeloCompresor || "",
@@ -264,6 +264,11 @@ export default function RegistrarEquipo() {
 
   const esVentilacion = ["Ventilación", "Extractor", "Inyector", "Cortina de aire", "Jetfan", "Presurizador"].includes(form.tipoEquipo);
   const esFancoilOMotor = ["Fan Coil", "UMA", "Manejadora de Aire", "Fancoil AH", "UMA AH"].some(t => (form.tipoEquipo || "").toLowerCase().includes(t.toLowerCase().split(" ")[0])) || esVentilacion;
+  // Split/VRV/Chiller usan refrigerante; Fan Coil/UMA usan agua helada (no aplica).
+  const esConRefrigerante = [
+    "Split Piso Techo", "Split Pared", "Split Ducto", "Split Fancoil", "Split Cassete",
+    "Ventana", "Autocontenido", "Precisión", "VRV Evaporador", "VRV Condensador", "Chiller",
+  ].includes(form.tipoEquipo);
 
   return (
     <div style={s.page}>
@@ -402,6 +407,12 @@ export default function RegistrarEquipo() {
                         <option value="">Seleccionar...</option>
                         {["R-22", "R-410A", "R-32", "R-407C", "R-134A", "Otro"].map(r => <option key={r}>{r}</option>)}
                       </select>
+                    </div>
+                  )}
+                  {esConRefrigerante && (
+                    <div>
+                      <label style={s.label}>Carga nominal de refrigerante (kg)</label>
+                      <input style={s.input} name="cargaNominal" type="number" step="0.1" placeholder="1.8, 6.5, 18.0..." value={form.cargaNominal} onChange={handleChange} />
                     </div>
                   )}
                 </div>

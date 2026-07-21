@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
-import { collection, getDocs, query, where, deleteDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, getDoc, query, where, deleteDoc, doc, updateDoc, addDoc, serverTimestamp, runTransaction } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 
 const FONT = "'Manrope', -apple-system, sans-serif";
+
+// Tipos de equipo que manejan gas refrigerante (Split/VRV/Chiller).
+// Fan Coil y UMA NO se incluyen: trabajan con agua helada, no con refrigerante.
+const TIPOS_CON_GAS = [
+  "Split Piso Techo", "Split Pared", "Split Ducto", "Split Fancoil", "Split Cassete",
+  "Ventana", "Autocontenido", "Precisión", "VRV Evaporador", "VRV Condensador", "Chiller",
+];
 
 function useManropeAndBodyReset() {
   useEffect(() => {
@@ -57,9 +64,34 @@ const SvgAlerta = ({ color = "currentColor" }) => (
     <path d="M12 10v4M12 17h.01" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
   </svg>
 );
+const SvgHistorial = ({ color = "currentColor" }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M3 12a9 9 0 1 0 3-6.7" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M3 4v5h5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M12 8v4l3 2" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgReemplazo = ({ color = "currentColor" }) => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+    <path d="M17 2l4 4-4 4" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3 12V10a4 4 0 0 1 4-4h14" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M7 22l-4-4 4-4" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M21 12v2a4 4 0 0 1-4 4H3" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
 const SvgChevron = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
     <path d="M9 6l6 6-6 6" stroke="#c3cad9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const SvgGota = ({ color = "currentColor" }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+    <path d="M12 2c3 4 6 7.5 6 11.5A6 6 0 0 1 6 13.5C6 9.5 9 6 12 2z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+  </svg>
+);
+const SvgLista = ({ color = "currentColor" }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+    <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
@@ -82,6 +114,20 @@ export default function VistaSede() {
   const [historialAbierto, setHistorialAbierto] = useState(false);
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
 
+  const [vista, setVista] = useState("equipos"); // "equipos" | "refrigerantes"
+  const [movimientos, setMovimientos] = useState(null); // null = aún no cargado
+  const [cargandoMovimientos, setCargandoMovimientos] = useState(false);
+  const [modalCargaAbierto, setModalCargaAbierto] = useState(false);
+  const [formCarga, setFormCarga] = useState({ equipoId: "", tipo: "carga", kg: "", fecha: new Date().toISOString().split("T")[0], tecnico: "" });
+  const [guardandoCarga, setGuardandoCarga] = useState(false);
+
+  const [historialesEquipo, setHistorialesEquipo] = useState({}); // { equipoId: [equiposAnteriores] }
+  const [historialEquipoAbierto, setHistorialEquipoAbierto] = useState({}); // { equipoId: bool }
+  const [cargandoHistorialEquipo, setCargandoHistorialEquipo] = useState({});
+  const [modalReemplazoAbierto, setModalReemplazoAbierto] = useState(null); // equipo a reemplazar, o null
+  const [formReemplazo, setFormReemplazo] = useState({ marca: "", modelo: "", serie: "", cargaNominal: "", kgRecuperados: "" });
+  const [guardandoReemplazo, setGuardandoReemplazo] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -98,7 +144,9 @@ export default function VistaSede() {
       where("sede", "==", sede)
     );
     const snap = await getDocs(q);
-    setEquipos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    const todos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Los equipos reemplazados siguen en Firestore (trazabilidad), pero no se listan como activos.
+    setEquipos(todos.filter(e => e.cicloVida !== "reemplazado"));
 
     try {
       const qA = query(collection(db, "averias"),
@@ -118,6 +166,199 @@ export default function VistaSede() {
     await deleteDoc(doc(db, "equipos", equipoId));
     setEquipos(prev => prev.filter(e => e.id !== equipoId));
   };
+
+  // ---- Historial de reemplazo de equipos (trazabilidad Kigali/MINAM) ----
+  const toggleHistorialEquipo = async (eq) => {
+    const abierto = historialEquipoAbierto[eq.id];
+    setHistorialEquipoAbierto(prev => ({ ...prev, [eq.id]: !abierto }));
+    if (abierto || historialesEquipo[eq.id] || !eq.equipoAnteriorId) return;
+    setCargandoHistorialEquipo(prev => ({ ...prev, [eq.id]: true }));
+    try {
+      const cadena = [];
+      let cursorId = eq.equipoAnteriorId;
+      while (cursorId) {
+        const snap = await getDoc(doc(db, "equipos", cursorId));
+        if (!snap.exists()) break;
+        const data = { id: snap.id, ...snap.data() };
+        cadena.push(data);
+        cursorId = data.equipoAnteriorId || null;
+      }
+      setHistorialesEquipo(prev => ({ ...prev, [eq.id]: cadena }));
+    } catch (e) {
+      console.error("Error cargando historial del equipo:", e);
+      setHistorialesEquipo(prev => ({ ...prev, [eq.id]: [] }));
+    }
+    setCargandoHistorialEquipo(prev => ({ ...prev, [eq.id]: false }));
+  };
+
+  const abrirModalReemplazo = (eq) => {
+    setModalReemplazoAbierto(eq);
+    setFormReemplazo({ marca: "", modelo: "", serie: "", cargaNominal: eq.cargaNominal || "", kgRecuperados: "" });
+  };
+
+  const guardarReemplazo = async (e) => {
+    e.preventDefault();
+    if (!modalReemplazoAbierto || !formReemplazo.marca) return;
+    setGuardandoReemplazo(true);
+    const equipoViejoId = modalReemplazoAbierto.id;
+    try {
+      const nuevoRef = doc(collection(db, "equipos"));
+      await runTransaction(db, async (tx) => {
+        const viejoRef = doc(db, "equipos", equipoViejoId);
+        const viejoSnap = await tx.get(viejoRef);
+        if (!viejoSnap.exists()) throw new Error("El equipo original ya no existe.");
+        const viejo = viejoSnap.data();
+        const hoy = new Date().toISOString().split("T")[0];
+
+        tx.set(nuevoRef, {
+          cliente, sede, adminid: auth.currentUser?.uid || "",
+          codigo: viejo.codigo || "", piso: viejo.piso || "", ambiente: viejo.ambiente || "",
+          tipoEquipo: viejo.tipoEquipo || "",
+          marca: formReemplazo.marca, modelo: formReemplazo.modelo, serie: formReemplazo.serie,
+          cargaNominal: formReemplazo.cargaNominal, tipoRefrigerante: viejo.tipoRefrigerante || "",
+          estado: "Operativo",
+          cicloVida: "activo",
+          equipoAnteriorId: equipoViejoId,
+          equipoReemplazoId: null,
+          historialCount: (viejo.historialCount || 0) + 1,
+          fechaInstalacion: hoy,
+          fechaBaja: null,
+          fechaRegistro: hoy,
+        });
+
+        tx.update(viejoRef, {
+          cicloVida: "reemplazado",
+          fechaBaja: hoy,
+          equipoReemplazoId: nuevoRef.id,
+        });
+      });
+
+      if (formReemplazo.kgRecuperados && Number(formReemplazo.kgRecuperados) > 0) {
+        await addDoc(collection(db, "movimientosRefrigerante"), {
+          equipoId: equipoViejoId,
+          equipoAmbiente: modalReemplazoAbierto.ambiente || "",
+          equipoCodigo: modalReemplazoAbierto.codigo || "",
+          cliente, sede,
+          tipo: "recuperacion_baja",
+          kg: Number(formReemplazo.kgRecuperados),
+          fecha: new Date().toISOString().split("T")[0],
+          tecnico: "",
+          fechaRegistro: serverTimestamp(),
+        });
+      }
+
+      setModalReemplazoAbierto(null);
+      setHistorialesEquipo({});
+      setHistorialEquipoAbierto({});
+      cargarEquipos(auth.currentUser?.uid);
+    } catch (err) {
+      alert("Error al reemplazar el equipo: " + err.message);
+    }
+    setGuardandoReemplazo(false);
+  };
+
+  // ---- Refrigerantes y cumplimiento ----
+  const equiposConGas = equipos.filter(e => TIPOS_CON_GAS.includes(e.tipoEquipo));
+
+  const cargarMovimientos = async () => {
+    if (movimientos !== null || equiposConGas.length === 0) return;
+    setCargandoMovimientos(true);
+    try {
+      const ids = equiposConGas.map(e => e.id);
+      const chunks = [];
+      for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
+      const resultados = await Promise.all(
+        chunks.map(chunk => getDocs(query(collection(db, "movimientosRefrigerante"), where("equipoId", "in", chunk))))
+      );
+      const todos = resultados.flatMap(snap => snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setMovimientos(todos);
+    } catch (e) {
+      console.error("Error cargando movimientos de refrigerante:", e);
+      setMovimientos([]);
+    }
+    setCargandoMovimientos(false);
+  };
+
+  const irARefrigerantes = () => {
+    setVista("refrigerantes");
+    cargarMovimientos();
+  };
+
+  const abrirModalCarga = (equipoIdPreseleccionado = "") => {
+    setFormCarga({ equipoId: equipoIdPreseleccionado, tipo: "carga", kg: "", fecha: new Date().toISOString().split("T")[0], tecnico: "" });
+    setModalCargaAbierto(true);
+  };
+
+  const guardarCarga = async (e) => {
+    e.preventDefault();
+    if (!formCarga.equipoId || !formCarga.kg) return;
+    setGuardandoCarga(true);
+    try {
+      const eq = equipos.find(x => x.id === formCarga.equipoId);
+      const nuevo = {
+        equipoId: formCarga.equipoId,
+        equipoAmbiente: eq?.ambiente || "",
+        equipoCodigo: eq?.codigo || "",
+        cliente, sede,
+        tipo: formCarga.tipo,
+        kg: Number(formCarga.kg),
+        fecha: formCarga.fecha,
+        tecnico: formCarga.tecnico,
+        fechaRegistro: serverTimestamp(),
+      };
+      const ref = await addDoc(collection(db, "movimientosRefrigerante"), nuevo);
+      setMovimientos(prev => [{ id: ref.id, ...nuevo, fechaRegistro: { toDate: () => new Date() } }, ...(prev || [])]);
+      setModalCargaAbierto(false);
+    } catch (err) {
+      alert("Error al guardar: " + err.message);
+    }
+    setGuardandoCarga(false);
+  };
+
+  const hace12Meses = () => { const d = new Date(); d.setMonth(d.getMonth() - 12); return d; };
+
+  const kgAnadidos12m = (equipoId) => {
+    if (!movimientos) return 0;
+    const corte = hace12Meses();
+    return movimientos
+      .filter(m => m.equipoId === equipoId && m.tipo === "carga" && new Date(m.fecha) >= corte)
+      .reduce((acc, m) => acc + (Number(m.kg) || 0), 0);
+  };
+
+  const estadoFuga = (pct) => {
+    if (pct === null) return { label: "Sin datos", bg: "#f4f6fb", color: "#8a92a6" };
+    if (pct >= 20) return { label: "Crítico", bg: "#fdeeee", color: "#a52b2b" };
+    if (pct >= 10) return { label: "Alerta", bg: "#fff3d6", color: "#a8720b" };
+    return { label: "OK", bg: "#e6f7ec", color: "#1c7a44" };
+  };
+
+  const refrigerantesData = equiposConGas.map(eq => {
+    const nominal = Number(eq.cargaNominal) || 0;
+    const anadido = kgAnadidos12m(eq.id);
+    const pct = nominal > 0 ? (anadido / nominal) * 100 : null;
+    return { equipo: eq, nominal, anadido, pct, estado: estadoFuga(pct) };
+  });
+
+  const kgInstalados = refrigerantesData.reduce((acc, r) => acc + r.nominal, 0);
+  const kgAnadidosTotal = refrigerantesData.reduce((acc, r) => acc + r.anadido, 0);
+  const tasaFugaPromedio = kgInstalados > 0 ? (kgAnadidosTotal / kgInstalados) * 100 : 0;
+  const enAlerta = refrigerantesData.filter(r => r.pct !== null && r.pct >= 10).length;
+
+  const mesesChart = (() => {
+    const meses = [];
+    const hoy = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+      meses.push({ label: d.toLocaleDateString("es-PE", { month: "short" }), year: d.getFullYear(), month: d.getMonth() });
+    }
+    return meses.map(m => {
+      const kg = (movimientos || [])
+        .filter(mv => mv.tipo === "carga" && (() => { const fd = new Date(mv.fecha); return fd.getFullYear() === m.year && fd.getMonth() === m.month; })())
+        .reduce((acc, mv) => acc + (Number(mv.kg) || 0), 0);
+      return { ...m, kg };
+    });
+  })();
+  const maxKgMes = Math.max(0.1, ...mesesChart.map(m => m.kg));
 
   // ---- Averías / emergencias ----
   const abrirDetalleAveria = (averia) => {
@@ -249,6 +490,19 @@ export default function VistaSede() {
       </div>
 
       <div style={s.content}>
+        {equiposConGas.length > 0 && (
+          <div style={s.tabsWrap}>
+            <button style={{ ...s.tabBtn, ...(vista === "equipos" ? s.tabBtnActiva : {}) }} onClick={() => setVista("equipos")}>
+              <SvgLista /> Equipos
+            </button>
+            <button style={{ ...s.tabBtn, ...(vista === "refrigerantes" ? s.tabBtnActivaRef : {}) }} onClick={irARefrigerantes}>
+              <SvgGota /> Refrigerantes
+            </button>
+          </div>
+        )}
+
+        {vista === "equipos" && (
+          <>
         <div style={s.statsGrid}>
           <div style={{ ...s.statCard, border: `1.5px solid ${estadoFiltro === "Todos" ? "#1a4fc0" : "#e7ebf3"}`, cursor: "pointer" }}
             onClick={() => setEstadoFiltro("Todos")}>
@@ -344,8 +598,11 @@ export default function VistaSede() {
                 {equiposFiltrados.map((eq, i) => {
                   const fc = fechaColor(eq.ultimoMantenimiento);
                   const mesAnio = fechaAMesAnio(eq.ultimoMantenimiento);
+                  const tieneHistorial = !!eq.equipoAnteriorId;
+                  const abierto = historialEquipoAbierto[eq.id];
                   return (
-                    <div key={eq.id} style={{ ...s.tablaRow, background: i % 2 === 0 ? "white" : "#fafbfd" }}>
+                    <React.Fragment key={eq.id}>
+                    <div style={{ ...s.tablaRow, background: i % 2 === 0 ? "white" : "#fafbfd" }}>
                       <span style={s.tdCell}>{i + 1}</span>
                       <span style={s.tdCell}>{eq.codigo ? <span style={s.codigo}>{eq.codigo}</span> : <span style={{ color: "#c3cad9" }}>-</span>}</span>
                       <span style={s.tdCell}>{eq.piso || "-"}</span>
@@ -367,21 +624,217 @@ export default function VistaSede() {
                           : <span style={{ fontSize: "11px", color: "#c3cad9" }}>—</span>}
                       </span>
                       <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden" }}>
-                        <div style={{ display: "flex", gap: "4px" }}>
+                        <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
                           <button style={s.btnInfo} onClick={() => navigate(`/equipo/${eq.id}`)}>Info</button>
                           <button style={s.btnEditar} onClick={() => navigate(`/registrar?id=${eq.id}`)}>Editar</button>
                           <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${eq.id}`)}>Protocolo</button>
+                          <button style={s.btnReemplazar} onClick={() => abrirModalReemplazo(eq)} title="Reemplazar equipo"><SvgReemplazo /></button>
                           <button style={s.btnEliminar} onClick={() => handleEliminar(eq.id)}><SvgEliminar /></button>
+                          {tieneHistorial && (
+                            <button style={s.btnHistorial} onClick={() => toggleHistorialEquipo(eq)} title={`${eq.historialCount || 1} reemplazo(s) anterior(es)`}>
+                              <SvgHistorial /> {eq.historialCount || 1}
+                            </button>
+                          )}
                         </div>
                       </span>
                     </div>
+                    {tieneHistorial && abierto && (
+                      <div style={s.historialPanel}>
+                        {cargandoHistorialEquipo[eq.id] ? (
+                          <div style={{ fontSize: "12px", color: "#8a92a6", padding: "6px 0" }}>Cargando historial...</div>
+                        ) : (
+                          <div style={s.historialLinea}>
+                            {(historialesEquipo[eq.id] || []).map((h, idx) => (
+                              <div key={h.id} style={s.historialItem}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+                                  <div>
+                                    <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#26314d" }}>{h.marca} {h.modelo} {h.serie ? `· ${h.serie}` : ""}</div>
+                                    <div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "2px" }}>
+                                      {h.fechaInstalacion || "?"} – {h.fechaBaja || "?"}
+                                    </div>
+                                  </div>
+                                  <span style={s.chipReemplazado}>Reemplazado</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    </React.Fragment>
                   );
                 })}
               </div>
             </div>
           </div>
         )}
+          </>
+        )}
+
+        {vista === "refrigerantes" && (
+          <>
+            <div style={s.statsGrid}>
+              <div style={s.statCard}>
+                <div style={{ ...s.statNum, color: "#1a4fc0" }}>{kgInstalados.toFixed(1)}</div>
+                <div style={s.statLabel}>Kg instalados</div>
+              </div>
+              <div style={s.statCard}>
+                <div style={{ ...s.statNum, color: "#1c7a44" }}>{kgAnadidosTotal.toFixed(1)}</div>
+                <div style={s.statLabel}>Kg añadidos 12m</div>
+              </div>
+              <div style={{ ...s.statCard, background: tasaFugaPromedio >= 10 ? "#fff3d6" : "white" }}>
+                <div style={{ ...s.statNum, color: tasaFugaPromedio >= 20 ? "#a52b2b" : tasaFugaPromedio >= 10 ? "#a8720b" : "#1c7a44" }}>{tasaFugaPromedio.toFixed(1)}%</div>
+                <div style={s.statLabel}>Tasa de fuga</div>
+              </div>
+              <div style={{ ...s.statCard, background: enAlerta > 0 ? "#fdeeee" : "white" }}>
+                <div style={{ ...s.statNum, color: enAlerta > 0 ? "#a52b2b" : "#8a92a6" }}>{enAlerta} / {equiposConGas.length}</div>
+                <div style={s.statLabel}>En alerta</div>
+              </div>
+            </div>
+
+            <div style={s.barrasCard}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+                <span style={{ fontSize: "14px", fontWeight: 800, color: "#12245e" }}>Refrigerante añadido por mes (kg)</span>
+                <button style={s.btnPrimary} onClick={() => abrirModalCarga()}>+ Registrar carga</button>
+              </div>
+              {cargandoMovimientos ? (
+                <div style={{ textAlign: "center", color: "#8a92a6", padding: "20px 0" }}>Cargando...</div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", height: "140px", padding: "0 4px" }}>
+                  {mesesChart.map((m, i) => (
+                    <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+                      <div style={{ width: "100%", maxWidth: "26px", height: `${Math.max(3, (m.kg / maxKgMes) * 110)}px`, background: m.kg > 0 ? "#1a4fc0" : "#eef1f6", borderRadius: "4px 4px 0 0" }} title={`${m.kg.toFixed(1)} kg`}></div>
+                      <span style={{ fontSize: "10px", color: "#8a92a6", fontWeight: 600, textTransform: "capitalize" }}>{m.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={s.tablaWrap}>
+              <div style={{ padding: "14px 18px", borderBottom: "1px solid #f2f4f8" }}>
+                <span style={{ fontSize: "14.5px", fontWeight: 800, color: "#12245e" }}>Equipos con carga de gas</span>
+              </div>
+              {refrigerantesData.length === 0 ? (
+                <div style={{ padding: "30px", textAlign: "center", color: "#8a92a6", fontSize: "13px", fontWeight: 600 }}>
+                  No hay equipos Split, VRV o Chiller registrados en esta sede.
+                </div>
+              ) : (
+                <div>
+                  <div style={s.tablaHeaderRef}>
+                    {["Equipo", "Gas", "Carga nominal", "Añadido 12m", "Fuga", "Estado", ""].map(h => (
+                      <span key={h} style={s.thCell}>{h}</span>
+                    ))}
+                  </div>
+                  {refrigerantesData.map((r, i) => (
+                    <div key={r.equipo.id} style={{ ...s.tablaRowRef, background: i % 2 === 0 ? "white" : "#fafbfd" }}>
+                      <span style={{ ...s.tdCell, fontWeight: 700, color: "#0f1b3d" }}>{r.equipo.tipoEquipo} — {r.equipo.ambiente || "-"}</span>
+                      <span style={s.tdCell}>{r.equipo.tipoRefrigerante || "—"}</span>
+                      <span style={s.tdCell}>{r.nominal > 0 ? `${r.nominal.toFixed(1)} kg` : "Sin dato"}</span>
+                      <span style={s.tdCell}>{r.anadido.toFixed(1)} kg</span>
+                      <span style={{ ...s.tdCell, fontWeight: 700, color: r.estado.color }}>{r.pct === null ? "—" : `${r.pct.toFixed(1)}%`}</span>
+                      <span style={s.tdCell}><span style={{ fontSize: "11px", padding: "3px 9px", borderRadius: "20px", background: r.estado.bg, color: r.estado.color, fontWeight: 700 }}>{r.estado.label}</span></span>
+                      <span style={s.tdCell}>
+                        <button style={s.btnRegistrarChico} onClick={() => abrirModalCarga(r.equipo.id)}>+ Carga</button>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Modal registrar carga de refrigerante */}
+      {modalCargaAbierto && (
+        <div style={s.modalOverlay} onClick={() => setModalCargaAbierto(false)}>
+          <div style={{ ...s.averiaCard, maxWidth: "440px" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: "15px", fontWeight: 800, color: "#12245e", marginBottom: "16px" }}>Registrar carga de refrigerante</div>
+            <form onSubmit={guardarCarga} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div>
+                <label style={s.labelModal}>Equipo</label>
+                <select style={s.inputModal} value={formCarga.equipoId} onChange={e => setFormCarga({ ...formCarga, equipoId: e.target.value })} required>
+                  <option value="">Seleccionar equipo...</option>
+                  {equiposConGas.map(eq => (
+                    <option key={eq.id} value={eq.id}>{eq.tipoEquipo} — {eq.ambiente || "-"} {eq.codigo ? `(${eq.codigo})` : ""}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={s.labelModal}>Movimiento</label>
+                  <select style={s.inputModal} value={formCarga.tipo} onChange={e => setFormCarga({ ...formCarga, tipo: e.target.value })}>
+                    <option value="carga">Carga (gas añadido)</option>
+                    <option value="recuperacion">Recuperación</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={s.labelModal}>Kg</label>
+                  <input style={s.inputModal} type="number" step="0.1" placeholder="0.5" value={formCarga.kg} onChange={e => setFormCarga({ ...formCarga, kg: e.target.value })} required />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={s.labelModal}>Fecha</label>
+                  <input style={s.inputModal} type="date" value={formCarga.fecha} onChange={e => setFormCarga({ ...formCarga, fecha: e.target.value })} required />
+                </div>
+                <div>
+                  <label style={s.labelModal}>Técnico</label>
+                  <input style={s.inputModal} placeholder="Nombre" value={formCarga.tecnico} onChange={e => setFormCarga({ ...formCarga, tecnico: e.target.value })} />
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
+                <button type="button" style={s.btnVerProtocolo} onClick={() => setModalCargaAbierto(false)}>Cancelar</button>
+                <button type="submit" style={s.btnMarcarAtendida} disabled={guardandoCarga}>{guardandoCarga ? "Guardando..." : "Guardar"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal reemplazar equipo (trazabilidad Kigali/MINAM) */}
+      {modalReemplazoAbierto && (
+        <div style={s.modalOverlay} onClick={() => setModalReemplazoAbierto(null)}>
+          <div style={{ ...s.averiaCard, maxWidth: "460px" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: "15px", fontWeight: 800, color: "#12245e", marginBottom: "4px" }}>Reemplazar equipo</div>
+            <div style={{ fontSize: "12px", color: "#8a92a6", marginBottom: "16px", fontWeight: 600 }}>
+              {modalReemplazoAbierto.codigo ? `${modalReemplazoAbierto.codigo} · ` : ""}{modalReemplazoAbierto.ambiente || "-"} — el equipo actual queda como historial, no se elimina.
+            </div>
+            <form onSubmit={guardarReemplazo} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={s.labelModal}>Marca (nuevo equipo)</label>
+                  <input style={s.inputModal} value={formReemplazo.marca} onChange={e => setFormReemplazo({ ...formReemplazo, marca: e.target.value })} required />
+                </div>
+                <div>
+                  <label style={s.labelModal}>Modelo</label>
+                  <input style={s.inputModal} value={formReemplazo.modelo} onChange={e => setFormReemplazo({ ...formReemplazo, modelo: e.target.value })} />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={s.labelModal}>N° de serie</label>
+                  <input style={s.inputModal} value={formReemplazo.serie} onChange={e => setFormReemplazo({ ...formReemplazo, serie: e.target.value })} />
+                </div>
+                <div>
+                  <label style={s.labelModal}>Carga nominal (kg)</label>
+                  <input style={s.inputModal} type="number" step="0.1" value={formReemplazo.cargaNominal} onChange={e => setFormReemplazo({ ...formReemplazo, cargaNominal: e.target.value })} />
+                </div>
+              </div>
+              <div>
+                <label style={s.labelModal}>Kg de refrigerante recuperados del equipo dado de baja</label>
+                <input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formReemplazo.kgRecuperados} onChange={e => setFormReemplazo({ ...formReemplazo, kgRecuperados: e.target.value })} />
+                <div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "4px" }}>Queda registrado como recuperación final — evidencia de cumplimiento, no se libera a la atmósfera.</div>
+              </div>
+              <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
+                <button type="button" style={s.btnVerProtocolo} onClick={() => setModalReemplazoAbierto(null)}>Cancelar</button>
+                <button type="submit" style={s.btnMarcarAtendida} disabled={guardandoReemplazo}>{guardandoReemplazo ? "Guardando..." : "Confirmar reemplazo"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal lista de emergencias activas */}
       {listaEmergencia && (
@@ -517,18 +970,24 @@ const s = {
   barraTrack: { flex: 1, height: "8px", background: "#eef1f6", borderRadius: "4px", overflow: "hidden" },
   barraNum: { fontSize: "13px", fontWeight: 700, width: "60px", textAlign: "right" },
   tablaWrap: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", overflow: "hidden" },
-  tablaHeader: { display: "grid", gridTemplateColumns: "24px 64px 40px 1.1fr 0.8fr 1fr 0.85fr 76px 76px 200px", gap: "6px", padding: "12px 16px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
-  tablaRow: { display: "grid", gridTemplateColumns: "24px 64px 40px 1.1fr 0.8fr 1fr 0.85fr 76px 76px 200px", gap: "6px", padding: "12px 16px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
+  tablaHeader: { display: "grid", gridTemplateColumns: "24px 64px 40px 1.1fr 0.8fr 1fr 0.85fr 76px 76px 260px", gap: "6px", padding: "12px 16px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
+  tablaRow: { display: "grid", gridTemplateColumns: "24px 64px 40px 1.1fr 0.8fr 1fr 0.85fr 76px 76px 260px", gap: "6px", padding: "12px 16px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
   thCell: { fontSize: "10.5px", color: "#8a92a6", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700, whiteSpace: "nowrap" },
   tdCell: { fontSize: "12.5px", color: "#26314d" },
   codigo: { fontSize: "11px", padding: "3px 8px", borderRadius: "7px", background: "#e5f0ff", color: "#1a4fc0", fontFamily: "monospace", fontWeight: 700 },
   badgeOp: { fontSize: "11px", padding: "4px 10px", borderRadius: "20px", background: "#e6f7ec", color: "#1c7a44", fontWeight: 700, whiteSpace: "nowrap" },
   badgeObs: { fontSize: "11px", padding: "4px 10px", borderRadius: "20px", background: "#fff3d6", color: "#a8720b", fontWeight: 700, whiteSpace: "nowrap" },
   badgeFs: { fontSize: "11px", padding: "4px 10px", borderRadius: "20px", background: "#fdeeee", color: "#a52b2b", fontWeight: 700, whiteSpace: "nowrap" },
-  btnInfo: { fontSize: "10px", padding: "5px 7px", background: "#1a4fc0", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
-  btnEditar: { fontSize: "10px", padding: "5px 7px", background: "#a8720b", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
-  btnProto: { fontSize: "10px", padding: "5px 7px", background: "#a52b2b", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
-  btnEliminar: { fontSize: "10px", padding: "5px 7px", background: "#fdeeee", color: "#a52b2b", border: "none", borderRadius: "7px", cursor: "pointer" },
+  btnInfo: { fontSize: "9.5px", padding: "5px 6px", background: "#1a4fc0", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
+  btnEditar: { fontSize: "9.5px", padding: "5px 6px", background: "#a8720b", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
+  btnProto: { fontSize: "9.5px", padding: "5px 6px", background: "#a52b2b", color: "white", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
+  btnEliminar: { fontSize: "9.5px", padding: "5px 6px", background: "#fdeeee", color: "#a52b2b", border: "none", borderRadius: "7px", cursor: "pointer" },
+  btnReemplazar: { fontSize: "9.5px", padding: "5px 6px", background: "#f1e9fb", color: "#7c3fd8", border: "none", borderRadius: "7px", cursor: "pointer" },
+  btnHistorial: { fontSize: "9.5px", padding: "5px 6px", background: "#fff3d6", color: "#a8720b", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: "2px", fontFamily: "inherit", whiteSpace: "nowrap" },
+  historialPanel: { gridColumn: "1 / -1", background: "#fafbfd", borderBottom: "1px solid #f2f4f8", padding: "10px 16px 14px 66px" },
+  historialLinea: { display: "flex", flexDirection: "column", gap: "8px", paddingLeft: "14px", borderLeft: "2px dashed #d3d1c7" },
+  historialItem: { border: "1px dashed #d3d1c7", borderRadius: "10px", padding: "9px 12px", opacity: 0.75, background: "white" },
+  chipReemplazado: { fontSize: "9.5px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", background: "#f4f6fb", color: "#8a92a6", whiteSpace: "nowrap" },
   filterLabel: { fontSize: "12.5px", color: "#6b7488", fontWeight: 600 },
   selectFiltro: { fontSize: "12.5px", padding: "6px 10px", border: "1px solid #dfe6f5", borderRadius: "8px", background: "#f9fafc", color: "#26314d", fontFamily: "inherit", fontWeight: 600 },
   empty: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", padding: "48px", textAlign: "center" },
@@ -566,4 +1025,14 @@ const s = {
   btnVerProtocolo: { flex: 1, height: "42px", borderRadius: "10px", border: "1px solid #dfe6f5", background: "white", color: "#12245e", fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   btnMarcarAtendida: { flex: 1, height: "42px", borderRadius: "10px", border: "none", background: "#a52b2b", color: "white", fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   averiaCaption: { fontSize: "11px", color: "#8a92a6", textAlign: "center", marginTop: "10px", lineHeight: 1.4, fontWeight: 600 },
+
+  tabsWrap: { display: "flex", gap: "8px", marginBottom: "18px" },
+  tabBtn: { display: "flex", alignItems: "center", gap: "7px", background: "white", color: "#6b7488", border: "1px solid #e7ebf3", borderRadius: "11px", padding: "10px 18px", fontFamily: "inherit", fontWeight: 700, fontSize: "13px", cursor: "pointer" },
+  tabBtnActiva: { background: "#12245e", color: "white", border: "1px solid #12245e" },
+  tabBtnActivaRef: { background: "#1a4fc0", color: "white", border: "1px solid #1a4fc0" },
+  tablaHeaderRef: { display: "grid", gridTemplateColumns: "1.4fr 0.7fr 0.9fr 0.9fr 0.7fr 0.8fr 90px", gap: "8px", padding: "10px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
+  tablaRowRef: { display: "grid", gridTemplateColumns: "1.4fr 0.7fr 0.9fr 0.9fr 0.7fr 0.8fr 90px", gap: "8px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
+  btnRegistrarChico: { fontSize: "10.5px", padding: "5px 9px", background: "#e5f0ff", color: "#1a4fc0", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", whiteSpace: "nowrap" },
+  labelModal: { display: "block", fontWeight: 700, fontSize: "12px", color: "#26314d", marginBottom: "5px" },
+  inputModal: { width: "100%", boxSizing: "border-box", border: "1px solid #dfe6f5", borderRadius: "10px", padding: "9px 11px", fontFamily: "inherit", fontSize: "13.5px", color: "#0f1b3d", background: "#f9fafc" },
 };
