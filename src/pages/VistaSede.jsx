@@ -64,6 +64,11 @@ const SvgAlerta = ({ color = "currentColor" }) => (
     <path d="M12 10v4M12 17h.01" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
   </svg>
 );
+const SvgEditarChico = ({ color = "currentColor" }) => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+    <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 const SvgHistorial = ({ color = "currentColor" }) => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
     <path d="M3 12a9 9 0 1 0 3-6.7" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
@@ -302,9 +307,28 @@ export default function VistaSede() {
     cargarMovimientos();
   };
 
+  const [editandoMovimiento, setEditandoMovimiento] = useState(null); // movimiento siendo editado, o null = creando nuevo
+
   const abrirModalCarga = (equipoIdPreseleccionado = "") => {
+    setEditandoMovimiento(null);
     setFormCarga({ equipoId: equipoIdPreseleccionado, tipo: "carga", kg: "", fecha: new Date().toISOString().split("T")[0], tecnico: "" });
     setModalCargaAbierto(true);
+  };
+
+  const abrirEditarMovimiento = (mov) => {
+    setEditandoMovimiento(mov);
+    setFormCarga({ equipoId: mov.equipoId, tipo: mov.tipo, kg: String(mov.kg), fecha: mov.fecha, tecnico: mov.tecnico || "" });
+    setModalCargaAbierto(true);
+  };
+
+  const handleEliminarMovimiento = async (movId) => {
+    if (!window.confirm("¿Eliminar este registro de refrigerante? Esta acción no se puede deshacer.")) return;
+    try {
+      await deleteDoc(doc(db, "movimientosRefrigerante", movId));
+      setMovimientos(prev => (prev || []).filter(m => m.id !== movId));
+    } catch (err) {
+      alert("Error al eliminar: " + err.message);
+    }
   };
 
   const guardarCarga = async (e) => {
@@ -313,20 +337,32 @@ export default function VistaSede() {
     setGuardandoCarga(true);
     try {
       const eq = equipos.find(x => x.id === formCarga.equipoId);
-      const nuevo = {
-        equipoId: formCarga.equipoId,
-        equipoAmbiente: eq?.ambiente || "",
-        equipoCodigo: eq?.codigo || "",
-        cliente, sede,
-        tipo: formCarga.tipo,
-        kg: Number(formCarga.kg),
-        fecha: formCarga.fecha,
-        tecnico: formCarga.tecnico,
-        fechaRegistro: serverTimestamp(),
-      };
-      const ref = await addDoc(collection(db, "movimientosRefrigerante"), nuevo);
-      setMovimientos(prev => [{ id: ref.id, ...nuevo, fechaRegistro: { toDate: () => new Date() } }, ...(prev || [])]);
+      if (editandoMovimiento) {
+        const actualizado = {
+          tipo: formCarga.tipo,
+          kg: Number(formCarga.kg),
+          fecha: formCarga.fecha,
+          tecnico: formCarga.tecnico,
+        };
+        await updateDoc(doc(db, "movimientosRefrigerante", editandoMovimiento.id), actualizado);
+        setMovimientos(prev => (prev || []).map(m => m.id === editandoMovimiento.id ? { ...m, ...actualizado } : m));
+      } else {
+        const nuevo = {
+          equipoId: formCarga.equipoId,
+          equipoAmbiente: eq?.ambiente || "",
+          equipoCodigo: eq?.codigo || "",
+          cliente, sede,
+          tipo: formCarga.tipo,
+          kg: Number(formCarga.kg),
+          fecha: formCarga.fecha,
+          tecnico: formCarga.tecnico,
+          fechaRegistro: serverTimestamp(),
+        };
+        const ref = await addDoc(collection(db, "movimientosRefrigerante"), nuevo);
+        setMovimientos(prev => [{ id: ref.id, ...nuevo, fechaRegistro: { toDate: () => new Date() } }, ...(prev || [])]);
+      }
       setModalCargaAbierto(false);
+      setEditandoMovimiento(null);
     } catch (err) {
       alert("Error al guardar: " + err.message);
     }
@@ -780,6 +816,10 @@ export default function VistaSede() {
                             <span style={{ fontSize: "12px", fontWeight: 700, color: "#0f1b3d" }}>{Number(m.kg).toFixed(1)} kg</span>
                             <span style={{ fontSize: "11.5px", color: "#8a92a6" }}>{m.fecha}</span>
                             <span style={{ fontSize: "11.5px", color: "#8a92a6" }}>{m.tecnico || "—"}</span>
+                            <div style={{ display: "flex", gap: "4px", justifyContent: "flex-end" }}>
+                              <button style={s.btnEditarMov} onClick={() => abrirEditarMovimiento(m)} title="Editar registro"><SvgEditarChico /></button>
+                              <button style={s.btnEliminarMov} onClick={() => handleEliminarMovimiento(m.id)} title="Eliminar registro"><SvgEliminar /></button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -796,18 +836,26 @@ export default function VistaSede() {
 
       {/* Modal registrar carga de refrigerante */}
       {modalCargaAbierto && (
-        <div style={s.modalOverlay} onClick={() => setModalCargaAbierto(false)}>
+        <div style={s.modalOverlay} onClick={() => { setModalCargaAbierto(false); setEditandoMovimiento(null); }}>
           <div style={{ ...s.averiaCard, maxWidth: "440px" }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: "15px", fontWeight: 800, color: "#12245e", marginBottom: "16px" }}>Registrar carga de refrigerante</div>
+            <div style={{ fontSize: "15px", fontWeight: 800, color: "#12245e", marginBottom: "16px" }}>
+              {editandoMovimiento ? "Editar registro de refrigerante" : "Registrar carga de refrigerante"}
+            </div>
             <form onSubmit={guardarCarga} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <div>
                 <label style={s.labelModal}>Equipo</label>
-                <select style={s.inputModal} value={formCarga.equipoId} onChange={e => setFormCarga({ ...formCarga, equipoId: e.target.value })} required>
-                  <option value="">Seleccionar equipo...</option>
-                  {equiposConGas.map(eq => (
-                    <option key={eq.id} value={eq.id}>{eq.tipoEquipo} — {eq.ambiente || "-"} {eq.codigo ? `(${eq.codigo})` : ""}</option>
-                  ))}
-                </select>
+                {editandoMovimiento ? (
+                  <div style={{ ...s.inputModal, background: "#f4f6fb", color: "#8a92a6" }}>
+                    {equiposConGas.find(eq => eq.id === formCarga.equipoId)?.ambiente || editandoMovimiento.equipoAmbiente || "Equipo"}
+                  </div>
+                ) : (
+                  <select style={s.inputModal} value={formCarga.equipoId} onChange={e => setFormCarga({ ...formCarga, equipoId: e.target.value })} required>
+                    <option value="">Seleccionar equipo...</option>
+                    {equiposConGas.map(eq => (
+                      <option key={eq.id} value={eq.id}>{eq.tipoEquipo} — {eq.ambiente || "-"} {eq.codigo ? `(${eq.codigo})` : ""}</option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
@@ -833,8 +881,8 @@ export default function VistaSede() {
                 </div>
               </div>
               <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
-                <button type="button" style={s.btnVerProtocolo} onClick={() => setModalCargaAbierto(false)}>Cancelar</button>
-                <button type="submit" style={s.btnMarcarAtendida} disabled={guardandoCarga}>{guardandoCarga ? "Guardando..." : "Guardar"}</button>
+                <button type="button" style={s.btnVerProtocolo} onClick={() => { setModalCargaAbierto(false); setEditandoMovimiento(null); }}>Cancelar</button>
+                <button type="submit" style={s.btnMarcarAtendida} disabled={guardandoCarga}>{guardandoCarga ? "Guardando..." : editandoMovimiento ? "Guardar cambios" : "Guardar"}</button>
               </div>
             </form>
           </div>
@@ -1084,11 +1132,13 @@ const s = {
   btnRegistrarChico: { fontSize: "10.5px", padding: "5px 9px", background: "#e5f0ff", color: "#1a4fc0", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", whiteSpace: "nowrap" },
   btnHistorialChico: { fontSize: "10.5px", padding: "5px 8px", background: "#fff3d6", color: "#a8720b", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" },
   historialCargasPanel: { background: "#fafbfd", borderBottom: "1px solid #f2f4f8", padding: "10px 18px 14px 18px", display: "flex", flexDirection: "column", gap: "7px" },
-  historialCargaItem: { display: "grid", gridTemplateColumns: "140px 70px 100px 1fr", gap: "10px", alignItems: "center", background: "white", border: "1px solid #eef1f6", borderRadius: "9px", padding: "8px 12px" },
+  historialCargaItem: { display: "grid", gridTemplateColumns: "140px 70px 100px 1fr 62px", gap: "10px", alignItems: "center", background: "white", border: "1px solid #eef1f6", borderRadius: "9px", padding: "8px 12px" },
   chipMovimiento: { fontSize: "10px", fontWeight: 700, padding: "3px 9px", borderRadius: "20px", width: "fit-content", whiteSpace: "nowrap" },
   chipCarga: { background: "#e6f7ec", color: "#1c7a44" },
   chipRecuperacion: { background: "#e5f0ff", color: "#1a4fc0" },
   chipRecuperacionBaja: { background: "#fff3d6", color: "#a8720b" },
+  btnEditarMov: { fontSize: "10px", padding: "5px 6px", background: "#fff3d6", color: "#a8720b", border: "none", borderRadius: "6px", cursor: "pointer" },
+  btnEliminarMov: { fontSize: "10px", padding: "5px 6px", background: "#fdeeee", color: "#a52b2b", border: "none", borderRadius: "6px", cursor: "pointer" },
   labelModal: { display: "block", fontWeight: 700, fontSize: "12px", color: "#26314d", marginBottom: "5px" },
   inputModal: { width: "100%", boxSizing: "border-box", border: "1px solid #dfe6f5", borderRadius: "10px", padding: "9px 11px", fontFamily: "inherit", fontSize: "13.5px", color: "#0f1b3d", background: "#f9fafc" },
 };
