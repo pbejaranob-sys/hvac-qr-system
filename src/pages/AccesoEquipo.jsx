@@ -159,7 +159,11 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
   const [guardandoCarga, setGuardandoCarga] = useState(false);
   const [errorCarga, setErrorCarga] = useState("");
 
-  const [formReemplazo, setFormReemplazo] = useState({ marca: "", modelo: "", serie: "", kgRecuperados: "", tecnico: "" });
+  const [formReemplazo, setFormReemplazo] = useState({
+    marca: "", modelo: "", serie: "", capacidad: "",
+    tipoRefrigerante: "", fases: "Monofásico", voltaje: "", amperaje: "",
+    cargaNominal: "", cargaAdicionalInstalacion: "", kgRecuperados: "", tecnico: "",
+  });
   const [guardandoReemplazo, setGuardandoReemplazo] = useState(false);
   const [errorReemplazo, setErrorReemplazo] = useState("");
 
@@ -233,7 +237,10 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
     const equipoViejoId = equipo.id;
     try {
       const nuevoRef = doc(collection(db, "equipos"));
-      const movRef = (formReemplazo.kgRecuperados && Number(formReemplazo.kgRecuperados) > 0)
+      const movRecuperacionRef = (formReemplazo.kgRecuperados && Number(formReemplazo.kgRecuperados) > 0)
+        ? doc(collection(db, "movimientosRefrigerante"))
+        : null;
+      const movCargaInicialRef = (formReemplazo.cargaAdicionalInstalacion && Number(formReemplazo.cargaAdicionalInstalacion) > 0)
         ? doc(collection(db, "movimientosRefrigerante"))
         : null;
 
@@ -249,7 +256,12 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
           codigo: viejo.codigo || "", piso: viejo.piso || "", ambiente: viejo.ambiente || "",
           tipoEquipo: viejo.tipoEquipo || "",
           marca: formReemplazo.marca, modelo: formReemplazo.modelo, serie: formReemplazo.serie,
-          cargaNominal: viejo.cargaNominal || "", tipoRefrigerante: viejo.tipoRefrigerante || "",
+          capacidad: formReemplazo.capacidad,
+          tipoRefrigerante: formReemplazo.tipoRefrigerante,
+          fases: formReemplazo.fases,
+          voltaje: formReemplazo.voltaje,
+          amperaje: formReemplazo.amperaje,
+          cargaNominal: formReemplazo.cargaNominal,
           estado: "Operativo",
           cicloVida: "activo",
           equipoAnteriorId: equipoViejoId,
@@ -266,14 +278,28 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
           equipoReemplazoId: nuevoRef.id,
         });
 
-        if (movRef) {
-          tx.set(movRef, {
+        if (movRecuperacionRef) {
+          tx.set(movRecuperacionRef, {
             equipoId: equipoViejoId,
             equipoAmbiente: viejo.ambiente || "",
             equipoCodigo: viejo.codigo || "",
             cliente: viejo.cliente || "", sede: viejo.sede || "",
             tipo: "recuperacion_baja",
             kg: Number(formReemplazo.kgRecuperados),
+            fecha: hoy,
+            tecnico: formReemplazo.tecnico,
+            fechaRegistro: serverTimestamp(),
+          });
+        }
+
+        if (movCargaInicialRef) {
+          tx.set(movCargaInicialRef, {
+            equipoId: nuevoRef.id,
+            equipoAmbiente: viejo.ambiente || "",
+            equipoCodigo: viejo.codigo || "",
+            cliente: viejo.cliente || "", sede: viejo.sede || "",
+            tipo: "carga",
+            kg: Number(formReemplazo.cargaAdicionalInstalacion),
             fecha: hoy,
             tecnico: formReemplazo.tecnico,
             fechaRegistro: serverTimestamp(),
@@ -412,7 +438,15 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
       subtitle: "El equipo actual queda como historial",
       bg: "#ffffff", border: "#e2d4fb", iconBg: "#f1e9fb", titleColor: "#0f1b3d",
       icon: <IconReemplazo color="#7c3fd8" />,
-      onClick: () => { setFormReemplazo({ marca: "", modelo: "", serie: "", kgRecuperados: "", tecnico: "" }); setVista("reemplazo"); },
+      onClick: () => {
+        setFormReemplazo({
+          marca: "", modelo: "", serie: "", capacidad: equipo.capacidad || "",
+          tipoRefrigerante: equipo.tipoRefrigerante || "", fases: equipo.fases || "Monofásico",
+          voltaje: equipo.voltaje || "", amperaje: equipo.amperaje || "",
+          cargaNominal: equipo.cargaNominal || "", cargaAdicionalInstalacion: "", kgRecuperados: "", tecnico: "",
+        });
+        setVista("reemplazo");
+      },
     }] : []),
     {
       key: "averia",
@@ -867,6 +901,7 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
               <span style={{ fontSize: "11px", color: "#a52b2b", fontWeight: 600 }}>El equipo actual queda como historial. No se elimina, y esta acción no se puede deshacer desde el teléfono.</span>
             </div>
             <form onSubmit={guardarReemplazo} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={st.seccionLabelForm}>Datos generales</div>
               <div>
                 <label style={st.labelForm}>Marca (equipo nuevo)</label>
                 <input style={st.inputForm} value={formReemplazo.marca} onChange={e => setFormReemplazo({ ...formReemplazo, marca: e.target.value })} required />
@@ -881,6 +916,45 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
                   <input style={st.inputForm} value={formReemplazo.serie} onChange={e => setFormReemplazo({ ...formReemplazo, serie: e.target.value })} />
                 </div>
               </div>
+              <div>
+                <label style={st.labelForm}>Capacidad (BTU)</label>
+                <input style={st.inputForm} value={formReemplazo.capacidad} onChange={e => setFormReemplazo({ ...formReemplazo, capacidad: e.target.value })} />
+              </div>
+
+              <div style={{ ...st.seccionLabelForm, color: "#1a4fc0" }}>Eléctrico y refrigerante</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div>
+                  <label style={st.labelForm}>Refrigerante</label>
+                  <select style={st.inputForm} value={formReemplazo.tipoRefrigerante} onChange={e => setFormReemplazo({ ...formReemplazo, tipoRefrigerante: e.target.value })}>
+                    <option value="">Seleccionar...</option>
+                    {["R-22", "R-410A", "R-32", "R-407C", "R-134A", "Otro"].map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={st.labelForm}>Fases</label>
+                  <select style={st.inputForm} value={formReemplazo.fases} onChange={e => setFormReemplazo({ ...formReemplazo, fases: e.target.value })}>
+                    <option>Monofásico</option><option>Trifásico</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={st.labelForm}>Voltaje placa (V)</label>
+                  <input style={st.inputForm} value={formReemplazo.voltaje} onChange={e => setFormReemplazo({ ...formReemplazo, voltaje: e.target.value })} />
+                </div>
+                <div>
+                  <label style={st.labelForm}>Amperaje placa (A)</label>
+                  <input style={st.inputForm} value={formReemplazo.amperaje} onChange={e => setFormReemplazo({ ...formReemplazo, amperaje: e.target.value })} />
+                </div>
+                <div>
+                  <label style={st.labelForm}>Carga nominal (kg)</label>
+                  <input style={st.inputForm} type="number" step="0.1" value={formReemplazo.cargaNominal} onChange={e => setFormReemplazo({ ...formReemplazo, cargaNominal: e.target.value })} />
+                </div>
+                <div>
+                  <label style={st.labelForm}>Carga adic. instalación (kg)</label>
+                  <input style={st.inputForm} type="number" step="0.1" placeholder="0.0" value={formReemplazo.cargaAdicionalInstalacion} onChange={e => setFormReemplazo({ ...formReemplazo, cargaAdicionalInstalacion: e.target.value })} />
+                </div>
+              </div>
+
+              <div style={{ ...st.seccionLabelForm, color: "#a52b2b" }}>Baja del equipo anterior</div>
               <div>
                 <label style={st.labelForm}>Kg de gas recuperados del equipo viejo</label>
                 <input style={st.inputForm} type="number" step="0.1" placeholder="0.0" value={formReemplazo.kgRecuperados} onChange={e => setFormReemplazo({ ...formReemplazo, kgRecuperados: e.target.value })} />
@@ -1018,10 +1092,11 @@ const st = {
   btnGuardar: { width: "100%", boxSizing: "border-box", background: "#1a4fc0", color: "#ffffff", border: "none", borderRadius: "14px", padding: "16px 20px", fontFamily: FONT, fontWeight: 700, fontSize: "clamp(15px,4vw,16px)", cursor: "pointer", boxShadow: "0 8px 20px rgba(26,79,192,0.28)" },
   btnCancelar: { background: "none", border: "none", color: "#6b7488", fontFamily: FONT, fontWeight: 600, fontSize: "13px", cursor: "pointer", padding: "6px", textAlign: "center" },
 
-  modalCard: { width: "100%", background: "#ffffff", borderRadius: "20px", padding: "clamp(24px,6vw,32px)", boxShadow: "0 20px 50px rgba(0,10,40,0.35)", boxSizing: "border-box", textAlign: "center", fontFamily: FONT },
+  modalCard: { width: "100%", background: "#ffffff", borderRadius: "20px", padding: "clamp(24px,6vw,32px)", boxShadow: "0 20px 50px rgba(0,10,40,0.35)", boxSizing: "border-box", textAlign: "center", fontFamily: FONT, maxHeight: "88vh", overflowY: "auto" },
   modalTitulo: { fontWeight: 800, fontSize: "clamp(16px,4.5vw,18px)", color: "#0f1b3d" },
   modalTexto: { color: "#5b6478", fontSize: "clamp(13px,3.6vw,14px)", marginTop: "8px", lineHeight: 1.5 },
   modalBtn: { marginTop: "20px", width: "100%", boxSizing: "border-box", background: "#1a4fc0", color: "#fff", border: "none", borderRadius: "12px", padding: "12px 20px", fontFamily: "inherit", fontWeight: 700, fontSize: "14px", cursor: "pointer" },
   labelForm: { display: "block", fontSize: "11px", fontWeight: 700, color: "#26314d", marginBottom: "5px", textAlign: "left" },
+  seccionLabelForm: { fontSize: "10px", fontWeight: 700, color: "#8a92a6", letterSpacing: "0.05em", textTransform: "uppercase", textAlign: "left", marginTop: "2px" },
   inputForm: { width: "100%", boxSizing: "border-box", border: "1px solid #dfe6f5", borderRadius: "10px", padding: "10px 12px", fontFamily: "inherit", fontSize: "13px", color: "#0f1b3d", background: "#f9fafc" },
 };

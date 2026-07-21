@@ -130,7 +130,11 @@ export default function VistaSede() {
   const [historialEquipoAbierto, setHistorialEquipoAbierto] = useState({}); // { equipoId: bool }
   const [cargandoHistorialEquipo, setCargandoHistorialEquipo] = useState({});
   const [modalReemplazoAbierto, setModalReemplazoAbierto] = useState(null); // equipo a reemplazar, o null
-  const [formReemplazo, setFormReemplazo] = useState({ marca: "", modelo: "", serie: "", cargaNominal: "", kgRecuperados: "" });
+  const [formReemplazo, setFormReemplazo] = useState({
+    marca: "", modelo: "", serie: "", capacidad: "",
+    tipoRefrigerante: "", fases: "Monofásico", voltaje: "", amperaje: "",
+    cargaNominal: "", cargaAdicionalInstalacion: "", kgRecuperados: "",
+  });
   const [guardandoReemplazo, setGuardandoReemplazo] = useState(false);
   const [historialCargasAbierto, setHistorialCargasAbierto] = useState({}); // { equipoId: bool }
   const [editandoHistorialItem, setEditandoHistorialItem] = useState(null); // { ownerId, item } o null
@@ -271,7 +275,12 @@ export default function VistaSede() {
 
   const abrirModalReemplazo = (eq) => {
     setModalReemplazoAbierto(eq);
-    setFormReemplazo({ marca: "", modelo: "", serie: "", cargaNominal: eq.cargaNominal || "", kgRecuperados: "" });
+    setFormReemplazo({
+      marca: "", modelo: "", serie: "", capacidad: eq.capacidad || "",
+      tipoRefrigerante: eq.tipoRefrigerante || "", fases: eq.fases || "Monofásico",
+      voltaje: eq.voltaje || "", amperaje: eq.amperaje || "",
+      cargaNominal: eq.cargaNominal || "", cargaAdicionalInstalacion: "", kgRecuperados: "",
+    });
   };
 
   const guardarReemplazo = async (e) => {
@@ -281,7 +290,10 @@ export default function VistaSede() {
     const equipoViejoId = modalReemplazoAbierto.id;
     try {
       const nuevoRef = doc(collection(db, "equipos"));
-      const movRef = (formReemplazo.kgRecuperados && Number(formReemplazo.kgRecuperados) > 0)
+      const movRecuperacionRef = (formReemplazo.kgRecuperados && Number(formReemplazo.kgRecuperados) > 0)
+        ? doc(collection(db, "movimientosRefrigerante"))
+        : null;
+      const movCargaInicialRef = (formReemplazo.cargaAdicionalInstalacion && Number(formReemplazo.cargaAdicionalInstalacion) > 0)
         ? doc(collection(db, "movimientosRefrigerante"))
         : null;
 
@@ -297,7 +309,12 @@ export default function VistaSede() {
           codigo: viejo.codigo || "", piso: viejo.piso || "", ambiente: viejo.ambiente || "",
           tipoEquipo: viejo.tipoEquipo || "",
           marca: formReemplazo.marca, modelo: formReemplazo.modelo, serie: formReemplazo.serie,
-          cargaNominal: formReemplazo.cargaNominal, tipoRefrigerante: viejo.tipoRefrigerante || "",
+          capacidad: formReemplazo.capacidad,
+          tipoRefrigerante: formReemplazo.tipoRefrigerante,
+          fases: formReemplazo.fases,
+          voltaje: formReemplazo.voltaje,
+          amperaje: formReemplazo.amperaje,
+          cargaNominal: formReemplazo.cargaNominal,
           estado: "Operativo",
           cicloVida: "activo",
           equipoAnteriorId: equipoViejoId,
@@ -314,14 +331,30 @@ export default function VistaSede() {
           equipoReemplazoId: nuevoRef.id,
         });
 
-        if (movRef) {
-          tx.set(movRef, {
+        if (movRecuperacionRef) {
+          tx.set(movRecuperacionRef, {
             equipoId: equipoViejoId,
             equipoAmbiente: viejo.ambiente || "",
             equipoCodigo: viejo.codigo || "",
             cliente, sede,
             tipo: "recuperacion_baja",
             kg: Number(formReemplazo.kgRecuperados),
+            fecha: hoy,
+            tecnico: "",
+            fechaRegistro: serverTimestamp(),
+          });
+        }
+
+        // Carga adicional por instalación (tubería más larga que lo que trae el equipo de fábrica)
+        // queda como el primer movimiento del equipo NUEVO, no del que se dio de baja.
+        if (movCargaInicialRef) {
+          tx.set(movCargaInicialRef, {
+            equipoId: nuevoRef.id,
+            equipoAmbiente: viejo.ambiente || "",
+            equipoCodigo: viejo.codigo || "",
+            cliente, sede,
+            tipo: "carga",
+            kg: Number(formReemplazo.cargaAdicionalInstalacion),
             fecha: hoy,
             tecnico: "",
             fechaRegistro: serverTimestamp(),
@@ -1000,12 +1033,13 @@ export default function VistaSede() {
       {/* Modal reemplazar equipo (trazabilidad Kigali/MINAM) */}
       {modalReemplazoAbierto && (
         <div style={s.modalOverlay} onClick={() => setModalReemplazoAbierto(null)}>
-          <div style={{ ...s.averiaCard, maxWidth: "460px" }} onClick={e => e.stopPropagation()}>
+          <div style={{ ...s.averiaCard, maxWidth: "520px", maxHeight: "88vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: "15px", fontWeight: 800, color: "#12245e", marginBottom: "4px" }}>Reemplazar equipo</div>
             <div style={{ fontSize: "12px", color: "#8a92a6", marginBottom: "16px", fontWeight: 600 }}>
               {modalReemplazoAbierto.codigo ? `${modalReemplazoAbierto.codigo} · ` : ""}{modalReemplazoAbierto.ambiente || "-"} — el equipo actual queda como historial, no se elimina.
             </div>
             <form onSubmit={guardarReemplazo} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={s.seccionLabel}>Datos generales</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
                   <label style={s.labelModal}>Marca (nuevo equipo)</label>
@@ -1015,22 +1049,57 @@ export default function VistaSede() {
                   <label style={s.labelModal}>Modelo</label>
                   <input style={s.inputModal} value={formReemplazo.modelo} onChange={e => setFormReemplazo({ ...formReemplazo, modelo: e.target.value })} />
                 </div>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
                   <label style={s.labelModal}>N° de serie</label>
                   <input style={s.inputModal} value={formReemplazo.serie} onChange={e => setFormReemplazo({ ...formReemplazo, serie: e.target.value })} />
                 </div>
                 <div>
+                  <label style={s.labelModal}>Capacidad (BTU)</label>
+                  <input style={s.inputModal} value={formReemplazo.capacidad} onChange={e => setFormReemplazo({ ...formReemplazo, capacidad: e.target.value })} />
+                </div>
+              </div>
+
+              <div style={{ ...s.seccionLabel, color: "#1a4fc0" }}>Datos eléctricos y refrigerante</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={s.labelModal}>Tipo de refrigerante</label>
+                  <select style={s.inputModal} value={formReemplazo.tipoRefrigerante} onChange={e => setFormReemplazo({ ...formReemplazo, tipoRefrigerante: e.target.value })}>
+                    <option value="">Seleccionar...</option>
+                    {["R-22", "R-410A", "R-32", "R-407C", "R-134A", "Otro"].map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={s.labelModal}>Fases</label>
+                  <select style={s.inputModal} value={formReemplazo.fases} onChange={e => setFormReemplazo({ ...formReemplazo, fases: e.target.value })}>
+                    <option>Monofásico</option><option>Trifásico</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={s.labelModal}>Voltaje de placa (V)</label>
+                  <input style={s.inputModal} value={formReemplazo.voltaje} onChange={e => setFormReemplazo({ ...formReemplazo, voltaje: e.target.value })} />
+                </div>
+                <div>
+                  <label style={s.labelModal}>Amperaje de placa (A)</label>
+                  <input style={s.inputModal} value={formReemplazo.amperaje} onChange={e => setFormReemplazo({ ...formReemplazo, amperaje: e.target.value })} />
+                </div>
+                <div>
                   <label style={s.labelModal}>Carga nominal (kg)</label>
                   <input style={s.inputModal} type="number" step="0.1" value={formReemplazo.cargaNominal} onChange={e => setFormReemplazo({ ...formReemplazo, cargaNominal: e.target.value })} />
                 </div>
+                <div>
+                  <label style={s.labelModal}>Carga adicional por instalación (kg)</label>
+                  <input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formReemplazo.cargaAdicionalInstalacion} onChange={e => setFormReemplazo({ ...formReemplazo, cargaAdicionalInstalacion: e.target.value })} />
+                </div>
               </div>
+              <div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "-8px" }}>Si la tubería requiere más gas que la carga de fábrica, se registra como la carga inicial del equipo nuevo.</div>
+
+              <div style={{ ...s.seccionLabel, color: "#a52b2b" }}>Baja del equipo anterior</div>
               <div>
                 <label style={s.labelModal}>Kg de refrigerante recuperados del equipo dado de baja</label>
                 <input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formReemplazo.kgRecuperados} onChange={e => setFormReemplazo({ ...formReemplazo, kgRecuperados: e.target.value })} />
                 <div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "4px" }}>Queda registrado como recuperación final — evidencia de cumplimiento, no se libera a la atmósfera.</div>
               </div>
+
               <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
                 <button type="button" style={s.btnVerProtocolo} onClick={() => setModalReemplazoAbierto(null)}>Cancelar</button>
                 <button type="submit" style={s.btnMarcarAtendida} disabled={guardandoReemplazo}>{guardandoReemplazo ? "Guardando..." : "Confirmar reemplazo"}</button>
@@ -1248,5 +1317,6 @@ const s = {
   btnEditarMov: { fontSize: "10px", padding: "5px 6px", background: "#fff3d6", color: "#a8720b", border: "none", borderRadius: "6px", cursor: "pointer" },
   btnEliminarMov: { fontSize: "10px", padding: "5px 6px", background: "#fdeeee", color: "#a52b2b", border: "none", borderRadius: "6px", cursor: "pointer" },
   labelModal: { display: "block", fontWeight: 700, fontSize: "12px", color: "#26314d", marginBottom: "5px" },
+  seccionLabel: { fontSize: "11px", fontWeight: 700, color: "#8a92a6", letterSpacing: "0.05em", textTransform: "uppercase", marginTop: "2px" },
   inputModal: { width: "100%", boxSizing: "border-box", border: "1px solid #dfe6f5", borderRadius: "10px", padding: "9px 11px", fontFamily: "inherit", fontSize: "13.5px", color: "#0f1b3d", background: "#f9fafc" },
 };
