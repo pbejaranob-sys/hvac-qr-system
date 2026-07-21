@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
-import { collection, getDocs, query, where, addDoc, deleteDoc, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, getDocs, query, where, addDoc, deleteDoc, doc, updateDoc, writeBatch, serverTimestamp } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 
 const FONT = "'Manrope', -apple-system, sans-serif";
@@ -24,6 +24,26 @@ function useManropeAndBodyReset() {
     };
   }, []);
 }
+
+const initiales = (nombre) => {
+  const words = (nombre || "").trim().split(" ");
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return (nombre || "?").substring(0, 2).toUpperCase();
+};
+
+const colorAvatar = (nombre) => {
+  const colores = [
+    { bg: "#e5f0ff", color: "#1a4fc0" },
+    { bg: "#e6f7ec", color: "#1c7a44" },
+    { bg: "#f1e9fb", color: "#7c3fd8" },
+    { bg: "#fff3d6", color: "#a8720b" },
+    { bg: "#fdeeee", color: "#a52b2b" },
+    { bg: "#e0f4f2", color: "#0d7a6c" },
+  ];
+  let sum = 0;
+  for (let i = 0; i < (nombre || "").length; i++) sum += nombre.charCodeAt(i);
+  return colores[sum % colores.length];
+};
 
 const parsePiso = (p) => {
   if (!p) return [99, 0];
@@ -97,6 +117,15 @@ export default function VistaCliente() {
   const [obsAbiertas, setObsAbiertas] = useState({});
   const toggleObs = (id) => setObsAbiertas(prev => ({ ...prev, [id]: !prev[id] }));
   const [formEditSede, setFormEditSede] = useState({ nombre: "", direccion: "", referencia: "" });
+
+  const [averias, setAverias] = useState([]);
+  const [detalleAveria, setDetalleAveria] = useState(null);
+  const [listaEmergenciaSede, setListaEmergenciaSede] = useState(null);
+  const [historialAverias, setHistorialAverias] = useState(null);
+  const [historialAbierto, setHistorialAbierto] = useState(false);
+  const [historialSedeFiltro, setHistorialSedeFiltro] = useState(null);
+  const [cargandoHistorial, setCargandoHistorial] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -128,6 +157,15 @@ export default function VistaCliente() {
     );
     const snapSedes = await getDocs(qSedes);
     setSedes(snapSedes.docs.map(d => ({ id: d.id, ...d.data() })));
+
+    try {
+      const qA = query(collection(db, "averias"), where("cliente", "==", nombre), where("atendida", "==", false));
+      const snapA = await getDocs(qA);
+      setAverias(snapA.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (e) {
+      console.error("Error cargando averías:", e);
+      setAverias([]);
+    }
   };
 
   const handleCrearSede = async (e) => {
@@ -204,6 +242,57 @@ export default function VistaCliente() {
     } catch (err) {
       alert("Error al eliminar: " + err.message);
     }
+  };
+
+  // ---- Averías / emergencias por sede ----
+  const abrirDetalleAveria = (averia) => {
+    setDetalleAveria(averia);
+    setListaEmergenciaSede(null);
+    setHistorialAbierto(false);
+  };
+  const cerrarDetalleAveria = () => setDetalleAveria(null);
+
+  const abrirEmergencias = (lista) => {
+    if (lista.length === 0) return;
+    if (lista.length === 1) abrirDetalleAveria(lista[0]);
+    else setListaEmergenciaSede(lista);
+  };
+  const abrirEmergenciasSede = (sede) => abrirEmergencias(averias.filter(a => a.sede === sede.nombre));
+
+  const marcarAveriaAtendida = async (averiaId) => {
+    try {
+      await updateDoc(doc(db, "averias", averiaId), { atendida: true, atendidaEn: serverTimestamp() });
+      const averiaAtendida = averias.find(a => a.id === averiaId);
+      setAverias(prev => prev.filter(a => a.id !== averiaId));
+      if (averiaAtendida && historialAverias !== null) {
+        setHistorialAverias(prev => [{ ...averiaAtendida, atendida: true, atendidaEn: { toDate: () => new Date() } }, ...prev]);
+      }
+      cerrarDetalleAveria();
+    } catch (e) {
+      console.error("Error marcando avería como atendida:", e);
+    }
+  };
+
+  const abrirHistorial = async (sede) => {
+    setHistorialSedeFiltro(sede || null);
+    setHistorialAbierto(true);
+    setListaEmergenciaSede(null);
+    if (historialAverias !== null) return;
+    setCargandoHistorial(true);
+    try {
+      const hSnap = await getDocs(query(collection(db, "averias"), where("cliente", "==", nombre), where("atendida", "==", true)));
+      setHistorialAverias(hSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (e) {
+      console.error("Error cargando historial de averías:", e);
+      setHistorialAverias([]);
+    }
+    setCargandoHistorial(false);
+  };
+
+  const getObsEquipo = (e) => {
+    const arr = e.observacionesArray || [];
+    const norm = arr.map(o => typeof o === "string" ? { texto: o } : o);
+    return norm.filter(o => o?.texto?.trim()).length;
   };
 
   const statsEquipos = (lista) => ({
@@ -471,10 +560,12 @@ export default function VistaCliente() {
             {sedes.map(sede => {
               const equiposSede = equipos.filter(e => e.sede === sede.nombre);
               const st = statsEquipos(equiposSede);
+              const averiasSede = averias.filter(a => a.sede === sede.nombre);
+              const av = colorAvatar(sede.nombre);
               return (
                 <div key={sede.id} style={s.sedeCard}>
                   <div style={s.sedeHeader}>
-                    <div style={s.sedeIcon}><SvgSede /></div>
+                    <div style={{ ...s.sedeIcon, background: av.bg, color: av.color }}>{initiales(sede.nombre)}</div>
                     <div style={{ flex: 1 }}>
                       <div style={s.sedeNombre}>{sede.nombre}</div>
                       <div style={s.sedeDireccion}>{sede.direccion}</div>
@@ -496,6 +587,13 @@ export default function VistaCliente() {
                     <div style={{ ...s.mini, background: st.fs > 0 ? "#fdeeee" : "#f4f6fb" }}>
                       <div style={{ ...s.miniNum, color: st.fs > 0 ? "#a52b2b" : "#9aa2b3" }}>{st.fs}</div>
                       <div style={{ ...s.miniLabel, color: st.fs > 0 ? "#a52b2b" : "#9aa2b3" }}>Fuera serv.</div>
+                    </div>
+                    <div style={{ ...s.mini, background: averiasSede.length > 0 ? "#fdeeee" : "#f4f6fb" }}>
+                      <div style={{ cursor: averiasSede.length > 0 ? "pointer" : "default" }} onClick={() => averiasSede.length > 0 && abrirEmergenciasSede(sede)}>
+                        <div style={{ ...s.miniNum, color: averiasSede.length > 0 ? "#a52b2b" : "#9aa2b3" }}>{averiasSede.length}</div>
+                        <div style={{ ...s.miniLabel, color: averiasSede.length > 0 ? "#a52b2b" : "#9aa2b3" }}>Emergencia</div>
+                      </div>
+                      <div style={{ fontSize: "10px", fontWeight: 700, color: "#1a4fc0", textAlign: "center", marginTop: "3px", textDecoration: "underline", cursor: "pointer" }} onClick={() => abrirHistorial(sede)}>Historial</div>
                     </div>
                   </div>
                   <button style={s.btnVerSede} onClick={() => navigate(`/cliente/${encodeURIComponent(nombre)}/sede/${encodeURIComponent(sede.nombre)}`)}>
@@ -545,6 +643,116 @@ export default function VistaCliente() {
           </div>
         </div>
       )}
+
+      {/* Modal lista de emergencias activas de una sede */}
+      {listaEmergenciaSede && (
+        <div style={s.modalOverlay} onClick={() => setListaEmergenciaSede(null)}>
+          <div style={s.listaCard} onClick={e => e.stopPropagation()}>
+            <div style={s.listaHeader}>
+              <SvgAlerta color="#a52b2b" />
+              <span style={s.listaTitulo}>Equipos con emergencia</span>
+              <span style={s.listaBadgeCount}>{listaEmergenciaSede.length}</span>
+              <button style={s.btnCerrarX} onClick={() => setListaEmergenciaSede(null)}>X</button>
+            </div>
+            <div style={s.listaBody}>
+              {listaEmergenciaSede.map(a => {
+                const eq = equipos.find(e => e.id === a.equipoId);
+                return (
+                  <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.listaItem}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
+                      <div style={s.listaItemMeta}>{a.piso ? `Piso ${a.piso}` : ""}{eq?.serie ? ` · Serie ${eq.serie}` : ""}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                      <span style={s.listaItemFecha}>{a.fecha?.toDate ? a.fecha.toDate().toLocaleDateString("es-PE") + ", " + a.fecha.toDate().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : ""}</span>
+                      <SvgFlechaDer />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal historial de averías */}
+      {historialAbierto && (
+        <div style={s.modalOverlay} onClick={() => setHistorialAbierto(false)}>
+          <div style={s.listaCard} onClick={e => e.stopPropagation()}>
+            <div style={s.listaHeader}>
+              <span style={s.listaTitulo}>Historial de averías{historialSedeFiltro ? ` — ${historialSedeFiltro.nombre}` : ""}</span>
+              <button style={s.btnCerrarX} onClick={() => setHistorialAbierto(false)}>X</button>
+            </div>
+            <div style={s.listaBody}>
+              {cargandoHistorial ? (
+                <div style={{ fontSize: "12.5px", color: "#8a92a6", textAlign: "center", padding: "20px 0" }}>Cargando historial...</div>
+              ) : (historialAverias || []).filter(a => !historialSedeFiltro || a.sede === historialSedeFiltro.nombre).length === 0 ? (
+                <div style={{ fontSize: "12.5px", color: "#aab1c2", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>Sin averías atendidas registradas</div>
+              ) : (historialAverias || [])
+                  .filter(a => !historialSedeFiltro || a.sede === historialSedeFiltro.nombre)
+                  .slice()
+                  .sort((a, b) => (b.atendidaEn?.toDate ? b.atendidaEn.toDate().getTime() : 0) - (a.atendidaEn?.toDate ? a.atendidaEn.toDate().getTime() : 0))
+                  .map(a => {
+                    const eq = equipos.find(e => e.id === a.equipoId);
+                    return (
+                      <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.listaItem}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
+                          <div style={s.listaItemMeta}>{a.sede ? `${a.sede} · ` : ""}{a.piso ? `Piso ${a.piso}` : ""}</div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                          <span style={s.atendidaChip}>Atendida</span>
+                          <SvgFlechaDer />
+                        </div>
+                      </div>
+                    );
+                  })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal detalle de avería */}
+      {detalleAveria && (() => {
+        const eq = equipos.find(e => e.id === detalleAveria.equipoId);
+        const atendida = !!detalleAveria.atendida;
+        return (
+          <div style={s.modalOverlay} onClick={cerrarDetalleAveria}>
+            <div style={{ ...s.averiaCard, border: `1px solid ${atendida ? "#c3ecd2" : "#f6d3d3"}` }} onClick={e => e.stopPropagation()}>
+              <div style={s.averiaHeaderRow}>
+                <div>
+                  <div style={s.averiaTitulo}>{eq?.tipoEquipo || "Equipo"} — {(detalleAveria.ambiente || eq?.ambiente || "").toString().toLowerCase()}</div>
+                  <div style={s.averiaSub}>Piso {detalleAveria.piso || eq?.piso || "-"} · {eq?.marca || "-"} · {eq?.modelo || detalleAveria.equipoCodigo || "-"}</div>
+                </div>
+                <span style={atendida ? s.badgeAtendida : s.badgeEmergencia}>{atendida ? "Atendida" : "Con emergencia"}</span>
+              </div>
+              <div style={s.averiaTabla}>
+                <div style={s.averiaFila}><span style={s.averiaLabel}>N° de serie</span><span style={s.averiaValor}>{eq?.serie || "-"}</span></div>
+                <div style={s.averiaFila}><span style={s.averiaLabel}>Estado</span><span style={s.averiaValor}>{eq?.estado || "-"}</span></div>
+                <div style={s.averiaFila}><span style={s.averiaLabel}>Últ. mantenimiento</span><span style={s.averiaValor}>{eq?.ultimoMantenimiento || "Sin registro"}</span></div>
+                <div style={s.averiaFila}><span style={s.averiaLabel}>Observaciones abiertas</span><span style={s.averiaValor}>{eq ? getObsEquipo(eq) : 0}</span></div>
+              </div>
+              <div style={s.averiaDivider}></div>
+              <div style={{ ...s.averiaMsgLabel, color: atendida ? "#1c7a44" : "#a52b2b" }}>{atendida ? "Avería atendida" : "Mensaje de emergencia"}</div>
+              <div style={{ ...s.averiaMsgBox, background: atendida ? "#e6f7ec" : "#fdeeee", border: `1px solid ${atendida ? "#c3ecd2" : "#f6d3d3"}` }}>
+                <div style={s.averiaMsgTxt}>{detalleAveria.mensaje}</div>
+                <div style={{ fontSize: "11px", color: "#8a92a6" }}>{detalleAveria.fecha?.toDate ? detalleAveria.fecha.toDate().toLocaleString("es-PE") : ""}</div>
+              </div>
+              {atendida ? (
+                <div style={s.averiaAtendidaTxt}>Atendida: {detalleAveria.atendidaEn?.toDate ? detalleAveria.atendidaEn.toDate().toLocaleString("es-PE") : "-"}</div>
+              ) : (
+                <>
+                  <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
+                    {eq && <button style={s.btnVerProtocolo} onClick={() => navigate(`/protocolo?equipo=${eq.id}`)}>Ver protocolo</button>}
+                    <button style={s.btnMarcarAtendida} onClick={() => marcarAveriaAtendida(detalleAveria.id)}>Marcar como atendida</button>
+                  </div>
+                  <div style={s.averiaCaption}>No se elimina: pasa a historial de averías atendidas y deja de contar en el badge de emergencia.</div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -599,10 +807,10 @@ const s = {
   sedeCardAgregar: { background: "white", border: "1.5px dashed #c3d6fb", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "180px", cursor: "pointer", color: "#1a4fc0", gap: "10px" },
   plusCircle: { width: "40px", height: "40px", borderRadius: "50%", background: "#e5f0ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", color: "#1a4fc0", fontWeight: 700 },
   sedeHeader: { padding: "14px 16px", borderBottom: "1px solid #f2f4f8", display: "flex", alignItems: "center", gap: "10px" },
-  sedeIcon: { width: "36px", height: "36px", borderRadius: "10px", background: "#e5f0ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px" },
+  sedeIcon: { width: "36px", height: "36px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 800, flexShrink: 0 },
   sedeNombre: { fontSize: "13.5px", fontWeight: 800, color: "#12245e" },
   sedeDireccion: { fontSize: "11.5px", color: "#8a92a6", marginTop: "2px", fontWeight: 600 },
-  miniStats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", padding: "14px 16px" },
+  miniStats: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px", padding: "14px 16px" },
   mini: { textAlign: "center", padding: "9px", borderRadius: "10px" },
   miniNum: { fontSize: "17px", fontWeight: 800 },
   miniLabel: { fontSize: "10px", marginTop: "2px", fontWeight: 700 },
@@ -613,4 +821,35 @@ const s = {
   obsPanel: { background: "#fafbfd", borderTop: "2px solid #f3dfa3", padding: "14px 18px" },
   obsTitulo: { fontSize: "11.5px", fontWeight: 700, color: "#a8720b", marginBottom: "10px" },
   obsItem: { background: "white", border: "1px solid #f3dfa3", borderLeft: "3px solid #e8a020", borderRadius: "10px", padding: "9px 13px" },
+
+  listaCard: { background: "white", borderRadius: "18px", width: "100%", maxWidth: "420px", boxShadow: "0 20px 50px rgba(0,10,40,0.3)", overflow: "hidden", fontFamily: FONT },
+  listaHeader: { display: "flex", alignItems: "center", gap: "8px", padding: "16px 18px", borderBottom: "1px solid #f2f4f8" },
+  listaTitulo: { fontSize: "14px", fontWeight: 700, color: "#12245e", flex: 1 },
+  listaBadgeCount: { fontSize: "11px", minWidth: "20px", height: "20px", padding: "0 6px", borderRadius: "10px", background: "#a52b2b", color: "white", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" },
+  btnCerrarX: { background: "none", border: "none", fontSize: "13px", fontWeight: 700, cursor: "pointer", color: "#8a92a6", padding: 0, marginLeft: "6px" },
+  listaBody: { padding: "12px 14px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "60vh", overflowY: "auto" },
+  listaItem: { background: "white", border: "1px solid #eef1f6", borderRadius: "12px", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", cursor: "pointer" },
+  listaItemNombre: { fontSize: "13.5px", fontWeight: 700, color: "#0f1b3d" },
+  listaItemMeta: { fontSize: "11.5px", color: "#8a92a6", marginTop: "3px", fontWeight: 600 },
+  listaItemFecha: { fontSize: "11px", color: "#a52b2b", fontWeight: 700, whiteSpace: "nowrap" },
+  atendidaChip: { fontSize: "11px", padding: "3px 9px", borderRadius: "20px", background: "#e6f7ec", color: "#1c7a44", fontWeight: 700, whiteSpace: "nowrap" },
+
+  averiaCard: { background: "white", borderRadius: "16px", width: "100%", maxWidth: "420px", padding: "20px", boxShadow: "0 20px 50px rgba(0,10,40,0.3)", boxSizing: "border-box", fontFamily: FONT },
+  averiaHeaderRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px", gap: "10px" },
+  averiaTitulo: { fontSize: "15px", fontWeight: 700, color: "#12245e", textAlign: "left" },
+  averiaSub: { fontSize: "12px", color: "#8a92a6", marginTop: "3px", textAlign: "left", fontWeight: 600 },
+  badgeEmergencia: { fontSize: "11px", padding: "3px 9px", background: "#fdeeee", color: "#a52b2b", borderRadius: "20px", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 },
+  badgeAtendida: { fontSize: "11px", padding: "3px 9px", background: "#e6f7ec", color: "#1c7a44", borderRadius: "20px", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 },
+  averiaTabla: { display: "flex", flexDirection: "column", gap: "10px", marginBottom: "14px" },
+  averiaFila: { display: "flex", justifyContent: "space-between", alignItems: "center" },
+  averiaLabel: { fontSize: "12px", color: "#8a92a6", fontWeight: 600 },
+  averiaValor: { fontSize: "13px", color: "#12245e", fontWeight: 700 },
+  averiaDivider: { height: "1px", background: "#eef1f6", margin: "2px 0 14px" },
+  averiaMsgLabel: { fontSize: "12px", fontWeight: 700, marginBottom: "7px" },
+  averiaMsgBox: { borderRadius: "12px", padding: "12px" },
+  averiaMsgTxt: { fontSize: "12.5px", color: "#0f1b3d", marginBottom: "6px", lineHeight: 1.4, fontWeight: 500 },
+  averiaAtendidaTxt: { fontSize: "12px", color: "#1c7a44", fontWeight: 700, marginTop: "10px" },
+  btnVerProtocolo: { flex: 1, height: "42px", borderRadius: "10px", border: "1px solid #dfe6f5", background: "white", color: "#12245e", fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+  btnMarcarAtendida: { flex: 1, height: "42px", borderRadius: "10px", border: "none", background: "#a52b2b", color: "white", fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+  averiaCaption: { fontSize: "11px", color: "#8a92a6", textAlign: "center", marginTop: "10px", lineHeight: 1.4, fontWeight: 600 },
 };
