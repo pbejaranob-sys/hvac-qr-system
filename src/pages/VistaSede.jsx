@@ -138,7 +138,11 @@ export default function VistaSede() {
   const [guardandoReemplazo, setGuardandoReemplazo] = useState(false);
   const [historialCargasAbierto, setHistorialCargasAbierto] = useState({}); // { equipoId: bool }
   const [editandoHistorialItem, setEditandoHistorialItem] = useState(null); // { ownerId, item } o null
-  const [formEditHistorial, setFormEditHistorial] = useState({ marca: "", modelo: "", serie: "", fechaInstalacion: "", fechaBaja: "" });
+  const [formEditHistorial, setFormEditHistorial] = useState({
+    marca: "", modelo: "", serie: "", capacidad: "",
+    tipoRefrigerante: "", fases: "Monofásico", voltaje: "", amperaje: "", cargaNominal: "",
+    fechaInstalacion: "", fechaBaja: "",
+  });
   const [guardandoEditHistorial, setGuardandoEditHistorial] = useState(false);
 
   const navigate = useNavigate();
@@ -221,6 +225,9 @@ export default function VistaSede() {
     setEditandoHistorialItem({ ownerId, item });
     setFormEditHistorial({
       marca: item.marca || "", modelo: item.modelo || "", serie: item.serie || "",
+      capacidad: item.capacidad || "", tipoRefrigerante: item.tipoRefrigerante || "",
+      fases: item.fases || "Monofásico", voltaje: item.voltaje || "", amperaje: item.amperaje || "",
+      cargaNominal: item.cargaNominal || "",
       fechaInstalacion: item.fechaInstalacion || "", fechaBaja: item.fechaBaja || "",
     });
   };
@@ -994,9 +1001,10 @@ export default function VistaSede() {
       {/* Modal editar item del historial de equipos */}
       {editandoHistorialItem && (
         <div style={s.modalOverlay} onClick={() => setEditandoHistorialItem(null)}>
-          <div style={{ ...s.averiaCard, maxWidth: "440px" }} onClick={e => e.stopPropagation()}>
+          <div style={{ ...s.averiaCard, maxWidth: "500px", maxHeight: "88vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: "15px", fontWeight: 800, color: "#12245e", marginBottom: "16px" }}>Editar equipo del historial</div>
             <form onSubmit={guardarEditHistorial} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={s.seccionLabel}>Datos generales</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
                   <label style={s.labelModal}>Marca</label>
@@ -1006,11 +1014,46 @@ export default function VistaSede() {
                   <label style={s.labelModal}>Modelo</label>
                   <input style={s.inputModal} value={formEditHistorial.modelo} onChange={e => setFormEditHistorial({ ...formEditHistorial, modelo: e.target.value })} />
                 </div>
+                <div>
+                  <label style={s.labelModal}>N° de serie</label>
+                  <input style={s.inputModal} value={formEditHistorial.serie} onChange={e => setFormEditHistorial({ ...formEditHistorial, serie: e.target.value })} />
+                </div>
+                <div>
+                  <label style={s.labelModal}>Capacidad (BTU)</label>
+                  <input style={s.inputModal} value={formEditHistorial.capacidad} onChange={e => setFormEditHistorial({ ...formEditHistorial, capacidad: e.target.value })} />
+                </div>
               </div>
-              <div>
-                <label style={s.labelModal}>N° de serie</label>
-                <input style={s.inputModal} value={formEditHistorial.serie} onChange={e => setFormEditHistorial({ ...formEditHistorial, serie: e.target.value })} />
+
+              <div style={{ ...s.seccionLabel, color: "#1a4fc0" }}>Datos eléctricos y refrigerante</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={s.labelModal}>Tipo de refrigerante</label>
+                  <select style={s.inputModal} value={formEditHistorial.tipoRefrigerante} onChange={e => setFormEditHistorial({ ...formEditHistorial, tipoRefrigerante: e.target.value })}>
+                    <option value="">Seleccionar...</option>
+                    {["R-22", "R-410A", "R-32", "R-407C", "R-134A", "Otro"].map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={s.labelModal}>Fases</label>
+                  <select style={s.inputModal} value={formEditHistorial.fases} onChange={e => setFormEditHistorial({ ...formEditHistorial, fases: e.target.value })}>
+                    <option>Monofásico</option><option>Trifásico</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={s.labelModal}>Voltaje de placa (V)</label>
+                  <input style={s.inputModal} value={formEditHistorial.voltaje} onChange={e => setFormEditHistorial({ ...formEditHistorial, voltaje: e.target.value })} />
+                </div>
+                <div>
+                  <label style={s.labelModal}>Amperaje de placa (A)</label>
+                  <input style={s.inputModal} value={formEditHistorial.amperaje} onChange={e => setFormEditHistorial({ ...formEditHistorial, amperaje: e.target.value })} />
+                </div>
+                <div>
+                  <label style={s.labelModal}>Carga nominal (kg)</label>
+                  <input style={s.inputModal} type="number" step="0.1" value={formEditHistorial.cargaNominal} onChange={e => setFormEditHistorial({ ...formEditHistorial, cargaNominal: e.target.value })} />
+                </div>
               </div>
+
+              <div style={s.seccionLabel}>Fechas de servicio</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
                   <label style={s.labelModal}>Fecha instalación</label>
