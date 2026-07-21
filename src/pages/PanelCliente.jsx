@@ -7,8 +7,6 @@ import jsPDF from "jspdf";
 
 const FONT = "'Manrope', -apple-system, sans-serif";
 
-// Tipos de equipo que manejan gas refrigerante (Split/VRV/Chiller).
-// Fan Coil/UMA no se incluyen: trabajan con agua helada, no con refrigerante.
 const TIPOS_CON_GAS = [
   "Split Piso Techo", "Split Pared", "Split Ducto", "Split Fancoil", "Split Cassete",
   "Ventana", "Autocontenido", "Precisión", "VRV Evaporador", "VRV Condensador", "Chiller",
@@ -259,7 +257,7 @@ export default function PanelCliente() {
   const [filtroTipoEquipo, setFiltroTipoEquipo] = useState("Todos");
   const [filtroMes, setFiltroMes] = useState("Todos");
   const [obsAbierto, setObsAbierto] = useState(null);
-  const [subVista, setSubVista] = useState("equipos"); // "equipos" | "refrigerantes" (solo dentro de una sede)
+  const [subVista, setSubVista] = useState("equipos");
   const [movimientos, setMovimientos] = useState(null);
   const [kgRecuperadosHistorico, setKgRecuperadosHistorico] = useState(null);
   const [cargandoMovimientos, setCargandoMovimientos] = useState(false);
@@ -409,7 +407,6 @@ export default function PanelCliente() {
     ? averias.filter(a => a.sede === sedeActual.nombre)
     : averias;
 
-  // ---- Refrigerantes (solo lectura) ----
   const equiposConGas = equiposMostrados.filter(e => TIPOS_CON_GAS.includes(e.tipoEquipo));
 
   const cargarMovimientos = async () => {
@@ -493,7 +490,6 @@ export default function PanelCliente() {
   })();
   const maxKgMes = Math.max(0.1, ...mesesChart.map(m => m.kg));
 
-  // ---- Historial de reemplazo de equipos (solo lectura) ----
   const toggleHistorialEquipo = async (eq) => {
     const abierto = historialEquipoAbierto[eq.id];
     setHistorialEquipoAbierto(prev => ({ ...prev, [eq.id]: !abierto }));
@@ -1079,6 +1075,8 @@ const s = {
   btnVerSede: { width: "100%", padding: "11px", border: "none", borderTop: "1px solid #f2f4f8", cursor: "pointer", fontSize: "13px", fontWeight: 700, background: "white", color: "#1a4fc0", fontFamily: "inherit" },
 
   statGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "14px" },
+  statCard: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", textAlign: "center" },
+  statNum: { fontWeight: 800, fontSize: "clamp(26px,4vw,34px)" },
   progressCard: { background: "white", border: "1px solid #e7ebf3", borderRadius: "18px", padding: "clamp(16px,3vw,24px)", display: "flex", flexDirection: "column", gap: "16px" },
 
   tablaCard: { background: "white", border: "1px solid #e7ebf3", borderRadius: "18px", padding: "clamp(16px,3vw,24px)", display: "flex", flexDirection: "column", gap: "16px" },
