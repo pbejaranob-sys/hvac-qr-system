@@ -133,6 +133,9 @@ export default function VistaSede() {
   const [formReemplazo, setFormReemplazo] = useState({ marca: "", modelo: "", serie: "", cargaNominal: "", kgRecuperados: "" });
   const [guardandoReemplazo, setGuardandoReemplazo] = useState(false);
   const [historialCargasAbierto, setHistorialCargasAbierto] = useState({}); // { equipoId: bool }
+  const [editandoHistorialItem, setEditandoHistorialItem] = useState(null); // { ownerId, item } o null
+  const [formEditHistorial, setFormEditHistorial] = useState({ marca: "", modelo: "", serie: "", fechaInstalacion: "", fechaBaja: "" });
+  const [guardandoEditHistorial, setGuardandoEditHistorial] = useState(false);
 
   const navigate = useNavigate();
 
@@ -208,6 +211,62 @@ export default function VistaSede() {
       setHistorialesEquipo(prev => ({ ...prev, [eq.id]: [] }));
     }
     setCargandoHistorialEquipo(prev => ({ ...prev, [eq.id]: false }));
+  };
+
+  const abrirEditarHistorialItem = (ownerId, item) => {
+    setEditandoHistorialItem({ ownerId, item });
+    setFormEditHistorial({
+      marca: item.marca || "", modelo: item.modelo || "", serie: item.serie || "",
+      fechaInstalacion: item.fechaInstalacion || "", fechaBaja: item.fechaBaja || "",
+    });
+  };
+
+  const guardarEditHistorial = async (e) => {
+    e.preventDefault();
+    if (!editandoHistorialItem) return;
+    setGuardandoEditHistorial(true);
+    try {
+      const { ownerId, item } = editandoHistorialItem;
+      await updateDoc(doc(db, "equipos", item.id), { ...formEditHistorial });
+      setHistorialesEquipo(prev => ({
+        ...prev,
+        [ownerId]: (prev[ownerId] || []).map(h => h.id === item.id ? { ...h, ...formEditHistorial } : h),
+      }));
+      setEditandoHistorialItem(null);
+    } catch (err) {
+      alert("Error al guardar: " + err.message);
+    }
+    setGuardandoEditHistorial(false);
+  };
+
+  // Elimina un equipo del historial y reconecta la cadena (predecesor <-> sucesor)
+  // para que el resto de la trazabilidad no quede rota.
+  const eliminarHistorialItem = async (eq, idx) => {
+    const cadena = historialesEquipo[eq.id] || [];
+    const item = cadena[idx];
+    if (!item) return;
+    if (!window.confirm(`¿Eliminar "${item.marca} ${item.modelo}" del historial? Esta acción no se puede deshacer.`)) return;
+
+    const predecesorId = item.equipoAnteriorId || null; // el que vino antes que "item" (más viejo)
+    const sucesorId = idx === 0 ? eq.id : cadena[idx - 1].id; // el que reemplazó a "item"
+
+    try {
+      await deleteDoc(doc(db, "equipos", item.id));
+      await updateDoc(doc(db, "equipos", sucesorId), { equipoAnteriorId: predecesorId });
+      if (predecesorId) {
+        await updateDoc(doc(db, "equipos", predecesorId), { equipoReemplazoId: sucesorId });
+      }
+      // Si el sucesor es el equipo activo, decrementar su historialCount y su enlace local.
+      if (sucesorId === eq.id) {
+        await updateDoc(doc(db, "equipos", eq.id), { historialCount: Math.max(0, (eq.historialCount || 1) - 1) });
+        setEquipos(prev => prev.map(e => e.id === eq.id
+          ? { ...e, equipoAnteriorId: predecesorId, historialCount: Math.max(0, (e.historialCount || 1) - 1) }
+          : e));
+      }
+      setHistorialesEquipo(prev => ({ ...prev, [eq.id]: cadena.filter((_, i) => i !== idx) }));
+    } catch (err) {
+      alert("Error al eliminar: " + err.message);
+    }
   };
 
   const abrirModalReemplazo = (eq) => {
@@ -707,7 +766,11 @@ export default function VistaSede() {
                                       {h.fechaInstalacion || "?"} – {h.fechaBaja || "?"}
                                     </div>
                                   </div>
-                                  <span style={s.chipReemplazado}>Reemplazado</span>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <span style={s.chipReemplazado}>Reemplazado</span>
+                                    <button style={s.btnEditarMov} onClick={() => abrirEditarHistorialItem(eq.id, h)} title="Editar"><SvgEditarChico /></button>
+                                    <button style={s.btnEliminarMov} onClick={() => eliminarHistorialItem(eq, idx)} title="Eliminar"><SvgEliminar /></button>
+                                  </div>
                                 </div>
                                 {h.kgRecuperados > 0 && (
                                   <div style={s.chipRecuperado}>
@@ -716,6 +779,7 @@ export default function VistaSede() {
                                 )}
                               </div>
                             ))}
+                            <div style={{ fontSize: "10px", color: "#c3cad9", textAlign: "center", marginTop: "2px" }}>Editar/eliminar historial solo visible para admin y superadmin</div>
                           </div>
                         )}
                       </div>
@@ -883,6 +947,45 @@ export default function VistaSede() {
               <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
                 <button type="button" style={s.btnVerProtocolo} onClick={() => { setModalCargaAbierto(false); setEditandoMovimiento(null); }}>Cancelar</button>
                 <button type="submit" style={s.btnMarcarAtendida} disabled={guardandoCarga}>{guardandoCarga ? "Guardando..." : editandoMovimiento ? "Guardar cambios" : "Guardar"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal editar item del historial de equipos */}
+      {editandoHistorialItem && (
+        <div style={s.modalOverlay} onClick={() => setEditandoHistorialItem(null)}>
+          <div style={{ ...s.averiaCard, maxWidth: "440px" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: "15px", fontWeight: 800, color: "#12245e", marginBottom: "16px" }}>Editar equipo del historial</div>
+            <form onSubmit={guardarEditHistorial} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={s.labelModal}>Marca</label>
+                  <input style={s.inputModal} value={formEditHistorial.marca} onChange={e => setFormEditHistorial({ ...formEditHistorial, marca: e.target.value })} />
+                </div>
+                <div>
+                  <label style={s.labelModal}>Modelo</label>
+                  <input style={s.inputModal} value={formEditHistorial.modelo} onChange={e => setFormEditHistorial({ ...formEditHistorial, modelo: e.target.value })} />
+                </div>
+              </div>
+              <div>
+                <label style={s.labelModal}>N° de serie</label>
+                <input style={s.inputModal} value={formEditHistorial.serie} onChange={e => setFormEditHistorial({ ...formEditHistorial, serie: e.target.value })} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={s.labelModal}>Fecha instalación</label>
+                  <input style={s.inputModal} type="date" value={formEditHistorial.fechaInstalacion} onChange={e => setFormEditHistorial({ ...formEditHistorial, fechaInstalacion: e.target.value })} />
+                </div>
+                <div>
+                  <label style={s.labelModal}>Fecha de baja</label>
+                  <input style={s.inputModal} type="date" value={formEditHistorial.fechaBaja} onChange={e => setFormEditHistorial({ ...formEditHistorial, fechaBaja: e.target.value })} />
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
+                <button type="button" style={s.btnVerProtocolo} onClick={() => setEditandoHistorialItem(null)}>Cancelar</button>
+                <button type="submit" style={s.btnMarcarAtendida} disabled={guardandoEditHistorial}>{guardandoEditHistorial ? "Guardando..." : "Guardar cambios"}</button>
               </div>
             </form>
           </div>
