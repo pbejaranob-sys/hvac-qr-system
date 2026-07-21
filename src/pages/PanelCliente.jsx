@@ -261,6 +261,7 @@ export default function PanelCliente() {
   const [obsAbierto, setObsAbierto] = useState(null);
   const [subVista, setSubVista] = useState("equipos"); // "equipos" | "refrigerantes" (solo dentro de una sede)
   const [movimientos, setMovimientos] = useState(null);
+  const [kgRecuperadosHistorico, setKgRecuperadosHistorico] = useState(null);
   const [cargandoMovimientos, setCargandoMovimientos] = useState(false);
   const [historialesEquipo, setHistorialesEquipo] = useState({});
   const [historialEquipoAbierto, setHistorialEquipoAbierto] = useState({});
@@ -432,6 +433,20 @@ export default function PanelCliente() {
   const irARefrigerantes = () => {
     setSubVista("refrigerantes");
     cargarMovimientos();
+    cargarRecuperacionHistorica();
+  };
+
+  const cargarRecuperacionHistorica = async (force = false) => {
+    if (kgRecuperadosHistorico !== null && !force) return;
+    try {
+      const filtros = [where("cliente", "==", usuario?.empresa), where("tipo", "==", "recuperacion_baja")];
+      if (sedeActual) filtros.push(where("sede", "==", sedeActual.nombre));
+      const snap = await getDocs(query(collection(db, "movimientosRefrigerante"), ...filtros));
+      setKgRecuperadosHistorico(snap.docs.reduce((acc, d) => acc + (Number(d.data().kg) || 0), 0));
+    } catch (e) {
+      console.error("Error cargando recuperación histórica:", e);
+      setKgRecuperadosHistorico(0);
+    }
   };
 
   const hace12Meses = () => { const d = new Date(); d.setMonth(d.getMonth() - 12); return d; };
@@ -741,7 +756,7 @@ export default function PanelCliente() {
               </div>
 
               <div style={{ overflowX: "auto", paddingRight: "4px" }}>
-                <div style={{ minWidth: "1020px" }}>
+                <div style={{ minWidth: "0" }}>
                   <div style={s.tablaColHead}>
                     {["#", "CÓDIGO", "PISO", "AMBIENTE", "TIPO EQUIPO", "MARCA/MODELO", "SERIE", "ESTADO", "ÚLT. MANT.", "ACCIONES"].map(h => (
                       <div key={h} style={{ fontWeight: 700, fontSize: "11.5px", color: "#8a92a6", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</div>
@@ -759,8 +774,8 @@ export default function PanelCliente() {
                           <div style={{ fontWeight: 700, color: "#8a92a6", fontSize: "13.5px" }}>{i + 1}</div>
                           <div>{equipo.codigo ? <span style={s.codigoChip}>{equipo.codigo}</span> : null}</div>
                           <div style={{ fontWeight: 600, color: "#26314d", fontSize: "13.5px" }}>{equipo.piso || "-"}</div>
-                          <div style={{ fontWeight: 700, color: "#0f1b3d", fontSize: "12.5px", lineHeight: 1.3 }}>{equipo.ambiente || "-"}</div>
-                          <div style={{ fontWeight: 600, color: "#26314d", fontSize: "12px" }}>{equipo.tipoEquipo || "-"}</div>
+                          <div style={{ fontWeight: 700, color: "#0f1b3d", fontSize: "12.5px", lineHeight: 1.3, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={equipo.ambiente || ""}>{equipo.ambiente || "-"}</div>
+                          <div style={{ fontWeight: 600, color: "#26314d", fontSize: "12px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={equipo.tipoEquipo || ""}>{equipo.tipoEquipo || "-"}</div>
                           <div style={{ minWidth: 0, overflow: "hidden" }}>
                             <div style={{ fontWeight: 700, fontSize: "12.5px", color: "#0f1b3d", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={equipo.marca || ""}>{equipo.marca || "-"}</div>
                             <div style={{ fontWeight: 600, fontSize: "11px", color: "#9aa2b3", marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={equipo.modelo || ""}>{equipo.modelo || "-"}</div>
@@ -859,6 +874,12 @@ export default function PanelCliente() {
                     <div style={{ ...s.statNum, color: enAlertaRef > 0 ? "#a52b2b" : "#8a92a6" }}>{enAlertaRef} / {equiposConGas.length}</div>
                     <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>EN ALERTA</div>
                   </div>
+                  <div style={s.statCard}>
+                    <div style={{ ...s.statNum, color: "#7c3fd8" }}>
+                      {kgRecuperadosHistorico === null ? "…" : kgRecuperadosHistorico.toFixed(1)}
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>KG RECUPERADOS (HISTÓRICO)</div>
+                  </div>
                 </div>
 
                 <div style={s.progressCard}>
@@ -887,15 +908,20 @@ export default function PanelCliente() {
                     </div>
                   ) : (
                     <div style={{ overflowX: "auto" }}>
-                      <div style={{ minWidth: "760px" }}>
+                      <div style={{ minWidth: "860px" }}>
                         <div style={s.tablaHeaderRef}>
-                          {["Equipo", "Gas", "Carga nominal", "Añadido 12m", "Fuga", "Estado"].map(h => (
+                          {["Código", "Piso", "Equipo", "Gas", "Carga nominal", "Añadido 12m", "Fuga", "Estado"].map(h => (
                             <span key={h} style={{ fontWeight: 700, fontSize: "11px", color: "#8a92a6", letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</span>
                           ))}
                         </div>
                         {refrigerantesData.map((r, i) => (
                           <div key={r.equipo.id} style={{ ...s.tablaRowRef, background: i % 2 === 0 ? "white" : "#fafbfd" }}>
-                            <span style={{ fontWeight: 700, color: "#0f1b3d", fontSize: "12.5px" }}>{r.equipo.tipoEquipo} — {r.equipo.ambiente || "-"}</span>
+                            <span>{r.equipo.codigo ? <span style={s.codigoChip}>{r.equipo.codigo}</span> : <span style={{ color: "#c3cad9" }}>-</span>}</span>
+                            <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.equipo.piso || "-"}</span>
+                            <span style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, color: "#0f1b3d", fontSize: "12.5px" }}>{r.equipo.tipoEquipo} — {r.equipo.ambiente || "-"}</div>
+                              <div style={{ fontSize: "10.5px", color: "#9aa2b3", marginTop: "2px" }}>{r.equipo.marca || ""} {r.equipo.modelo || ""}{r.equipo.serie ? ` · ${r.equipo.serie}` : ""}</div>
+                            </span>
                             <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.equipo.tipoRefrigerante || "—"}</span>
                             <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.nominal > 0 ? `${r.nominal.toFixed(1)} kg` : "Sin dato"}</span>
                             <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.anadido.toFixed(1)} kg</span>
@@ -1060,8 +1086,8 @@ const s = {
   filterLabel: { fontSize: "12.5px", fontWeight: 600, color: "#6b7488" },
   filterSelect: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", minWidth: "140px", justifyContent: "space-between", fontFamily: "inherit" },
   filterSelectNative: { fontSize: "12.5px", fontWeight: 600, padding: "7px 11px", borderRadius: "9px", border: "1px solid #dfe6f5", background: "#f9fafc", color: "#26314d", fontFamily: "inherit" },
-  tablaColHead: { display: "grid", gridTemplateColumns: "24px 66px 38px 130px 78px 160px 120px 78px 84px 165px", gap: "6px", borderBottom: "2px solid #eef1f6", paddingBottom: "10px" },
-  tablaFila: { display: "grid", gridTemplateColumns: "24px 66px 38px 130px 78px 160px 120px 78px 84px 165px", gap: "6px", alignItems: "center", borderBottom: "1px solid #f2f4f8", padding: "14px 0" },
+  tablaColHead: { display: "grid", gridTemplateColumns: "22px 62px 36px 1.1fr 0.8fr 1fr 0.85fr 76px 76px 230px", gap: "6px", borderBottom: "2px solid #eef1f6", paddingBottom: "10px" },
+  tablaFila: { display: "grid", gridTemplateColumns: "22px 62px 36px 1.1fr 0.8fr 1fr 0.85fr 76px 76px 230px", gap: "6px", alignItems: "center", borderBottom: "1px solid #f2f4f8", padding: "14px 0" },
   codigoChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "12px", padding: "3px 9px", borderRadius: "7px" },
   ultMantChip: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "11px", padding: "3px 9px", borderRadius: "20px", whiteSpace: "nowrap", display: "inline-block" },
   btnInfo: { background: "#1a4fc0", color: "white", border: "none", borderRadius: "7px", padding: "4px 7px", fontFamily: "inherit", fontWeight: 700, fontSize: "9.5px", cursor: "pointer" },
@@ -1108,7 +1134,7 @@ const s = {
   tabBtn: { background: "white", color: "#6b7488", border: "1px solid #e7ebf3", borderRadius: "11px", padding: "10px 18px", fontFamily: "inherit", fontWeight: 700, fontSize: "13px", cursor: "pointer" },
   tabBtnActiva: { background: "#12245e", color: "white", border: "1px solid #12245e" },
   tabBtnActivaRef: { background: "#1a4fc0", color: "white", border: "1px solid #1a4fc0" },
-  tablaHeaderRef: { display: "grid", gridTemplateColumns: "1.5fr 0.8fr 1fr 1fr 0.8fr 0.9fr", gap: "10px", padding: "10px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
-  tablaRowRef: { display: "grid", gridTemplateColumns: "1.5fr 0.8fr 1fr 1fr 0.8fr 0.9fr", gap: "10px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
+  tablaHeaderRef: { display: "grid", gridTemplateColumns: "70px 45px 1.6fr 0.7fr 0.9fr 0.9fr 0.7fr 0.9fr", gap: "10px", padding: "10px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
+  tablaRowRef: { display: "grid", gridTemplateColumns: "70px 45px 1.6fr 0.7fr 0.9fr 0.9fr 0.7fr 0.9fr", gap: "10px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
   btnHistorialChico: { fontSize: "10px", padding: "5px 7px", background: "#fff3d6", color: "#a8720b", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" },
 };
