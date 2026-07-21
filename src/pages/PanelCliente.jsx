@@ -7,6 +7,41 @@ import jsPDF from "jspdf";
 
 const FONT = "'Manrope', -apple-system, sans-serif";
 
+// Tipos de equipo que manejan gas refrigerante (Split/VRV/Chiller).
+// Fan Coil/UMA no se incluyen: trabajan con agua helada, no con refrigerante.
+const TIPOS_CON_GAS = [
+  "Split Piso Techo", "Split Pared", "Split Ducto", "Split Fancoil", "Split Cassete",
+  "Ventana", "Autocontenido", "Precisión", "VRV Evaporador", "VRV Condensador", "Chiller",
+];
+
+const initiales = (nombre) => {
+  const words = (nombre || "").trim().split(" ");
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return (nombre || "?").substring(0, 2).toUpperCase();
+};
+
+const colorAvatar = (nombre) => {
+  const colores = [
+    { bg: "#e5f0ff", color: "#1a4fc0" },
+    { bg: "#e6f7ec", color: "#1c7a44" },
+    { bg: "#f1e9fb", color: "#7c3fd8" },
+    { bg: "#fff3d6", color: "#a8720b" },
+    { bg: "#fdeeee", color: "#a52b2b" },
+    { bg: "#e0f4f2", color: "#0d7a6c" },
+  ];
+  let sum = 0;
+  for (let i = 0; i < (nombre || "").length; i++) sum += nombre.charCodeAt(i);
+  return colores[sum % colores.length];
+};
+
+const SvgHistorial = ({ color = "currentColor" }) => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+    <path d="M3 12a9 9 0 1 0 3-6.7" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M3 4v5h5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M12 8v4l3 2" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 function useManropeAndBodyReset() {
   useEffect(() => {
     if (!document.getElementById("font-manrope")) {
@@ -224,6 +259,12 @@ export default function PanelCliente() {
   const [filtroTipoEquipo, setFiltroTipoEquipo] = useState("Todos");
   const [filtroMes, setFiltroMes] = useState("Todos");
   const [obsAbierto, setObsAbierto] = useState(null);
+  const [subVista, setSubVista] = useState("equipos"); // "equipos" | "refrigerantes" (solo dentro de una sede)
+  const [movimientos, setMovimientos] = useState(null);
+  const [cargandoMovimientos, setCargandoMovimientos] = useState(false);
+  const [historialesEquipo, setHistorialesEquipo] = useState({});
+  const [historialEquipoAbierto, setHistorialEquipoAbierto] = useState({});
+  const [cargandoHistorialEquipo, setCargandoHistorialEquipo] = useState({});
   const [vistaActual, setVistaActual] = useState("sedes");
   const [sedeActual, setSedeActual] = useState(null);
   const [averias, setAverias] = useState([]);
@@ -359,6 +400,113 @@ export default function PanelCliente() {
   const getRec = (e) => e.recomendacionesArray?.filter(Boolean) ||
     e.recomendaciones?.split(/\n|;/).map(r => r.trim()).filter(Boolean) || [];
 
+  // ---- Refrigerantes (solo lectura) ----
+  const equiposConGas = equiposMostrados.filter(e => TIPOS_CON_GAS.includes(e.tipoEquipo));
+
+  const cargarMovimientos = async () => {
+    if (movimientos !== null || equiposConGas.length === 0) return;
+    setCargandoMovimientos(true);
+    try {
+      const ids = equiposConGas.map(e => e.id);
+      const chunks = [];
+      for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
+      const resultados = await Promise.all(
+        chunks.map(chunk => getDocs(query(collection(db, "movimientosRefrigerante"), where("equipoId", "in", chunk))))
+      );
+      setMovimientos(resultados.flatMap(snap => snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    } catch (e) {
+      console.error("Error cargando movimientos de refrigerante:", e);
+      setMovimientos([]);
+    }
+    setCargandoMovimientos(false);
+  };
+
+  const irARefrigerantes = () => {
+    setSubVista("refrigerantes");
+    cargarMovimientos();
+  };
+
+  const hace12Meses = () => { const d = new Date(); d.setMonth(d.getMonth() - 12); return d; };
+
+  const kgAnadidos12m = (equipoId) => {
+    if (!movimientos) return 0;
+    const corte = hace12Meses();
+    return movimientos
+      .filter(m => m.equipoId === equipoId && m.tipo === "carga" && new Date(m.fecha) >= corte)
+      .reduce((acc, m) => acc + (Number(m.kg) || 0), 0);
+  };
+
+  const estadoFuga = (pct) => {
+    if (pct === null) return { label: "Sin datos", bg: "#f4f6fb", color: "#8a92a6" };
+    if (pct >= 20) return { label: "Crítico", bg: "#fdeeee", color: "#a52b2b" };
+    if (pct >= 10) return { label: "Alerta", bg: "#fff3d6", color: "#a8720b" };
+    return { label: "OK", bg: "#e6f7ec", color: "#1c7a44" };
+  };
+
+  const refrigerantesData = equiposConGas.map(eq => {
+    const nominal = Number(eq.cargaNominal) || 0;
+    const anadido = kgAnadidos12m(eq.id);
+    const pct = nominal > 0 ? (anadido / nominal) * 100 : null;
+    return { equipo: eq, nominal, anadido, pct, estado: estadoFuga(pct) };
+  });
+  const kgInstalados = refrigerantesData.reduce((acc, r) => acc + r.nominal, 0);
+  const kgAnadidosTotal = refrigerantesData.reduce((acc, r) => acc + r.anadido, 0);
+  const tasaFugaPromedio = kgInstalados > 0 ? (kgAnadidosTotal / kgInstalados) * 100 : 0;
+  const enAlertaRef = refrigerantesData.filter(r => r.pct !== null && r.pct >= 10).length;
+
+  const mesesChart = (() => {
+    const meses = [];
+    const hoy = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+      meses.push({ label: d.toLocaleDateString("es-PE", { month: "short" }), year: d.getFullYear(), month: d.getMonth() });
+    }
+    return meses.map(m => {
+      const kg = (movimientos || [])
+        .filter(mv => mv.tipo === "carga" && (() => { const fd = new Date(mv.fecha); return fd.getFullYear() === m.year && fd.getMonth() === m.month; })())
+        .reduce((acc, mv) => acc + (Number(mv.kg) || 0), 0);
+      return { ...m, kg };
+    });
+  })();
+  const maxKgMes = Math.max(0.1, ...mesesChart.map(m => m.kg));
+
+  // ---- Historial de reemplazo de equipos (solo lectura) ----
+  const toggleHistorialEquipo = async (eq) => {
+    const abierto = historialEquipoAbierto[eq.id];
+    setHistorialEquipoAbierto(prev => ({ ...prev, [eq.id]: !abierto }));
+    if (abierto || historialesEquipo[eq.id] || !eq.equipoAnteriorId) return;
+    setCargandoHistorialEquipo(prev => ({ ...prev, [eq.id]: true }));
+    try {
+      const { getDoc, doc } = await import("firebase/firestore");
+      const cadena = [];
+      let cursorId = eq.equipoAnteriorId;
+      while (cursorId) {
+        const snap = await getDoc(doc(db, "equipos", cursorId));
+        if (!snap.exists()) break;
+        const data = { id: snap.id, ...snap.data() };
+        cadena.push(data);
+        cursorId = data.equipoAnteriorId || null;
+      }
+      await Promise.all(cadena.map(async (h) => {
+        try {
+          const movSnap = await getDocs(query(
+            collection(db, "movimientosRefrigerante"),
+            where("equipoId", "==", h.id),
+            where("tipo", "==", "recuperacion_baja")
+          ));
+          h.kgRecuperados = movSnap.docs.reduce((acc, d) => acc + (Number(d.data().kg) || 0), 0);
+        } catch {
+          h.kgRecuperados = null;
+        }
+      }));
+      setHistorialesEquipo(prev => ({ ...prev, [eq.id]: cadena }));
+    } catch (e) {
+      console.error("Error cargando historial del equipo:", e);
+      setHistorialesEquipo(prev => ({ ...prev, [eq.id]: [] }));
+    }
+    setCargandoHistorialEquipo(prev => ({ ...prev, [eq.id]: false }));
+  };
+
   const equiposMostrados = sedeActual
     ? equipos.filter(e => e.sede === sedeActual.nombre)
     : equipos;
@@ -468,10 +616,11 @@ export default function PanelCliente() {
               const fsS = eqSede.filter(e => e.estado === "Fuera de servicio").length;
               const totS = eqSede.length;
               const averiasSede = averias.filter(a => a.sede === sede.nombre);
+              const av = colorAvatar(sede.nombre);
               return (
                 <div key={sede.id} style={s.sedeCard}>
                   <div style={s.sedeHeader}>
-                    <div style={s.sedeIconBox}><img src="/assets/hvac-isotipo-filled.png" alt="" style={{ width: 30, height: 30, objectFit: "contain", filter: "brightness(0) invert(1)" }} /></div>
+                    <div style={{ ...s.sedeIconBox, background: av.bg, color: av.color }}>{initiales(sede.nombre)}</div>
                     <div>
                       <div style={s.sedeNombre}>{sede.nombre}</div>
                       <div style={s.sedeDireccion}>{sede.direccion}</div>
@@ -499,6 +648,19 @@ export default function PanelCliente() {
         {/* Vista equipos */}
         {vistaActual === "equipos" && (
           <>
+            {equiposConGas.length > 0 && (
+              <div style={s.tabsWrap}>
+                <button style={{ ...s.tabBtn, ...(subVista === "equipos" ? s.tabBtnActiva : {}) }} onClick={() => setSubVista("equipos")}>
+                  Equipos
+                </button>
+                <button style={{ ...s.tabBtn, ...(subVista === "refrigerantes" ? s.tabBtnActivaRef : {}) }} onClick={irARefrigerantes}>
+                  Refrigerantes
+                </button>
+              </div>
+            )}
+
+            {subVista === "equipos" && (
+              <>
             {/* Stat cards */}
             <div style={s.statGrid}>
               {[
@@ -589,6 +751,8 @@ export default function PanelCliente() {
                     const abierto = obsAbierto === equipo.id;
                     const obsArr = getObs(equipo);
                     const numObs = obsArr.length;
+                    const tieneHistorial = !!equipo.equipoAnteriorId;
+                    const historialAbiertoEq = historialEquipoAbierto[equipo.id];
                     return (
                       <React.Fragment key={equipo.id}>
                         <div style={s.tablaFila}>
@@ -606,14 +770,45 @@ export default function PanelCliente() {
                           </div>
                           <div style={{ minWidth: 0, overflow: "hidden" }}>{getBadge(equipo.estado)}</div>
                           <div style={{ minWidth: 0, overflow: "hidden" }}>{equipo.ultimoMantenimiento ? <span style={s.ultMantChip}>{fechaAMesAnio(equipo.ultimoMantenimiento) || equipo.ultimoMantenimiento}</span> : <span style={{ fontSize: "11px", color: "#c3cad9" }}>—</span>}</div>
-                          <div style={{ display: "flex", gap: "10px", flexWrap: "nowrap", justifyContent: "flex-end", minWidth: 0, paddingLeft: "10px" }}>
+                          <div style={{ display: "flex", gap: "8px", flexWrap: "nowrap", justifyContent: "flex-end", alignItems: "center", minWidth: 0, paddingLeft: "10px" }}>
                             <button style={s.btnInfo} onClick={() => window.open(`/equipo/${equipo.id}?noqr=1`, "_blank")}>Info</button>
                             <button style={{ ...s.btnObs, ...(abierto ? { background: "#8a5b0a", color: "white" } : {}), opacity: numObs === 0 ? 0.5 : 1 }} onClick={() => setObsAbierto(abierto ? null : equipo.id)}>
                               Obs <span style={{ background: abierto ? "white" : "#f3dfa3", color: "#8a5b0a", borderRadius: "20px", padding: "1px 5px", fontSize: "10px" }}>{numObs}</span>
                             </button>
                             <button style={s.btnProto} onClick={() => navigate(`/protocolo?equipo=${equipo.id}&origen=cliente${sedeActual ? `&sede=${encodeURIComponent(sedeActual.id)}` : ""}`)}>Protocolo</button>
+                            {tieneHistorial && (
+                              <button style={s.btnHistorialChico} onClick={() => toggleHistorialEquipo(equipo)} title={`${equipo.historialCount || 1} reemplazo(s) anterior(es)`}>
+                                <SvgHistorial /> {equipo.historialCount || 1}
+                              </button>
+                            )}
                           </div>
                         </div>
+                        {tieneHistorial && historialAbiertoEq && (
+                          <div style={{ background: "#fafbfd", borderBottom: "1px solid #f2f4f8", padding: "10px 18px 14px 18px" }}>
+                            {cargandoHistorialEquipo[equipo.id] ? (
+                              <div style={{ fontSize: "12px", color: "#8a92a6" }}>Cargando historial...</div>
+                            ) : (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingLeft: "14px", borderLeft: "2px dashed #d3d1c7" }}>
+                                {(historialesEquipo[equipo.id] || []).map(h => (
+                                  <div key={h.id} style={{ border: "1px dashed #d3d1c7", borderRadius: "10px", padding: "9px 12px", opacity: 0.75, background: "white" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+                                      <div>
+                                        <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#26314d" }}>{h.marca} {h.modelo} {h.serie ? `· ${h.serie}` : ""}</div>
+                                        <div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "2px" }}>{h.fechaInstalacion || "?"} – {h.fechaBaja || "?"}</div>
+                                      </div>
+                                      <span style={{ fontSize: "9.5px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", background: "#f4f6fb", color: "#8a92a6", whiteSpace: "nowrap" }}>Reemplazado</span>
+                                    </div>
+                                    {h.kgRecuperados > 0 && (
+                                      <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10.5px", color: "#a8720b", fontWeight: 600, background: "#fff3d6", border: "1px solid #f3dfa3", borderRadius: "9px", padding: "7px 10px", marginTop: "9px" }}>
+                                        Recuperación final: {h.kgRecuperados.toFixed(1)} kg {h.tipoRefrigerante || ""} al dar de baja
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                         {abierto && (
                           <div style={{ background: "white", borderBottom: "1px solid #f2f4f8", padding: "14px 0 18px", width: "100%", boxSizing: "border-box" }}>
                             <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#8a5b0a", marginBottom: "10px" }}>{numObs} observación{numObs !== 1 ? "es" : ""} — {equipo.codigo || equipo.ambiente}</div>
@@ -642,6 +837,78 @@ export default function PanelCliente() {
                 </div>
               </div>
             </div>
+              </>
+            )}
+
+            {subVista === "refrigerantes" && (
+              <>
+                <div style={s.statGrid}>
+                  <div style={s.statCard}>
+                    <div style={{ ...s.statNum, color: "#1a4fc0" }}>{kgInstalados.toFixed(1)}</div>
+                    <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>KG INSTALADOS</div>
+                  </div>
+                  <div style={s.statCard}>
+                    <div style={{ ...s.statNum, color: "#1c7a44" }}>{kgAnadidosTotal.toFixed(1)}</div>
+                    <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>KG AÑADIDOS 12M</div>
+                  </div>
+                  <div style={{ ...s.statCard, background: tasaFugaPromedio >= 10 ? "#fff3d6" : "white" }}>
+                    <div style={{ ...s.statNum, color: tasaFugaPromedio >= 20 ? "#a52b2b" : tasaFugaPromedio >= 10 ? "#a8720b" : "#1c7a44" }}>{tasaFugaPromedio.toFixed(1)}%</div>
+                    <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>TASA DE FUGA</div>
+                  </div>
+                  <div style={{ ...s.statCard, background: enAlertaRef > 0 ? "#fdeeee" : "white" }}>
+                    <div style={{ ...s.statNum, color: enAlertaRef > 0 ? "#a52b2b" : "#8a92a6" }}>{enAlertaRef} / {equiposConGas.length}</div>
+                    <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>EN ALERTA</div>
+                  </div>
+                </div>
+
+                <div style={s.progressCard}>
+                  <div style={{ fontSize: "14px", fontWeight: 800, color: "#12245e", marginBottom: "14px" }}>Refrigerante añadido por mes (kg)</div>
+                  {cargandoMovimientos ? (
+                    <div style={{ textAlign: "center", color: "#8a92a6", padding: "20px 0" }}>Cargando...</div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", height: "140px", padding: "0 4px" }}>
+                      {mesesChart.map((m, i) => (
+                        <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+                          <div style={{ width: "100%", maxWidth: "26px", height: `${Math.max(3, (m.kg / maxKgMes) * 110)}px`, background: m.kg > 0 ? "#1a4fc0" : "#eef1f6", borderRadius: "4px 4px 0 0" }} title={`${m.kg.toFixed(1)} kg`}></div>
+                          <span style={{ fontSize: "10px", color: "#8a92a6", fontWeight: 600, textTransform: "capitalize" }}>{m.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={s.tablaCard}>
+                  <div style={{ padding: "14px 18px", borderBottom: "1px solid #f2f4f8" }}>
+                    <span style={{ fontSize: "14.5px", fontWeight: 800, color: "#12245e" }}>Equipos con carga de gas</span>
+                  </div>
+                  {refrigerantesData.length === 0 ? (
+                    <div style={{ padding: "30px", textAlign: "center", color: "#8a92a6", fontSize: "13px", fontWeight: 600 }}>
+                      No hay equipos Split, VRV o Chiller registrados.
+                    </div>
+                  ) : (
+                    <div style={{ overflowX: "auto" }}>
+                      <div style={{ minWidth: "760px" }}>
+                        <div style={s.tablaHeaderRef}>
+                          {["Equipo", "Gas", "Carga nominal", "Añadido 12m", "Fuga", "Estado"].map(h => (
+                            <span key={h} style={{ fontWeight: 700, fontSize: "11px", color: "#8a92a6", letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</span>
+                          ))}
+                        </div>
+                        {refrigerantesData.map((r, i) => (
+                          <div key={r.equipo.id} style={{ ...s.tablaRowRef, background: i % 2 === 0 ? "white" : "#fafbfd" }}>
+                            <span style={{ fontWeight: 700, color: "#0f1b3d", fontSize: "12.5px" }}>{r.equipo.tipoEquipo} — {r.equipo.ambiente || "-"}</span>
+                            <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.equipo.tipoRefrigerante || "—"}</span>
+                            <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.nominal > 0 ? `${r.nominal.toFixed(1)} kg` : "Sin dato"}</span>
+                            <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.anadido.toFixed(1)} kg</span>
+                            <span style={{ fontWeight: 700, fontSize: "12.5px", color: r.estado.color }}>{r.pct === null ? "—" : `${r.pct.toFixed(1)}%`}</span>
+                            <span><span style={{ fontSize: "11px", padding: "3px 9px", borderRadius: "20px", background: r.estado.bg, color: r.estado.color, fontWeight: 700 }}>{r.estado.label}</span></span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
@@ -776,7 +1043,7 @@ const s = {
   sedesGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" },
   sedeCard: { background: "white", border: "1px solid #e7ebf3", borderRadius: "16px", overflow: "hidden" },
   sedeHeader: { padding: "14px 16px", borderBottom: "1px solid #f2f4f8", display: "flex", alignItems: "center", gap: "10px" },
-  sedeIconBox: { width: "40px", height: "40px", borderRadius: "10px", background: "#1a4fc0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  sedeIconBox: { width: "40px", height: "40px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "14px", fontWeight: 800 },
   sedeNombre: { fontSize: "13.5px", fontWeight: 700, color: "#12245e" },
   sedeDireccion: { fontSize: "11.5px", color: "#8a92a6", marginTop: "2px" },
   miniStats: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "6px", padding: "12px 14px" },
@@ -836,4 +1103,12 @@ const s = {
   averiaCaption: { fontSize: "11px", color: "#8a92a6", textAlign: "center", marginTop: "10px", lineHeight: 1.4, fontWeight: 600 },
 
   centro: { textAlign: "center", padding: "3rem", fontSize: "15px", color: "#8a92a6", fontFamily: FONT },
+
+  tabsWrap: { display: "flex", gap: "8px", marginBottom: "18px" },
+  tabBtn: { background: "white", color: "#6b7488", border: "1px solid #e7ebf3", borderRadius: "11px", padding: "10px 18px", fontFamily: "inherit", fontWeight: 700, fontSize: "13px", cursor: "pointer" },
+  tabBtnActiva: { background: "#12245e", color: "white", border: "1px solid #12245e" },
+  tabBtnActivaRef: { background: "#1a4fc0", color: "white", border: "1px solid #1a4fc0" },
+  tablaHeaderRef: { display: "grid", gridTemplateColumns: "1.5fr 0.8fr 1fr 1fr 0.8fr 0.9fr", gap: "10px", padding: "10px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
+  tablaRowRef: { display: "grid", gridTemplateColumns: "1.5fr 0.8fr 1fr 1fr 0.8fr 0.9fr", gap: "10px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
+  btnHistorialChico: { fontSize: "10px", padding: "5px 7px", background: "#fff3d6", color: "#a8720b", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" },
 };
