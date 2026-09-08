@@ -16,6 +16,7 @@ import EditarCliente from "./pages/EditarCliente";
 import Privacidad from "./pages/Privacidad";
 import Terminos from "./pages/Terminos";
 import Protocolo from "./pages/Protocolo";
+import InstalarPWA from "./pages/InstalarPWA";
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/protocolo" element={<Protocolo />} />
       </Routes>
+      <InstalarPWA />
     </BrowserRouter>
   );
 }
