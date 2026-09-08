@@ -205,6 +205,7 @@ const FieldSelect = ({ label, value, onChange, options }) => (
     <select value={value} onChange={e => onChange(e.target.value)} style={sf.input}>
       {options.map(o => <option key={o}>{o}</option>)}
     </select>
+  </div>
 );
 const FieldCalc = ({ label, value }) => (
   <div>
