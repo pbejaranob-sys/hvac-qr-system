@@ -44,9 +44,6 @@ export default function VistaEquipo() {
   const [authChecked, setAuthChecked] = useState(false);
   const [pdfGenerado, setPdfGenerado] = useState(false);
 
-  // Carga la fuente Manrope (igual que AccesoEquipo.jsx y PanelCliente.jsx) y
-  // quita el margen por defecto del body aplicando el mismo fondo gris de la página,
-  // así no queda un borde blanco alrededor (efecto de "página cortada").
   useEffect(() => {
     if (!document.getElementById("font-manrope")) {
       const link = document.createElement("link");
@@ -65,22 +62,32 @@ export default function VistaEquipo() {
     };
   }, []);
 
-  useEffect(() => { cargarEquipo(); }, []);
+  // ---- CORRECCIÓN CLAVE: cargar equipo DENTRO de onAuthStateChanged ----
+  // Así esperamos a que Firebase Auth propague el token antes de leer Firestore.
+  // Esto resuelve el error cuando se llega desde QR + login en PWA.
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, user => {
-      setEsPub(!user);
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      const esPub = !user;
+      setEsPub(esPub);
       setAuthChecked(true);
+      // Cargar el equipo ahora que ya sabemos el estado de auth
+      try {
+        const snap = await getDoc(doc(db, "equipos", id));
+        if (snap.exists()) setEquipo({ id: snap.id, ...snap.data() });
+      } catch (e) {
+        console.error("Error cargando equipo:", e);
+      }
+      setCargando(false);
     });
     return () => unsub();
-  }, []);
+  }, [id]);
 
-  const cargarEquipo = async () => {
-    try {
-      const snap = await getDoc(doc(db, "equipos", id));
-      if (snap.exists()) setEquipo({ id: snap.id, ...snap.data() });
-    } catch (e) { console.error(e); }
-    setCargando(false);
-  };
+  // Si es acceso público y hay protocolo, abrir PDF automáticamente
+  useEffect(() => {
+    if (authChecked && esPub && equipo && !cargando && !pdfGenerado) {
+      setPdfGenerado(true);
+    }
+  }, [authChecked, esPub, equipo, cargando, pdfGenerado]);
 
   const getQRpx = () => {
     if (tamanoQR === "2x2") return 76;
@@ -292,7 +299,6 @@ export default function VistaEquipo() {
 
   return (
     <div style={s.page}>
-      {/* Navbar */}
       <div style={s.navbar}>
         <div style={s.navLeft}>
           <img src="/assets/hvac-isotipo-blue.png" alt="HVAC" style={s.navLogo} />
@@ -309,7 +315,6 @@ export default function VistaEquipo() {
         </div>
 
         <div style={s.layout}>
-          {/* SIDEBAR */}
           <div style={s.sidebar}>
             <div style={s.sCardCenter}>
               <div style={s.sLogoBox}>
@@ -321,14 +326,8 @@ export default function VistaEquipo() {
 
             <div style={s.sCard}>
               <div style={s.sLbl}>Ubicación</div>
-              <div style={s.sRow}>
-                <SvgUbicacion />
-                <div style={s.sVal}>{equipo.cliente || "-"}</div>
-              </div>
-              <div style={s.sRow}>
-                <SvgPin />
-                <div style={s.sValMuted}>Piso {equipo.piso || "-"} · {equipo.ambiente || "-"}</div>
-              </div>
+              <div style={s.sRow}><SvgUbicacion /><div style={s.sVal}>{equipo.cliente || "-"}</div></div>
+              <div style={s.sRow}><SvgPin /><div style={s.sValMuted}>Piso {equipo.piso || "-"} · {equipo.ambiente || "-"}</div></div>
             </div>
 
             <div style={s.sCard}>
@@ -338,29 +337,18 @@ export default function VistaEquipo() {
 
             <div style={s.sCard}>
               <div style={s.sLbl}>Último mantenimiento</div>
-              <div style={s.sRow}>
-                <SvgCalendario />
-                <div style={s.sValStrong}>{equipo.ultimoMantenimiento || "Sin registro"}</div>
-              </div>
+              <div style={s.sRow}><SvgCalendario /><div style={s.sValStrong}>{equipo.ultimoMantenimiento || "Sin registro"}</div></div>
             </div>
 
-            {!sinQR && (
-              <button style={s.btnOutline} onClick={imprimirQR}>
-                <SvgPrint /> Imprimir QR
-              </button>
-            )}
+            {!sinQR && <button style={s.btnOutline} onClick={imprimirQR}><SvgPrint /> Imprimir QR</button>}
             <button style={s.btnOutline} onClick={() => generarPDF("descargar")} disabled={imprimiendo}>
               <SvgDownload /> {imprimiendo ? "Generando..." : "Descargar PDF"}
             </button>
           </div>
 
-          {/* MAIN */}
           <div style={s.main}>
             <div style={s.card}>
-              <div style={s.cardHeaderCenter}>
-                <SvgFicha />
-                <div style={s.cardTitulo}>DATOS DEL EQUIPO</div>
-              </div>
+              <div style={s.cardHeaderCenter}><SvgFicha /><div style={s.cardTitulo}>DATOS DEL EQUIPO</div></div>
               <div style={s.datosGrid}>
                 {datosGrid.map(([label, value]) => (
                   <div key={label} style={{ textAlign: "center" }}>
@@ -372,15 +360,10 @@ export default function VistaEquipo() {
             </div>
 
             <div style={s.card}>
-              <div style={s.cardHeaderCenter}>
-                <SvgAlerta />
-                <div style={s.cardTitulo}>OBSERVACIÓN · CAUSA · RECOMENDACIÓN</div>
-              </div>
+              <div style={s.cardHeaderCenter}><SvgAlerta /><div style={s.cardTitulo}>OBSERVACIÓN · CAUSA · RECOMENDACIÓN</div></div>
               {obs.length > 0 ? (
                 <>
-                  <div style={s.ocrHead}>
-                    <div></div><div>OBSERVACIÓN</div><div>CAUSA</div><div>RECOMENDACIÓN</div>
-                  </div>
+                  <div style={s.ocrHead}><div></div><div>OBSERVACIÓN</div><div>CAUSA</div><div>RECOMENDACIÓN</div></div>
                   {obs.map((o, i) => (
                     <div key={i} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                       <div style={s.ocrRow}>
@@ -395,17 +378,12 @@ export default function VistaEquipo() {
                     </div>
                   ))}
                 </>
-              ) : (
-                <div style={s.vacio}>Sin observaciones registradas</div>
-              )}
+              ) : <div style={s.vacio}>Sin observaciones registradas</div>}
             </div>
 
             {getCor().length > 0 && (
               <div style={s.card}>
-                <div style={s.cardHeaderCenter}>
-                  <SvgLlave />
-                  <div style={s.cardTitulo}>CORRECTIVOS REALIZADOS</div>
-                </div>
+                <div style={s.cardHeaderCenter}><SvgLlave /><div style={s.cardTitulo}>CORRECTIVOS REALIZADOS</div></div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {getCor().map((c, i) => (
                     <div key={i} style={s.corItem}>
@@ -439,10 +417,7 @@ export default function VistaEquipo() {
 
             {!sinQR && (
               <div style={s.card}>
-                <div style={s.cardHeaderCenter}>
-                  <SvgQR />
-                  <div style={s.cardTitulo}>CÓDIGO QR</div>
-                </div>
+                <div style={s.cardHeaderCenter}><SvgQR /><div style={s.cardTitulo}>CÓDIGO QR</div></div>
                 <div style={{ display: "flex", gap: "24px", alignItems: "flex-start", flexWrap: "wrap", justifyContent: "center" }}>
                   <div style={{ textAlign: "center" }}>
                     <img src={qrUrl} alt="QR" style={{ width: px, height: px, border: "1px solid #eef1f6", borderRadius: "12px" }} />
@@ -481,7 +456,7 @@ export default function VistaEquipo() {
   );
 }
 
-// ---- Iconos inline (mismo trazo que el handoff de Claude Design) ----
+// ---- Iconos ----
 const SvgUbicacion = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ marginTop: "2px", flexShrink: 0 }}>
     <path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6" stroke="#1a4fc0" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -510,7 +485,6 @@ const SvgDownload = ({ color = "currentColor" }) => (
     <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
-// Ícono grande de la tarjeta lateral, según el grupo del equipo (fancoil/expansión/ventilación/vrv)
 const IconEquipoTipo = ({ grupo, size = 30, color = "white" }) => {
   if (grupo === "fancoil") return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -529,7 +503,6 @@ const IconEquipoTipo = ({ grupo, size = 30, color = "white" }) => {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <path d="M12 12c0-4 2-7 5-7a3 3 0 1 1-2 5.2" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M12 12c-4 0-7 2-7 5a3 3 0 1 0 5.2-2" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M12 12c4 0 6-3 6-6" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
       <circle cx="12" cy="12" r="1.6" fill={color} />
     </svg>
   );
@@ -572,7 +545,6 @@ const SvgQR = () => (
 );
 
 const FONT = "'Manrope', -apple-system, sans-serif";
-
 const s = {
   page: { minHeight: "100vh", width: "100%", background: "#eef1f6", fontFamily: FONT, boxSizing: "border-box" },
   navbar: { background: "white", borderBottom: "1px solid #e7ebf3", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
@@ -589,7 +561,6 @@ const s = {
   sidebar: { width: "260px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "14px" },
   sCardCenter: { background: "white", borderRadius: "16px", padding: "22px 18px", boxShadow: "0 2px 10px rgba(20,40,90,0.06)", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center" },
   sLogoBox: { width: "60px", height: "60px", borderRadius: "14px", background: "#1a4fc0", display: "flex", alignItems: "center", justifyContent: "center" },
-  sLogoImg: { width: "46px", height: "46px", objectFit: "contain", filter: "brightness(0) invert(1)" },
   sNombre: { fontWeight: 800, fontSize: "15px", color: "#12245e", lineHeight: 1.3 },
   sTipo: { background: "#e5f0ff", color: "#1a4fc0", fontWeight: 700, fontSize: "11.5px", padding: "3px 11px", borderRadius: "20px" },
   sCard: { background: "white", borderRadius: "16px", padding: "16px 18px", boxShadow: "0 2px 10px rgba(20,40,90,0.06)", display: "flex", flexDirection: "column", gap: "8px" },
