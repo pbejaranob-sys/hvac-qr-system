@@ -101,7 +101,9 @@ function EscanerQR({ onResult, onCerrar }) {
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
             if (!montado) return;
-            scanner.stop().catch(() => {});
+            // Detener el escáner ignorando cualquier error
+            // (en iOS Safari puede lanzar "Cannot stop, scanner is not running")
+            try { scanner.stop(); } catch (_) {}
             setQrLeido(decodedText);
             setEstado("leido");
           },
@@ -119,7 +121,9 @@ function EscanerQR({ onResult, onCerrar }) {
     iniciar();
     return () => {
       montado = false;
-      if (scannerRef.current) scannerRef.current.stop().catch(() => {});
+      if (scannerRef.current) {
+        try { scannerRef.current.stop(); } catch (_) {}
+      }
     };
   }, []);
 
