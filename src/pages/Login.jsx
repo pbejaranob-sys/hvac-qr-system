@@ -226,17 +226,15 @@ export default function Login() {
           {cargando ? "Ingresando..." : "Ingresar al sistema"}
         </button>
 
-        {/* Botón escanear QR — solo visible en PWA instalada */}
+        {/* En PWA: instrucción para usar la cámara nativa del iPhone */}
         {esPWA() && (
-          <button
-            type="button"
-            style={{ ...s.btnQR, opacity: escaneando ? 0.7 : 1 }}
-            disabled={escaneando}
-            onClick={() => inputQRRef.current?.click()}
-          >
-            <SvgQR />
-            {escaneando ? "Procesando QR..." : "Escanear QR de equipo"}
-          </button>
+          <div style={s.qrInfo}>
+            <div style={s.qrInfoIcono}>📷</div>
+            <div>
+              <div style={s.qrInfoTitulo}>Para escanear un equipo</div>
+              <div style={s.qrInfoSub}>Abre la cámara del iPhone y apunta al QR del equipo. iOS lo detecta automáticamente.</div>
+            </div>
+          </div>
         )}
 
         <div style={s.footer}>HVAC &copy; 2026</div>
@@ -262,5 +260,9 @@ const s = {
   input: { width: "100%", boxSizing: "border-box", border: "1px solid #dfe6f5", borderRadius: "12px", padding: "14px 14px 14px 44px", fontFamily: "inherit", fontSize: "14.5px", color: "#12245e", background: "#f4f6fb" },
   button: { width: "100%", boxSizing: "border-box", background: "#1a4fc0", color: "white", border: "none", borderRadius: "12px", padding: "15px 20px", fontFamily: "inherit", fontWeight: 700, fontSize: "15px", cursor: "pointer", boxShadow: "0 8px 20px rgba(26,79,192,0.28)" },
   btnQR: { width: "100%", boxSizing: "border-box", background: "#12245e", color: "white", border: "none", borderRadius: "12px", padding: "15px 20px", fontFamily: "inherit", fontWeight: 700, fontSize: "15px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", boxShadow: "0 4px 14px rgba(18,36,94,0.22)" },
+  qrInfo: { width: "100%", boxSizing: "border-box", background: "#f4f6fb", border: "1px solid #dfe6f5", borderRadius: "14px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" },
+  qrInfoIcono: { fontSize: "24px", lineHeight: 1, marginTop: "2px" },
+  qrInfoTitulo: { fontWeight: 700, fontSize: "13px", color: "#12245e", marginBottom: "4px" },
+  qrInfoSub: { fontWeight: 500, fontSize: "12px", color: "#6b7488", lineHeight: 1.5 },
   footer: { color: "#9aa2b3", fontWeight: 600, fontSize: "12px" },
 };
