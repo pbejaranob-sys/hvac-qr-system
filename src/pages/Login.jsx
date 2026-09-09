@@ -236,19 +236,7 @@ export default function Login() {
   const [cargando, setCargando] = useState(false);
   const [verPass, setVerPass] = useState(false);
   const [mostrarEscaner, setMostrarEscaner] = useState(false);
-  // Ruta destino guardada tras escanear el QR
-  const [rutaQR, setRutaQR] = useState(null);
   const navigate = useNavigate();
-
-  // Cuando el escáner lee el QR: guardar la ruta y cerrar el escáner
-  const onQRResult = (ruta) => {
-    setMostrarEscaner(false);
-    setRutaQR(ruta);
-    // Limpiar campos para que el técnico ingrese sus credenciales
-    setEmail("");
-    setPassword("");
-    setError("");
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -259,15 +247,6 @@ export default function Login() {
       const uid = userCredential.user.uid;
       const docSnap = await getDoc(doc(db, "usuarios", uid));
 
-      // Si hay ruta de QR guardada, esperar que Firebase propague el token y navegar
-      if (rutaQR) {
-        // Pequeña espera para que onAuthStateChanged en VistaEquipo reciba el usuario
-        await new Promise(resolve => setTimeout(resolve, 800));
-        navigate(rutaQR);
-        return;
-      }
-
-      // Login normal → redirigir según rol
       if (docSnap.exists()) {
         const userData = docSnap.data();
         if (userData.superadmin === true) navigate("/admin");
@@ -311,22 +290,6 @@ export default function Login() {
 
           <div style={s.subLogo}>SISTEMA DE MANTENIMIENTO</div>
 
-          {/* Banner cuando hay un QR guardado */}
-          {rutaQR && (
-            <div style={s.bannerQR}>
-              <span style={{ fontSize: "18px" }}>📱</span>
-              <div>
-                <div style={s.bannerQRTitulo}>QR escaneado</div>
-                <div style={s.bannerQRSub}>Ingresa tus credenciales para acceder al equipo</div>
-              </div>
-              <button
-                type="button"
-                style={s.bannerQRX}
-                onClick={() => setRutaQR(null)}
-              >✕</button>
-            </div>
-          )}
-
           {error && <div style={s.error}>{error}</div>}
 
           <div style={s.fieldsWrap}>
@@ -358,15 +321,11 @@ export default function Login() {
           </div>
 
           <button style={s.button} type="submit" disabled={cargando}>
-            {cargando
-              ? "Ingresando..."
-              : rutaQR
-                ? "Ingresar y abrir equipo →"
-                : "Ingresar al sistema"}
+            {cargando ? "Ingresando..." : "Ingresar al sistema"}
           </button>
 
           {/* Botón escanear QR — solo en PWA instalada */}
-          {esPWA() && !rutaQR && (
+          {esPWA() && (
             <button
               type="button"
               style={s.btnQR}
@@ -374,18 +333,6 @@ export default function Login() {
             >
               <SvgQR />
               Escanear QR de equipo
-            </button>
-          )}
-
-          {/* Si ya hay QR escaneado, opción de escanear otro */}
-          {esPWA() && rutaQR && (
-            <button
-              type="button"
-              style={{ ...s.btnQR, background: "#6b7488", boxShadow: "none" }}
-              onClick={() => { setRutaQR(null); setMostrarEscaner(true); }}
-            >
-              <SvgQR />
-              Escanear otro QR
             </button>
           )}
 
