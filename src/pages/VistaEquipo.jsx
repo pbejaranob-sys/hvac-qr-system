@@ -62,24 +62,40 @@ export default function VistaEquipo() {
     };
   }, []);
 
-  // ---- CORRECCIÓN CLAVE: cargar equipo DENTRO de onAuthStateChanged ----
-  // Así esperamos a que Firebase Auth propague el token antes de leer Firestore.
-  // Esto resuelve el error cuando se llega desde QR + login en PWA.
+  // Firebase siempre emite null primero al montar, luego el usuario real.
+  // Si llegamos desde QR+login, el primer emit null haría que esPub=true por error.
+  // Solución: si el primer emit es null, esperamos hasta 1500ms por si hay sesión
+  // activa que aún no fue restaurada desde localStorage.
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      const esPub = !user;
-      setEsPub(esPub);
+    let resuelto = false;
+    let timer = null;
+
+    const cargar = async (esPublico) => {
+      setEsPub(esPublico);
       setAuthChecked(true);
-      // Cargar el equipo ahora que ya sabemos el estado de auth
       try {
         const snap = await getDoc(doc(db, "equipos", id));
         if (snap.exists()) setEquipo({ id: snap.id, ...snap.data() });
-      } catch (e) {
-        console.error("Error cargando equipo:", e);
-      }
+      } catch (e) { console.error("Error cargando equipo:", e); }
       setCargando(false);
+    };
+
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Sesión confirmada — resolver inmediatamente
+        if (timer) clearTimeout(timer);
+        if (!resuelto) { resuelto = true; cargar(false); }
+      } else {
+        // Primer emit null — esperar por si hay sesión restaurándose
+        if (!resuelto) {
+          timer = setTimeout(() => {
+            if (!resuelto) { resuelto = true; cargar(true); }
+          }, 1500);
+        }
+      }
     });
-    return () => unsub();
+
+    return () => { unsub(); if (timer) clearTimeout(timer); };
   }, [id]);
 
   // Si es acceso público y hay protocolo, abrir PDF automáticamente
