@@ -114,40 +114,60 @@ export default function Login() {
     setError("");
 
     try {
-      const jsQR = (await import("jsqr")).default;
-      const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-      img.src = objectUrl;
-      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+      let qrData = null;
 
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      canvas.getContext("2d").drawImage(img, 0, 0);
-      URL.revokeObjectURL(objectUrl);
-
-      const imageData = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-      if (code) {
-        // QR decodificado — navegar a la ruta del equipo
-        // VistaEquipo detecta que no hay sesión y muestra AccesoEquipo (Cliente/Técnico)
+      // Intentar con BarcodeDetector (nativo en iOS 16+ y Chrome Android)
+      if ("BarcodeDetector" in window) {
         try {
-          const url = new URL(code.data);
+          const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+          const bitmap = await createImageBitmap(file);
+          const codes = await detector.detect(bitmap);
+          if (codes.length > 0) qrData = codes[0].rawValue;
+        } catch (_) {}
+      }
+
+      // Fallback: jsqr con canvas de alta resolución
+      if (!qrData) {
+        const jsQR = (await import("jsqr")).default;
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        img.src = objectUrl;
+        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+
+        // Usar resolución completa de la imagen para mejor detección
+        const canvas = document.createElement("canvas");
+        const MAX = 1920;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(objectUrl);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+        if (code) qrData = code.data;
+      }
+
+      if (qrData) {
+        try {
+          const url = new URL(qrData);
           navigate(url.pathname + url.search);
         } catch {
-          if (code.data.startsWith("/")) navigate(code.data);
+          if (qrData.startsWith("/")) navigate(qrData);
           else setError("QR no reconocido. Asegúrate de apuntar al QR del equipo.");
         }
       } else {
-        setError("No se detectó un QR en la foto. Intenta de nuevo con mejor iluminación.");
+        setError("No se detectó el QR. Asegúrate de que el código esté bien iluminado y centrado en la foto.");
       }
     } catch (err) {
-      setError("Error al procesar la imagen: " + err.message);
+      setError("Error al procesar la imagen.");
+      console.error(err);
     }
 
     setEscaneando(false);
-    // Limpiar el input para poder escanear de nuevo
     if (inputQRRef.current) inputQRRef.current.value = "";
   };
 
