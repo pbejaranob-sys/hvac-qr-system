@@ -77,150 +77,125 @@ const SvgCheckCircle = () => (
   </svg>
 );
 
-// ---- Escáner QR ----
+// ---- Escáner QR nativo — usa input file capture que funciona en iOS PWA ----
+// En vez de acceder a la cámara directamente (que requiere permisos especiales en iOS PWA),
+// abrimos el selector de archivos con capture="environment" que iOS redirige a la cámara
+// automáticamente, y luego decodificamos la imagen con jsQR.
 function EscanerQR({ onResult, onCerrar }) {
-  const divRef = useRef(null);
-  const scannerRef = useRef(null);
-  const [estado, setEstado] = useState("iniciando"); // iniciando | listo | leido | error
-  const [qrLeido, setQrLeido] = useState("");
+  const inputRef = useRef(null);
+  const [estado, setEstado] = useState("esperando"); // esperando | procesando | leido | error
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Abrir la cámara automáticamente al montar
   useEffect(() => {
-    let montado = true;
-
-    const iniciar = async () => {
-      try {
-        const { Html5Qrcode } = await import("html5-qrcode");
-        if (!montado || !divRef.current) return;
-
-        const scanner = new Html5Qrcode("qr-reader");
-        scannerRef.current = scanner;
-
-        await scanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          (decodedText) => {
-            if (!montado) return;
-            // Detener el escáner ignorando cualquier error
-            // (en iOS Safari puede lanzar "Cannot stop, scanner is not running")
-            try { scanner.stop(); } catch (_) {}
-            setQrLeido(decodedText);
-            setEstado("leido");
-          },
-          () => {}
-        );
-        if (montado) setEstado("listo");
-      } catch {
-        if (montado) {
-          setEstado("error");
-          setErrorMsg("No se pudo acceder a la cámara. Verifica los permisos en Ajustes.");
-        }
-      }
-    };
-
-    iniciar();
-    return () => {
-      montado = false;
-      if (scannerRef.current) {
-        try { scannerRef.current.stop(); } catch (_) {}
-      }
-    };
+    setTimeout(() => {
+      if (inputRef.current) inputRef.current.click();
+    }, 300);
   }, []);
 
-  // Cuando el QR fue leído: extraer la ruta y llamar onResult
-  const confirmarQR = () => {
+  const procesarImagen = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEstado("procesando");
+
     try {
-      const url = new URL(qrLeido);
-      onResult(url.pathname + url.search);
-    } catch {
-      if (qrLeido.startsWith("/")) onResult(qrLeido);
-      else setEstado("error") || setErrorMsg("QR no reconocido.");
+      // Cargar jsQR dinámicamente
+      const jsQR = (await import("jsqr")).default;
+
+      // Leer la imagen como ImageData
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.src = url;
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+
+      // Decodificar QR
+      const code = jsQR(imageData.data, imageData.width, imageData.height);
+      if (code) {
+        // QR encontrado — extraer ruta
+        try {
+          const parsed = new URL(code.data);
+          onResult(parsed.pathname + parsed.search);
+        } catch {
+          if (code.data.startsWith("/")) onResult(code.data);
+          else { setEstado("error"); setErrorMsg("QR no reconocido: " + code.data); }
+        }
+      } else {
+        setEstado("error");
+        setErrorMsg("No se encontró un QR en la imagen. Intenta de nuevo con mejor iluminación.");
+      }
+    } catch (err) {
+      setEstado("error");
+      setErrorMsg("Error al procesar la imagen: " + err.message);
     }
   };
 
   return (
     <div style={sc.overlay}>
       <div style={sc.panel}>
-
-        {/* Header */}
         <div style={sc.header}>
-          <span style={sc.headerTitulo}>
-            {estado === "leido" ? "QR detectado" : "Escanear QR del equipo"}
-          </span>
+          <span style={sc.headerTitulo}>Escanear QR del equipo</span>
           <button style={sc.btnClose} onClick={onCerrar}><SvgClose /></button>
         </div>
 
-        {/* Estado: iniciando / listo / escaneando */}
-        {estado !== "leido" && estado !== "error" && (
-          <>
-            <div style={sc.visorWrap}>
-              <div id="qr-reader" ref={divRef} style={sc.visor} />
-              {estado === "iniciando" && (
-                <div style={sc.overlayVisor}>
-                  <div style={sc.spinner} />
-                  <div style={sc.overlayTxt}>Iniciando cámara...</div>
-                </div>
-              )}
-              {estado === "listo" && (
-                <div style={sc.marcoWrap} pointerEvents="none">
-                  <div style={{ ...sc.esquina, top: "50%", left: "50%", marginTop: -125, marginLeft: -125, position: "absolute", width: 250, height: 250, pointerEvents: "none" }}>
-                    <div style={{ ...sc.esq, top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3 }} />
-                    <div style={{ ...sc.esq, top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3 }} />
-                    <div style={{ ...sc.esq, bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3 }} />
-                    <div style={{ ...sc.esq, bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3 }} />
-                  </div>
-                </div>
-              )}
-            </div>
-            <div style={sc.instruccion}>Apunta la cámara al código QR del equipo</div>
-          </>
-        )}
+        <div style={sc.confirmWrap}>
+          {estado === "esperando" && (
+            <>
+              <div style={{ fontSize: "52px" }}>📷</div>
+              <div style={sc.confirmTitulo}>Abrir cámara</div>
+              <div style={sc.confirmSub}>
+                Toca el botón para abrir la cámara y apunta al código QR del equipo
+              </div>
+              {/* Input nativo — iOS lo redirige a la cámara automáticamente */}
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={procesarImagen}
+                style={{ display: "none" }}
+              />
+              <button style={sc.btnContinuar} onClick={() => inputRef.current?.click()}>
+                📷 Abrir cámara
+              </button>
+            </>
+          )}
 
-        {/* Estado: QR leído — mostrar confirmación antes de continuar */}
-        {estado === "leido" && (
-          <div style={sc.confirmWrap}>
-            <SvgCheckCircle />
-            <div style={sc.confirmTitulo}>QR detectado correctamente</div>
-            <div style={sc.confirmSub}>
-              Al continuar se te pedirá tu usuario y contraseña para ingresar al equipo.
-            </div>
-            <div style={sc.confirmUrl}>{qrLeido}</div>
-            <button style={sc.btnContinuar} onClick={confirmarQR}>
-              Continuar al login →
-            </button>
-            <button style={sc.btnReintentar} onClick={() => {
-              setEstado("iniciando");
-              setQrLeido("");
-              // Reiniciar escáner
-              if (scannerRef.current) scannerRef.current.stop().catch(() => {});
-              setTimeout(() => {
-                import("html5-qrcode").then(({ Html5Qrcode }) => {
-                  const scanner = new Html5Qrcode("qr-reader-2");
-                  scannerRef.current = scanner;
-                  scanner.start(
-                    { facingMode: "environment" },
-                    { fps: 10, qrbox: { width: 250, height: 250 } },
-                    (txt) => { scanner.stop().catch(() => {}); setQrLeido(txt); setEstado("leido"); },
-                    () => {}
-                  ).then(() => setEstado("listo")).catch(() => { setEstado("error"); setErrorMsg("Error al reiniciar la cámara."); });
-                });
-              }, 300);
-            }}>
-              Escanear otro QR
-            </button>
-          </div>
-        )}
+          {estado === "procesando" && (
+            <>
+              <div style={sc.spinner} />
+              <div style={sc.confirmTitulo}>Procesando imagen...</div>
+              <div style={sc.confirmSub}>Buscando código QR en la foto</div>
+            </>
+          )}
 
-        {/* Estado: error */}
-        {estado === "error" && (
-          <div style={sc.confirmWrap}>
-            <div style={{ fontSize: "40px" }}>⚠️</div>
-            <div style={{ ...sc.confirmTitulo, color: "#f87171" }}>Error de cámara</div>
-            <div style={sc.confirmSub}>{errorMsg}</div>
-            <button style={sc.btnReintentar} onClick={onCerrar}>Cerrar</button>
-          </div>
-        )}
-
+          {estado === "error" && (
+            <>
+              <div style={{ fontSize: "40px" }}>⚠️</div>
+              <div style={{ ...sc.confirmTitulo, color: "#f87171" }}>No se pudo leer el QR</div>
+              <div style={sc.confirmSub}>{errorMsg}</div>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={procesarImagen}
+                style={{ display: "none" }}
+              />
+              <button style={sc.btnContinuar} onClick={() => { setEstado("esperando"); inputRef.current?.click(); }}>
+                Intentar de nuevo
+              </button>
+              <button style={sc.btnReintentar} onClick={onCerrar}>Cancelar</button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
