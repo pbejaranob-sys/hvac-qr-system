@@ -259,8 +259,10 @@ export default function Login() {
       const uid = userCredential.user.uid;
       const docSnap = await getDoc(doc(db, "usuarios", uid));
 
-      // Si hay ruta de QR guardada, ir ahí sin importar el rol
+      // Si hay ruta de QR guardada, esperar que Firebase propague el token y navegar
       if (rutaQR) {
+        // Pequeña espera para que onAuthStateChanged en VistaEquipo reciba el usuario
+        await new Promise(resolve => setTimeout(resolve, 800));
         navigate(rutaQR);
         return;
       }
