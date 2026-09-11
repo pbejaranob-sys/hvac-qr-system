@@ -258,6 +258,399 @@ const useIsMobile = () => {
   return isMobile;
 };
 
+function CronogramaView({ equipos }) {
+  const [subVistaCron, setSubVistaCron] = useState('resumen');
+  const [filtroFreqEq, setFiltroFreqEq] = useState('todos');
+  const [filtroEstadoEq, setFiltroEstadoEq] = useState('todos');
+
+  const hoy = new Date();
+  const MES_HOY = hoy.getMonth();
+  const ANIO_HOY = hoy.getFullYear();
+  const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  const FREQ_MESES_MAP = { mensual:1, bimensual:2, trimestral:3, cuatrimestral:4, semestral:6, anual:12 };
+  const FREQ_INFO = {
+    mensual:      { label:'Mensual',      color:'#7c3fd8', periodos: Array.from({length:12},(_,i)=>({label:MESES[i],meses:[i]})) },
+    bimensual:    { label:'Bimensual',    color:'#0d7a6c', periodos: [{label:'Ene-Feb',meses:[0,1]},{label:'Mar-Abr',meses:[2,3]},{label:'May-Jun',meses:[4,5]},{label:'Jul-Ago',meses:[6,7]},{label:'Sep-Oct',meses:[8,9]},{label:'Nov-Dic',meses:[10,11]}] },
+    trimestral:   { label:'Trimestral',   color:'#1a4fc0', periodos: [{label:'T1',sublabel:'Ene-Mar',meses:[0,1,2]},{label:'T2',sublabel:'Abr-Jun',meses:[3,4,5]},{label:'T3',sublabel:'Jul-Sep',meses:[6,7,8]},{label:'T4',sublabel:'Oct-Dic',meses:[9,10,11]}] },
+    cuatrimestral:{ label:'Cuatrimestral',color:'#a8720b', periodos: [{label:'C1',sublabel:'Ene-Abr',meses:[0,1,2,3]},{label:'C2',sublabel:'May-Ago',meses:[4,5,6,7]},{label:'C3',sublabel:'Sep-Dic',meses:[8,9,10,11]}] },
+    semestral:    { label:'Semestral',    color:'#0d6e58', periodos: [{label:'S1',sublabel:'Ene-Jun',meses:[0,1,2,3,4,5]},{label:'S2',sublabel:'Jul-Dic',meses:[6,7,8,9,10,11]}] },
+    anual:        { label:'Anual',        color:'#8a92a6', periodos: [{label:'Anual',meses:[0,1,2,3,4,5,6,7,8,9,10,11]}] },
+  };
+
+  // Equipos con frecuencia definida
+  const eqsConFreq = equipos.filter(e => e.frecuencia && FREQ_INFO[e.frecuencia]);
+  const TOTAL = eqsConFreq.length;
+
+  // Estado individual por periodo
+  const estadoEq = (eq) => {
+    if (!eq.ultimoMantenimiento) return 'sin';
+    const ult = new Date(eq.ultimoMantenimiento.includes('/') ? eq.ultimoMantenimiento.split('/').reverse().join('-') : eq.ultimoMantenimiento);
+    if (isNaN(ult)) return 'sin';
+    const fM = FREQ_MESES_MAP[eq.frecuencia] || 3;
+    const vTot = ult.getFullYear() * 12 + ult.getMonth() + fM;
+    const hTot = ANIO_HOY * 12 + MES_HOY;
+    if (hTot < vTot) return 'aldia';
+    if (hTot === vTot) return 'proceso';
+    return 'vencido';
+  };
+
+  const tieneProtEn = (eq, meses) => (eq.protocolos || []).some(p => {
+    if (!p.fecha) return false;
+    const d = new Date(p.fecha);
+    return meses.includes(d.getMonth()) && d.getFullYear() === ANIO_HOY;
+  });
+
+  const estadoPeriodo = (meses) => {
+    const hTot = ANIO_HOY * 12 + MES_HOY;
+    const min = Math.min(...meses), max = Math.max(...meses);
+    if (hTot < ANIO_HOY * 12 + min) return 'futuro';
+    if (hTot <= ANIO_HOY * 12 + max) return 'curso';
+    return 'pasado';
+  };
+
+  const esPeriodoActual = (freq, per) => {
+    const meses = per.meses;
+    const hTot = ANIO_HOY * 12 + MES_HOY;
+    const min = Math.min(...meses), max = Math.max(...meses);
+    return hTot >= ANIO_HOY * 12 + min && hTot <= ANIO_HOY * 12 + max;
+  };
+
+  // Conteos globales
+  const countEstados = { aldia: 0, proceso: 0, vencido: 0, sin: 0 };
+  eqsConFreq.forEach(eq => countEstados[estadoEq(eq)]++);
+  const pctGlobal = TOTAL > 0 ? Math.round((countEstados.aldia + countEstados.proceso) / TOTAL * 100) : 0;
+
+  // Frecuencias presentes
+  const freqsPresentes = [...new Set(eqsConFreq.map(e => e.frecuencia))].filter(f => FREQ_INFO[f]);
+
+  // Colores barras
+  const C_VERDE = '#2ecc71';
+  const C_ROJO  = '#e05252';
+  const C_AZUL  = '#3a8ff0';
+  const C_GRIS  = '#e7ebf3';
+
+  const CFG_ESTADO = {
+    aldia:   { color:'#1c9a53', bg:'#e6f7ec', dot:'#1c9a53', label:'Al día' },
+    proceso: { color:'#1a4fc0', bg:'#e5f0ff', dot:'#1a4fc0', label:'En proceso' },
+    vencido: { color:'#c23b3b', bg:'#fdeeee', dot:'#c23b3b', label:'Vencido' },
+    sin:     { color:'#8a92a6', bg:'#f4f6fb', dot:'#c3cad9', label:'Sin fecha' },
+  };
+
+  const FONT = "'Manrope', -apple-system, sans-serif";
+
+  // ---- Barra apilada vertical ----
+  const BarraVertical = ({ real, total, est, isActual, h = 72 }) => {
+    const pendiente = total - real;
+    const hReal = real > 0 ? Math.round(real / total * h) : 0;
+    const hPend = h - hReal;
+    if (est === 'futuro') return (
+      <div style={{ width: '100%', height: h, background: C_GRIS, borderRadius: '5px 5px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: '7px', color: '#b0b8c9', fontWeight: 700, transform: 'rotate(-90deg)', whiteSpace: 'nowrap' }}>prog.</span>
+      </div>
+    );
+    if (est === 'curso') return (
+      <div style={{ width: '100%', height: h, borderRadius: '5px 5px 0 0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {hPend > 0 && <div style={{ flex: hPend, background: C_AZUL, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {pendiente > 0 && <span style={{ fontSize: '9px', fontWeight: 800, color: '#fff' }}>{pendiente}</span>}
+        </div>}
+        {hReal > 0 && <div style={{ flex: hReal, background: C_VERDE, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {real > 0 && <span style={{ fontSize: '9px', fontWeight: 800, color: '#fff' }}>{real}</span>}
+        </div>}
+      </div>
+    );
+    return (
+      <div style={{ width: '100%', height: h, borderRadius: '5px 5px 0 0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {hPend > 0 && <div style={{ flex: hPend, background: C_ROJO, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {pendiente > 0 && <span style={{ fontSize: '9px', fontWeight: 800, color: '#fff' }}>{pendiente}</span>}
+        </div>}
+        {hReal > 0 && <div style={{ flex: hReal, background: C_VERDE, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {real > 0 && <span style={{ fontSize: '9px', fontWeight: 800, color: '#fff' }}>{real}</span>}
+        </div>}
+      </div>
+    );
+  };
+
+  // ---- FreqCard: card por frecuencia con barras ----
+  const FreqCard = ({ freq }) => {
+    const info = FREQ_INFO[freq];
+    const eqsF = eqsConFreq.filter(e => e.frecuencia === freq);
+    const total = eqsF.length;
+    const ests = eqsF.map(estadoEq);
+    const d = { aldia: ests.filter(e => e === 'aldia').length, proceso: ests.filter(e => e === 'proceso').length, vencido: ests.filter(e => e === 'vencido').length, sin: ests.filter(e => e === 'sin').length };
+    const ok = d.aldia + d.proceso;
+    const p = Math.round(ok / total * 100);
+
+    return (
+      <div style={{ background: '#fff', border: '1px solid #e7ebf3', borderRadius: 14, padding: 16, marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ background: info.color + '18', color: info.color, fontWeight: 700, fontSize: 11, padding: '3px 10px', borderRadius: 20 }}>{info.label}</span>
+            <span style={{ fontSize: 11, color: '#8a92a6', fontWeight: 600 }}>{total} equipos</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', height: 8, width: 60, borderRadius: 4, overflow: 'hidden', gap: 1 }}>
+              <div style={{ width: Math.round(d.aldia/total*100)+'%', background: '#1c9a53' }}></div>
+              <div style={{ width: Math.round(d.proceso/total*100)+'%', background: '#1a4fc0' }}></div>
+              <div style={{ width: Math.round(d.vencido/total*100)+'%', background: '#c23b3b' }}></div>
+              <div style={{ width: Math.round(d.sin/total*100)+'%', background: '#c3cad9' }}></div>
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 13, color: p >= 80 ? '#1c9a53' : p >= 50 ? '#f3a827' : '#c23b3b' }}>{p}%</span>
+          </div>
+        </div>
+
+        {/* Barras verticales */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 88 }}>
+          {info.periodos.map((per, idx) => {
+            const real = eqsF.filter(eq => tieneProtEn(eq, per.meses)).length;
+            const est = estadoPeriodo(per.meses);
+            const isActual = esPeriodoActual(freq, per);
+            const numColor = est === 'futuro' ? 'transparent' : est === 'curso' ? C_AZUL : real === total ? C_VERDE : real > 0 ? '#a8720b' : C_ROJO;
+            return (
+              <div key={idx}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 2,
+                  opacity: isActual ? 1 : 0.22, transition: 'opacity 0.2s', cursor: 'pointer' }}
+                onMouseEnter={e => { if (!isActual) e.currentTarget.style.opacity = '0.90'; }}
+                onMouseLeave={e => { if (!isActual) e.currentTarget.style.opacity = '0.22'; }}>
+                <div style={{ fontSize: 9, fontWeight: 800, color: numColor, minHeight: 14, display: 'flex', alignItems: 'flex-end' }}>
+                  {est !== 'futuro' ? `${real}/${total}` : ''}
+                </div>
+                <BarraVertical real={real} total={total} est={est} isActual={isActual} h={68} />
+                {isActual && <div style={{ width: '100%', height: 3, background: info.color, borderRadius: 2, marginTop: 2 }}></div>}
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ height: 1, background: '#eef1f6', marginTop: 0 }}></div>
+        <div style={{ display: 'flex', gap: 3, marginTop: 4 }}>
+          {info.periodos.map((per, idx) => {
+            const isActual = esPeriodoActual(freq, per);
+            return (
+              <div key={idx} style={{ flex: 1, textAlign: 'center', fontSize: freq === 'mensual' ? 8 : 9, fontWeight: isActual ? 800 : 500, color: isActual ? info.color : '#c3cad9' }}>
+                {per.label}
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10, paddingTop: 8, borderTop: '1px solid #eef1f6' }}>
+          <span style={{ fontSize: 10.5, color: '#1c9a53', fontWeight: 700 }}>check Al día: {d.aldia}</span>
+          <span style={{ fontSize: 10.5, color: '#1a4fc0', fontWeight: 700 }}>* Proceso: {d.proceso}</span>
+          <span style={{ fontSize: 10.5, color: '#c23b3b', fontWeight: 700 }}>x Vencido: {d.vencido}</span>
+          {d.sin > 0 && <span style={{ fontSize: 10.5, color: '#8a92a6', fontWeight: 700 }}>- Sin fecha: {d.sin}</span>}
+        </div>
+      </div>
+    );
+  };
+
+  // ---- Vista Cronograma por periodos ----
+  const CronogramaDetalle = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {freqsPresentes.map(freq => {
+        const info = FREQ_INFO[freq];
+        const eqsF = eqsConFreq.filter(e => e.frecuencia === freq);
+        const total = eqsF.length;
+        return (
+          <div key={freq} style={{ background: '#fff', border: '1px solid #e7ebf3', borderRadius: 14, padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span style={{ background: info.color + '18', color: info.color, fontWeight: 700, fontSize: 11, padding: '3px 10px', borderRadius: 20 }}>{info.label}</span>
+              <span style={{ fontSize: 11, color: '#8a92a6', fontWeight: 600 }}>{total} equipos</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {info.periodos.map((per, idx) => {
+                const real = eqsF.filter(eq => tieneProtEn(eq, per.meses)).length;
+                const est = estadoPeriodo(per.meses);
+                const pendiente = total - real;
+                const pct2 = Math.round(real / total * 100);
+                const isActual = esPeriodoActual(freq, per);
+                let bg, border, titColor, badge;
+                if (est === 'futuro') { bg = '#f9fafc'; border = '#eef1f6'; titColor = '#8a92a6'; badge = 'Programado'; }
+                else if (est === 'curso') { bg = '#eef6ff'; border = '#c3d6fb'; titColor = '#1a4fc0'; badge = 'En curso *'; }
+                else {
+                  if (real === total) { bg = '#e6f7ec'; border = '#c3ecd2'; titColor = '#1c9a53'; badge = 'Completo check'; }
+                  else if (real > 0) { bg = '#fffdf4'; border = '#f3dfa3'; titColor = '#a8720b'; badge = 'Parcial'; }
+                  else { bg = '#fff5f5'; border = '#f6d3d3'; titColor = '#c23b3b'; badge = 'No ejecutado x'; }
+                }
+                return (
+                  <div key={idx} style={{ background: bg, border: `1.5px solid ${border}`, borderRadius: 12, padding: '10px 13px', boxShadow: isActual ? '0 2px 10px rgba(26,79,192,0.12)' : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 800, fontSize: 12.5, color: '#12245e' }}>{per.label}{per.sublabel ? ` . ${per.sublabel}` : ''}</span>
+                        <span style={{ fontWeight: 700, fontSize: 10, padding: '2px 8px', borderRadius: 20, background: border, color: titColor }}>{badge}</span>
+                      </div>
+                      <span style={{ fontWeight: 800, fontSize: 14, color: titColor }}>{real}/{total}</span>
+                    </div>
+                    <div style={{ height: 10, borderRadius: 5, overflow: 'hidden', display: 'flex', gap: 2 }}>
+                      {real > 0 && <div style={{ flex: real, background: C_VERDE, borderRadius: 5 }}></div>}
+                      {est === 'curso' && pendiente > 0 && <div style={{ flex: pendiente, background: C_AZUL, borderRadius: 5 }}></div>}
+                      {est === 'pasado' && pendiente > 0 && <div style={{ flex: pendiente, background: C_ROJO, borderRadius: 5 }}></div>}
+                      {est === 'futuro' && <div style={{ flex: total, background: C_GRIS, borderRadius: 5 }}></div>}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        {real > 0 && <span style={{ fontSize: 10, color: '#1c9a53', fontWeight: 700 }}>check {real} realizados</span>}
+                        {est === 'curso' && pendiente > 0 && <span style={{ fontSize: 10, color: '#1a4fc0', fontWeight: 700 }}>* {pendiente} pendientes</span>}
+                        {est === 'pasado' && pendiente > 0 && <span style={{ fontSize: 10, color: '#c23b3b', fontWeight: 700 }}>x {pendiente} vencidos</span>}
+                      </div>
+                      {est !== 'futuro' && <span style={{ fontSize: 10, color: titColor, fontWeight: 700 }}>{pct2}%</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // ---- Vista Por equipo ----
+  const PorEquipo = () => {
+    const filtrados = eqsConFreq.filter(eq => {
+      const okE = filtroEstadoEq === 'todos' || estadoEq(eq) === filtroEstadoEq;
+      const okF = filtroFreqEq === 'todos' || eq.frecuencia === filtroFreqEq;
+      return okE && okF;
+    });
+    return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <span style={{ fontWeight: 800, fontSize: 13, color: '#12245e' }}>Lista de equipos</span>
+          <span style={{ background: '#e5f0ff', color: '#1a4fc0', fontWeight: 700, fontSize: 11, padding: '3px 9px', borderRadius: 20 }}>{filtrados.length} equipos</span>
+        </div>
+        {/* Filtro estado */}
+        <div style={{ fontSize: 10, color: '#c3cad9', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>Estado</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+          {[['todos','Todos',TOTAL,'#26314d','#f4f6fb','#e7ebf3'],['aldia','Al día',countEstados.aldia,'#1c9a53','#e6f7ec','#c3ecd2'],['proceso','En proceso',countEstados.proceso,'#1a4fc0','#e5f0ff','#c3d6fb'],['vencido','Vencido',countEstados.vencido,'#a52b2b','#fdeeee','#f6d3d3'],['sin','Sin fecha',countEstados.sin,'#8a92a6','#f4f6fb','#e7ebf3']].map(([k,lbl,n,color,bg,border]) => (
+            <button key={k} onClick={() => setFiltroEstadoEq(k)}
+              style={{ borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, background: filtroEstadoEq === k ? color : bg, color: filtroEstadoEq === k ? '#fff' : color, border: `1.5px solid ${border}` }}>
+              {lbl} {n}
+            </button>
+          ))}
+        </div>
+        {/* Filtro frecuencia */}
+        <div style={{ fontSize: 10, color: '#c3cad9', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>Frecuencia</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+          {[['todos','Todas'],...freqsPresentes.map(f => [f, FREQ_INFO[f].label + ' ('+eqsConFreq.filter(e=>e.frecuencia===f).length+')'])].map(([k,lbl]) => {
+            const color = k === 'todos' ? '#26314d' : FREQ_INFO[k]?.color || '#26314d';
+            const bg = k === 'todos' ? '#f4f6fb' : color + '18';
+            return (
+              <button key={k} onClick={() => setFiltroFreqEq(k)}
+                style={{ borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, background: filtroFreqEq === k ? color : bg, color: filtroFreqEq === k ? '#fff' : color, border: `1.5px solid ${color}30` }}>
+                {lbl}
+              </button>
+            );
+          })}
+        </div>
+        {/* Lista */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtrados.map(eq => {
+            const est = estadoEq(eq);
+            const cfg = CFG_ESTADO[est];
+            const fM = FREQ_MESES_MAP[eq.frecuencia] || 3;
+            const MESES_L = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            let nextStr = '-';
+            if (eq.ultimoMantenimiento) {
+              const ult = new Date(eq.ultimoMantenimiento.includes('/') ? eq.ultimoMantenimiento.split('/').reverse().join('-') : eq.ultimoMantenimiento);
+              if (!isNaN(ult)) {
+                const vTot = ult.getFullYear() * 12 + ult.getMonth() + fM;
+                nextStr = MESES_L[vTot % 12] + ' ' + Math.floor(vTot / 12);
+              }
+            }
+            const fc = FREQ_INFO[eq.frecuencia]?.color || '#8a92a6';
+            return (
+              <div key={eq.id} style={{ background: '#fff', border: '1px solid #e7ebf3', borderRadius: 12, padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }}></div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#0f1b3d', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{eq.ambiente || eq.codigo || '-'}</div>
+                  <div style={{ fontSize: 11, color: '#8a92a6', fontWeight: 600, marginTop: 1 }}>
+                    Piso {eq.piso || '-'} . <span style={{ color: fc, fontWeight: 700 }}>{FREQ_INFO[eq.frecuencia]?.label}</span> . {eq.tipoEquipo}
+                  </div>
+                  {eq.ultimoMantenimiento && <div style={{ fontSize: 10.5, color: '#8a92a6', marginTop: 1 }}>Último: {eq.ultimoMantenimiento}</div>}
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 10.5, padding: '3px 9px', borderRadius: 20, background: cfg.bg, color: cfg.color }}>{cfg.label}</div>
+                  <div style={{ fontSize: 10, color: '#8a92a6', fontWeight: 600, marginTop: 3 }}>Vence: {nextStr}</div>
+                </div>
+              </div>
+            );
+          })}
+          {filtrados.length === 0 && (
+            <div style={{ textAlign: 'center', color: '#aab1c2', fontStyle: 'italic', padding: '20px 0', fontSize: 13 }}>
+              No hay equipos con estos filtros
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (TOTAL === 0) return (
+    <div style={{ textAlign: 'center', padding: '40px 20px', color: '#8a92a6' }}>
+      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Sin datos de cronograma</div>
+      <div style={{ fontSize: 13 }}>Asigna una frecuencia de mantenimiento a cada equipo desde el formulario de registro.</div>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Tabs internos del cronograma */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16, background: '#fff', border: '1px solid #e7ebf3', borderRadius: 14, padding: 10 }}>
+        {[['resumen','Resumen'],['cronograma','Cronograma'],['equipo','Por equipo']].map(([k,lbl]) => (
+          <button key={k} onClick={() => setSubVistaCron(k)}
+            style={{ flex: 1, textAlign: 'center', padding: '8px 6px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: FONT, background: subVistaCron === k ? '#1a4fc0' : '#f4f6fb', color: subVistaCron === k ? '#fff' : '#6b7488' }}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      {/* RESUMEN */}
+      {subVistaCron === 'resumen' && (
+        <div>
+          {/* Stats globales */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+            {[['Al día',countEstados.aldia,'#1c9a53','#e6f7ec','#c3ecd2'],['En proceso',countEstados.proceso,'#1a4fc0','#e5f0ff','#c3d6fb'],['Vencidos',countEstados.vencido,'#a52b2b','#fdeeee','#f6d3d3'],['Sin fecha',countEstados.sin,'#8a92a6','#f4f6fb','#e7ebf3']].map(([lbl,n,color,bg,border]) => (
+              <div key={lbl} style={{ background: bg, border: `1.5px solid ${border}`, borderRadius: 12, padding: '13px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                <div style={{ fontWeight: 800, fontSize: 24, color }}>{n}</div>
+                <div style={{ fontWeight: 700, fontSize: 10, color: '#6b7488', letterSpacing: '0.04em', textAlign: 'center' }}>{lbl.toUpperCase()}</div>
+              </div>
+            ))}
+          </div>
+          {/* Barra global */}
+          <div style={{ background: '#fff', border: '1px solid #e7ebf3', borderRadius: 14, padding: 14, marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontWeight: 800, fontSize: 13, color: '#12245e' }}>Avance global {ANIO_HOY}</span>
+              <span style={{ fontWeight: 800, fontSize: 15, color: pctGlobal >= 80 ? '#1c9a53' : pctGlobal >= 50 ? '#f3a827' : '#c23b3b' }}>{pctGlobal}%</span>
+            </div>
+            <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', gap: 2, marginBottom: 8 }}>
+              <div style={{ width: Math.round(countEstados.aldia/TOTAL*100)+'%', background: '#1c9a53', borderRadius: 6 }}></div>
+              <div style={{ width: Math.round(countEstados.proceso/TOTAL*100)+'%', background: '#1a4fc0', borderRadius: 6 }}></div>
+              <div style={{ width: Math.round(countEstados.vencido/TOTAL*100)+'%', background: '#c23b3b', borderRadius: 6 }}></div>
+              <div style={{ width: Math.round(countEstados.sin/TOTAL*100)+'%', background: '#c3cad9', borderRadius: 6 }}></div>
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {[['#2ecc71','Realizados'],['#e05252','Vencidos'],['#3a8ff0','En proceso']].map(([c,lbl]) => (
+                <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: c }}></div>
+                  <span style={{ fontSize: 10.5, color: '#6b7488', fontWeight: 600 }}>{c === '#2ecc71' ? 'Verde' : c === '#e05252' ? 'Rojo' : 'Azul'} = {lbl}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Cards por frecuencia */}
+          {freqsPresentes.map(freq => <FreqCard key={freq} freq={freq} />)}
+        </div>
+      )}
+
+      {/* CRONOGRAMA */}
+      {subVistaCron === 'cronograma' && <CronogramaDetalle />}
+
+      {/* POR EQUIPO */}
+      {subVistaCron === 'equipo' && <PorEquipo />}
+    </div>
+  );
+}
+
+
 export default function PanelCliente() {
   useManropeAndBodyReset();
   const isMobile = useIsMobile();
@@ -703,16 +1096,19 @@ export default function PanelCliente() {
         {/* Vista equipos */}
         {vistaActual === "equipos" && (
           <>
-            {equiposConGas.length > 0 && (
-              <div style={s.tabsWrap}>
-                <button style={{ ...s.tabBtn, ...(subVista === "equipos" ? s.tabBtnActiva : {}) }} onClick={() => setSubVista("equipos")}>
-                  Equipos
-                </button>
+            <div style={s.tabsWrap}>
+              <button style={{ ...s.tabBtn, ...(subVista === "equipos" ? s.tabBtnActiva : {}) }} onClick={() => setSubVista("equipos")}>
+                Equipos
+              </button>
+              <button style={{ ...s.tabBtn, ...(subVista === "cronograma" ? s.tabBtnActivaCron : {}) }} onClick={() => setSubVista("cronograma")}>
+                📅 Cronograma
+              </button>
+              {equiposConGas.length > 0 && (
                 <button style={{ ...s.tabBtn, ...(subVista === "refrigerantes" ? s.tabBtnActivaRef : {}) }} onClick={irARefrigerantes}>
                   Refrigerantes
                 </button>
-              </div>
-            )}
+              )}
+            </div>
 
             {subVista === "equipos" && (
               <>
@@ -893,6 +1289,10 @@ export default function PanelCliente() {
               </div>
             </div>
               </>
+            )}
+
+            {subVista === "cronograma" && (
+              <CronogramaView equipos={equiposMostrados} />
             )}
 
             {subVista === "refrigerantes" && (
@@ -1176,6 +1576,7 @@ const s = {
   tabBtn: { background: "white", color: "#6b7488", border: "1px solid #e7ebf3", borderRadius: "11px", padding: "10px 18px", fontFamily: "inherit", fontWeight: 700, fontSize: "13px", cursor: "pointer" },
   tabBtnActiva: { background: "#12245e", color: "white", border: "1px solid #12245e" },
   tabBtnActivaRef: { background: "#1a4fc0", color: "white", border: "1px solid #1a4fc0" },
+  tabBtnActivaCron: { background: "#7c3fd8", color: "white", border: "1px solid #7c3fd8" },
   tablaHeaderRef: { display: "grid", gridTemplateColumns: "70px 45px 1.6fr 0.7fr 0.9fr 0.9fr 0.7fr 0.9fr", gap: "10px", padding: "10px 18px", background: "#fafbfd", borderBottom: "1px solid #eef1f6" },
   tablaRowRef: { display: "grid", gridTemplateColumns: "70px 45px 1.6fr 0.7fr 0.9fr 0.9fr 0.7fr 0.9fr", gap: "10px", padding: "12px 18px", borderBottom: "1px solid #f2f4f8", alignItems: "center" },
   btnHistorialChico: { fontSize: "10px", padding: "5px 7px", background: "#fff3d6", color: "#a8720b", border: "none", borderRadius: "7px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" },
