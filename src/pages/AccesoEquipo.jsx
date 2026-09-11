@@ -103,6 +103,7 @@ const protocoloVacio = (grupo, equipo) => ({
   estatusItems: {},
   observaciones: [{ observacion: "", causa: "", recomendacion: "" }],
   estadoFinal: equipo?.estado || "Operativo",
+  fotos: [],  // array de base64 strings
 });
 
 // ---- Iconos SVG ----
@@ -340,6 +341,42 @@ const generarPDF = (equipo, prot) => {
   seccion("Resultado del servicio");
   campo4([["Estado final", prot.estadoFinal], ["Técnico", prot.tecnico], ["", ""], ["", ""]]);
 
+  // ---- Registro fotográfico ----
+  const fotos = prot.fotos || [];
+  if (fotos.length > 0) {
+    pdf.addPage();
+    let yFoto = M;
+    pdf.setFillColor(26, 79, 192);
+    pdf.rect(0, 0, 210, 14, "F");
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(10); pdf.setTextColor(255, 255, 255);
+    pdf.text("REGISTRO FOTOGRÁFICO", M, 9);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(8);
+    pdf.text(`${equipo.cliente || ""} · ${equipo.ambiente || ""} · ${prot.fecha}`, 210 - M, 9, { align: "right" });
+    yFoto = 22;
+
+    const fotoPorFila = 3;
+    const anchoFoto = (210 - M * 2 - 6) / fotoPorFila;
+    const altoFoto = anchoFoto; // cuadradas
+
+    for (let i = 0; i < fotos.length; i++) {
+      const col = i % fotoPorFila;
+      const fila = Math.floor(i / fotoPorFila);
+      const x = M + col * (anchoFoto + 3);
+      const y = yFoto + fila * (altoFoto + 8);
+
+      // Añadir imagen base64
+      try {
+        const imgData = fotos[i];
+        const format = imgData.startsWith("data:image/png") ? "PNG" : "JPEG";
+        pdf.addImage(imgData, format, x, y, anchoFoto, altoFoto);
+      } catch (_) {}
+
+      // Número de foto
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(100, 100, 100);
+      pdf.text(`Foto ${i + 1}`, x + 1, y + altoFoto + 4);
+    }
+  }
+
   pdf.setFontSize(7.5); pdf.setTextColor(150, 150, 150);
   pdf.text("HVAC Sistema de Mantenimiento", M, 290);
   pdf.save(`protocolo-${grupo}-${equipo.codigo || equipo.ambiente || "equipo"}-${prot.fecha}.pdf`);
@@ -348,6 +385,25 @@ const generarPDF = (equipo, prot) => {
 // ========================================
 // COMPONENTE PRINCIPAL
 // ========================================
+
+// ---- Comprimir imagen a base64 (max 900px, calidad 0.75) ----
+const comprimirFoto = (file) => new Promise((resolve, reject) => {
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    const MAX = 900;
+    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    resolve(canvas.toDataURL("image/jpeg", 0.75));
+  };
+  img.onerror = reject;
+  img.src = url;
+});
+
 export default function AccesoEquipo({ equipo, onVerInforme }) {
   useManropeFont();
 
@@ -767,6 +823,61 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
               </div>
             ))}
             <button onClick={addObs} style={st.btnAddFila}>+ Agregar observación</button>
+          </div>
+
+
+          {/* Registro fotográfico */}
+          <div style={st.card}>
+            <div style={st.cardTitulo}>📷 Registro fotográfico</div>
+            <div style={{ fontSize: "12px", color: "#8a92a6", marginBottom: "12px" }}>
+              Adjunta de 4 a 6 fotos del mantenimiento realizado
+            </div>
+
+            {/* Grid de fotos */}
+            {(prot.fotos || []).length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "12px" }}>
+                {(prot.fotos || []).map((foto, i) => (
+                  <div key={i} style={{ position: "relative", aspectRatio: "1/1" }}>
+                    <img src={foto} alt={`Foto ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px", border: "1px solid #e7ebf3" }} />
+                    <button
+                      onClick={() => setP("fotos", (prot.fotos || []).filter((_, idx) => idx !== i))}
+                      style={{ position: "absolute", top: "4px", right: "4px", background: "rgba(194,59,59,0.85)", color: "white", border: "none", borderRadius: "50%", width: "22px", height: "22px", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
+                      ×
+                    </button>
+                    <div style={{ position: "absolute", bottom: "4px", left: "4px", background: "rgba(0,0,0,0.55)", color: "white", borderRadius: "6px", padding: "2px 6px", fontSize: "10px", fontWeight: 700 }}>{i + 1}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Botón agregar foto */}
+            {(prot.fotos || []).length < 6 && (
+              <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "13px", borderRadius: "12px", border: "2px dashed #c3d6fb", background: "#f4f8ff", color: "#1a4fc0", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    const actuales = prot.fotos || [];
+                    const disponibles = 6 - actuales.length;
+                    const seleccionadas = files.slice(0, disponibles);
+                    const comprimidas = await Promise.all(seleccionadas.map(comprimirFoto));
+                    setP("fotos", [...actuales, ...comprimidas]);
+                    e.target.value = "";
+                  }}
+                  style={{ display: "none" }}
+                />
+                📷 {(prot.fotos || []).length === 0 ? "Agregar fotos" : `Agregar más (${(prot.fotos || []).length}/6)`}
+              </label>
+            )}
+
+            {(prot.fotos || []).length >= 6 && (
+              <div style={{ textAlign: "center", color: "#8a92a6", fontSize: "12px", padding: "8px" }}>
+                Máximo 6 fotos alcanzado
+              </div>
+            )}
           </div>
 
           {/* Resultado del servicio */}
