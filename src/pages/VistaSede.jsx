@@ -8,7 +8,7 @@ const FONT = "'Manrope', -apple-system, sans-serif";
 
 const TIPOS_CON_GAS = [
   "Split Piso Techo", "Split Pared", "Split Ducto", "Split Fancoil", "Split Cassete",
-  "Ventana", "Autocontenido", "PrecisiÃ³n", "VRV Evaporador", "VRV Condensador", "Chiller",
+  "Ventana", "Autocontenido", "Precisión", "VRV Evaporador", "VRV Condensador", "Chiller",
 ];
 
 function useManropeAndBodyReset() {
@@ -34,7 +34,7 @@ function useManropeAndBodyReset() {
 const parsePiso = (p) => {
   if (!p) return [99, 0];
   const s = String(p).toLowerCase().trim();
-  const sotanoMatch = s.match(/s[oÃ³]tano\s*(\d*)/);
+  const sotanoMatch = s.match(/s[oó]tano\s*(\d*)/);
   if (sotanoMatch) return [-1, -(parseInt(sotanoMatch[1]) || 1)];
   const num = parseFloat(s);
   if (!isNaN(num)) return [0, num];
@@ -111,7 +111,7 @@ const SvgObs = () => (
   </svg>
 );
 
-// ---- ExportaciÃ³n Excel / PDF ----
+// ---- Exportación Excel / PDF ----
 const getObsPDF = (e) => {
   const arr = e.observacionesArray || [];
   const norm = arr.map(o => typeof o === "string"
@@ -643,7 +643,7 @@ export default function VistaSede() {
   const [modalReemplazoAbierto, setModalReemplazoAbierto] = useState(null);
   const [formReemplazo, setFormReemplazo] = useState({
     marca: "", modelo: "", serie: "", capacidad: "",
-    tipoRefrigerante: "", fases: "MonofÃ¡sico", voltaje: "", amperaje: "",
+    tipoRefrigerante: "", fases: "Monofásico", voltaje: "", amperaje: "",
     cargaNominal: "", cargaAdicionalInstalacion: "", kgRecuperados: "",
   });
   const [guardandoReemplazo, setGuardandoReemplazo] = useState(false);
@@ -651,7 +651,7 @@ export default function VistaSede() {
   const [editandoHistorialItem, setEditandoHistorialItem] = useState(null);
   const [formEditHistorial, setFormEditHistorial] = useState({
     marca: "", modelo: "", serie: "", capacidad: "",
-    tipoRefrigerante: "", fases: "MonofÃ¡sico", voltaje: "", amperaje: "", cargaNominal: "",
+    tipoRefrigerante: "", fases: "Monofásico", voltaje: "", amperaje: "", cargaNominal: "",
     fechaInstalacion: "", fechaBaja: "",
   });
   const [guardandoEditHistorial, setGuardandoEditHistorial] = useState(false);
@@ -690,7 +690,7 @@ export default function VistaSede() {
   };
 
   const handleEliminar = async (equipoId) => {
-    if (!window.confirm("Â¿Eliminar este equipo? Esta acciÃ³n no se puede deshacer.")) return;
+    if (!window.confirm("Â¿Eliminar este equipo? Esta acción no se puede deshacer.")) return;
     await deleteDoc(doc(db, "equipos", equipoId));
     setEquipos(prev => prev.filter(e => e.id !== equipoId));
   };
@@ -726,7 +726,7 @@ export default function VistaSede() {
 
   const abrirEditarHistorialItem = async (ownerId, item) => {
     setEditandoHistorialItem({ ownerId, item });
-    setFormEditHistorial({ marca: item.marca || "", modelo: item.modelo || "", serie: item.serie || "", capacidad: item.capacidad || "", tipoRefrigerante: item.tipoRefrigerante || "", fases: item.fases || "MonofÃ¡sico", voltaje: item.voltaje || "", amperaje: item.amperaje || "", cargaNominal: item.cargaNominal || "", fechaInstalacion: item.fechaInstalacion || "", fechaBaja: item.fechaBaja || "", cargaAdicionalInstalacion: "", cargaAdicionalMovId: null, kgRecuperados: "", kgRecuperadosMovId: null });
+    setFormEditHistorial({ marca: item.marca || "", modelo: item.modelo || "", serie: item.serie || "", capacidad: item.capacidad || "", tipoRefrigerante: item.tipoRefrigerante || "", fases: item.fases || "Monofásico", voltaje: item.voltaje || "", amperaje: item.amperaje || "", cargaNominal: item.cargaNominal || "", fechaInstalacion: item.fechaInstalacion || "", fechaBaja: item.fechaBaja || "", cargaAdicionalInstalacion: "", cargaAdicionalMovId: null, kgRecuperados: "", kgRecuperadosMovId: null });
     try {
       const snap = await getDocs(query(collection(db, "movimientosRefrigerante"), where("equipoId", "==", item.id)));
       const movs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -764,7 +764,7 @@ export default function VistaSede() {
     const cadena = historialesEquipo[eq.id] || [];
     const item = cadena[idx];
     if (!item) return;
-    if (!window.confirm(`Â¿Eliminar "${item.marca} ${item.modelo}" del historial? Esta acciÃ³n no se puede deshacer.`)) return;
+    if (!window.confirm(`Â¿Eliminar "${item.marca} ${item.modelo}" del historial? Esta acción no se puede deshacer.`)) return;
     const predecesorId = item.equipoAnteriorId || null;
     const sucesorId = idx === 0 ? eq.id : cadena[idx - 1].id;
     try {
@@ -781,7 +781,7 @@ export default function VistaSede() {
 
   const abrirModalReemplazo = (eq) => {
     setModalReemplazoAbierto(eq);
-    setFormReemplazo({ marca: "", modelo: "", serie: "", capacidad: eq.capacidad || "", tipoRefrigerante: eq.tipoRefrigerante || "", fases: eq.fases || "MonofÃ¡sico", voltaje: eq.voltaje || "", amperaje: eq.amperaje || "", cargaNominal: eq.cargaNominal || "", cargaAdicionalInstalacion: "", kgRecuperados: "" });
+    setFormReemplazo({ marca: "", modelo: "", serie: "", capacidad: eq.capacidad || "", tipoRefrigerante: eq.tipoRefrigerante || "", fases: eq.fases || "Monofásico", voltaje: eq.voltaje || "", amperaje: eq.amperaje || "", cargaNominal: eq.cargaNominal || "", cargaAdicionalInstalacion: "", kgRecuperados: "" });
   };
 
   const guardarReemplazo = async (e) => {
@@ -832,7 +832,7 @@ export default function VistaSede() {
     try {
       const snap = await getDocs(query(collection(db, "movimientosRefrigerante"), where("sede", "==", sede), where("tipo", "==", "recuperacion_baja")));
       setKgRecuperadosHistorico(snap.docs.reduce((acc, d) => acc + (Number(d.data().kg) || 0), 0));
-    } catch (e) { console.error("Error cargando recuperaciÃ³n histÃ³rica:", e); setKgRecuperadosHistorico(0); }
+    } catch (e) { console.error("Error cargando recuperación histórica:", e); setKgRecuperadosHistorico(0); }
   };
 
   const irARefrigerantes = () => { setVista("refrigerantes"); cargarMovimientos(); cargarRecuperacionHistorica(); };
@@ -846,7 +846,7 @@ export default function VistaSede() {
   };
   const abrirEditarMovimiento = (mov) => { setEditandoMovimiento(mov); setFormCarga({ equipoId: mov.equipoId, tipo: mov.tipo, kg: String(mov.kg), fecha: mov.fecha, tecnico: mov.tecnico || "" }); setModalCargaAbierto(true); };
   const handleEliminarMovimiento = async (movId) => {
-    if (!window.confirm("Â¿Eliminar este registro de refrigerante? Esta acciÃ³n no se puede deshacer.")) return;
+    if (!window.confirm("Â¿Eliminar este registro de refrigerante? Esta acción no se puede deshacer.")) return;
     try { await deleteDoc(doc(db, "movimientosRefrigerante", movId)); setMovimientos(prev => (prev || []).filter(m => m.id !== movId)); } catch (err) { alert("Error al eliminar: " + err.message); }
   };
 
@@ -872,7 +872,7 @@ export default function VistaSede() {
 
   const hace12Meses = () => { const d = new Date(); d.setMonth(d.getMonth() - 12); return d; };
   const kgAnadidos12m = (equipoId) => { if (!movimientos) return 0; const corte = hace12Meses(); return movimientos.filter(m => m.equipoId === equipoId && m.tipo === "carga" && new Date(m.fecha) >= corte).reduce((acc, m) => acc + (Number(m.kg) || 0), 0); };
-  const estadoFuga = (pct) => { if (pct === null) return { label: "Sin datos", bg: "#f4f6fb", color: "#8a92a6" }; if (pct >= 20) return { label: "CrÃ­tico", bg: "#fdeeee", color: "#a52b2b" }; if (pct >= 10) return { label: "Alerta", bg: "#fff3d6", color: "#a8720b" }; return { label: "OK", bg: "#e6f7ec", color: "#1c7a44" }; };
+  const estadoFuga = (pct) => { if (pct === null) return { label: "Sin datos", bg: "#f4f6fb", color: "#8a92a6" }; if (pct >= 20) return { label: "Crítico", bg: "#fdeeee", color: "#a52b2b" }; if (pct >= 10) return { label: "Alerta", bg: "#fff3d6", color: "#a8720b" }; return { label: "OK", bg: "#e6f7ec", color: "#1c7a44" }; };
 
   const refrigerantesData = equiposConGas.map(eq => { const nominal = Number(eq.cargaNominal) || 0; const anadido = kgAnadidos12m(eq.id); const pct = nominal > 0 ? (anadido / nominal) * 100 : null; return { equipo: eq, nominal, anadido, pct, estado: estadoFuga(pct) }; });
   const kgInstalados = refrigerantesData.reduce((acc, r) => acc + r.nominal, 0);
@@ -885,7 +885,7 @@ export default function VistaSede() {
   const abrirDetalleAveria = (averia) => { setDetalleAveria(averia); setListaEmergencia(null); setHistorialAbierto(false); };
   const cerrarDetalleAveria = () => setDetalleAveria(null);
   const abrirEmergencias = () => { if (averias.length === 0) return; if (averias.length === 1) abrirDetalleAveria(averias[0]); else setListaEmergencia(averias); };
-  const marcarAveriaAtendida = async (averiaId) => { try { await updateDoc(doc(db, "averias", averiaId), { atendida: true, atendidaEn: serverTimestamp() }); const averiaAtendida = averias.find(a => a.id === averiaId); setAverias(prev => prev.filter(a => a.id !== averiaId)); if (averiaAtendida && historialAverias !== null) { setHistorialAverias(prev => [{ ...averiaAtendida, atendida: true, atendidaEn: { toDate: () => new Date() } }, ...prev]); } cerrarDetalleAveria(); } catch (e) { console.error("Error marcando averÃ­a como atendida:", e); } };
+  const marcarAveriaAtendida = async (averiaId) => { try { await updateDoc(doc(db, "averias", averiaId), { atendida: true, atendidaEn: serverTimestamp() }); const averiaAtendida = averias.find(a => a.id === averiaId); setAverias(prev => prev.filter(a => a.id !== averiaId)); if (averiaAtendida && historialAverias !== null) { setHistorialAverias(prev => [{ ...averiaAtendida, atendida: true, atendidaEn: { toDate: () => new Date() } }, ...prev]); } cerrarDetalleAveria(); } catch (e) { console.error("Error marcando avería como atendida:", e); } };
   const abrirHistorial = async () => { setHistorialAbierto(true); setListaEmergencia(null); if (historialAverias !== null) return; setCargandoHistorial(true); try { const hSnap = await getDocs(query(collection(db, "averias"), where("cliente", "==", cliente), where("sede", "==", sede), where("atendida", "==", true))); setHistorialAverias(hSnap.docs.map(d => ({ id: d.id, ...d.data() }))); } catch (e) { console.error("Error cargando historial:", e); setHistorialAverias([]); } setCargandoHistorial(false); };
 
   const getObsCount = (e) => { const arr = e.observacionesArray || []; const norm = arr.map(o => typeof o === "string" ? { texto: o } : o); return norm.filter(o => o?.texto?.trim()).length; };
@@ -975,7 +975,7 @@ export default function VistaSede() {
               </div>
             </div>
             <div style={{ overflowX: "auto" }}><div style={{ minWidth: "0" }}>
-              <div style={s.tablaHeader}>{["#", "CÃ³digo", "Piso", "Ambiente", "Tipo", "Marca/Modelo", "Serie", "Estado", "Ãšlt. mant.", "Acciones"].map(h => <span key={h} style={s.thCell}>{h}</span>)}</div>
+              <div style={s.tablaHeader}>{["#", "Código", "Piso", "Ambiente", "Tipo", "Marca/Modelo", "Serie", "Estado", "Últ. mant.", "Acciones"].map(h => <span key={h} style={s.thCell}>{h}</span>)}</div>
               {equiposFiltrados.map((eq, i) => {
                 const fc = fechaColor(eq.ultimoMantenimiento);
                 const mesAnio = fechaAMesAnio(eq.ultimoMantenimiento);
@@ -991,9 +991,9 @@ export default function VistaSede() {
                       <span style={{ ...s.tdCell, fontWeight: 700, color: "#0f1b3d", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={eq.ambiente || ""}>{eq.ambiente || "-"}</span>
                       <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={eq.tipoEquipo || ""}>{eq.tipoEquipo || "-"}</span>
                       <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden" }}><div style={{ fontWeight: 700, fontSize: "12px", color: "#0f1b3d", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={eq.marca || ""}>{eq.marca}</div><div style={{ fontSize: "10.5px", color: "#9aa2b3", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={eq.modelo || ""}>{eq.modelo}</div></span>
-                      <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={eq.serie || ""}>{eq.serie || "â€”"}</span>
+                      <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={eq.serie || ""}>{eq.serie || ""”"}</span>
                       <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden" }}><span style={eq.estado === "Operativo" ? s.badgeOp : eq.estado === "Operativo con observaciones" ? s.badgeObs : s.badgeFs}>{eq.estado === "Operativo" ? "Operativo" : eq.estado === "Operativo con observaciones" ? "Con obs." : "Fuera serv."}</span></span>
-                      <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden" }}>{mesAnio ? <span style={{ fontSize: "11px", padding: "3px 9px", borderRadius: "20px", background: fc.bg, color: fc.color, border: `1px solid ${fc.border}`, whiteSpace: "nowrap", fontWeight: 700 }}>{mesAnio}</span> : <span style={{ fontSize: "11px", color: "#c3cad9" }}>â€”</span>}</span>
+                      <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden" }}>{mesAnio ? <span style={{ fontSize: "11px", padding: "3px 9px", borderRadius: "20px", background: fc.bg, color: fc.color, border: `1px solid ${fc.border}`, whiteSpace: "nowrap", fontWeight: 700 }}>{mesAnio}</span> : <span style={{ fontSize: "11px", color: "#c3cad9" }}>"”</span>}</span>
                       <span style={{ ...s.tdCell, minWidth: 0, overflow: "hidden" }}>
                         <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
                           <button style={s.btnInfo} onClick={() => navigate(`/equipo/${eq.id}`)}>Info</button>
@@ -1013,7 +1013,7 @@ export default function VistaSede() {
                       const recArr = getRec(eq);
                       return (
                         <div style={{ background: "#fafbfd", borderTop: "2px solid #f3dfa3", borderBottom: "1px solid #f2f4f8", padding: "14px 18px" }}>
-                          <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#a8720b", marginBottom: "10px" }}>{numObsArr} observaciÃ³n{numObsArr !== 1 ? "es" : ""} â€” {eq.codigo || eq.ambiente}</div>
+                          <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#a8720b", marginBottom: "10px" }}>{numObsArr} observación{numObsArr !== 1 ? "es" : ""} "” {eq.codigo || eq.ambiente}</div>
                           {numObsArr === 0 ? (
                             <div style={{ fontSize: "12.5px", color: "#c3cad9", textAlign: "center", padding: "8px 0" }}>Sin observaciones registradas</div>
                           ) : (
@@ -1023,10 +1023,10 @@ export default function VistaSede() {
                                   <div style={{ fontSize: "10px", color: "#8a92a6", paddingTop: "8px", textAlign: "center" }}>{idx + 1}</div>
                                   <div style={{ background: "#fff8e6", border: "1px solid #f3dfa3", borderRadius: "9px", padding: "8px 10px" }}>
                                     <div style={{ fontSize: "11.5px", color: "#26314d", lineHeight: 1.4 }}>{o.texto}</div>
-                                    {(o.fecha || o.tecnico) && <div style={{ fontSize: "9.5px", color: "#aab1c2", marginTop: "4px" }}>{o.fecha}{o.fecha && o.tecnico ? " Â· " : ""}{o.tecnico}</div>}
+                                    {(o.fecha || o.tecnico) && <div style={{ fontSize: "9.5px", color: "#aab1c2", marginTop: "4px" }}>{o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico}</div>}
                                   </div>
-                                  <div style={{ background: "#fdeeee", border: "1px solid #f6d3d3", borderRadius: "9px", padding: "8px 10px", fontSize: "11.5px", color: "#a52b2b" }}>{o.causa || "â€”"}</div>
-                                  <div style={{ background: "#e6f7ec", border: "1px solid #c3ecd2", borderRadius: "9px", padding: "8px 10px", fontSize: "11.5px", color: "#1c7a44" }}>{recArr[idx] ? (typeof recArr[idx] === "string" ? recArr[idx] : recArr[idx].texto || "â€”") : "â€”"}</div>
+                                  <div style={{ background: "#fdeeee", border: "1px solid #f6d3d3", borderRadius: "9px", padding: "8px 10px", fontSize: "11.5px", color: "#a52b2b" }}>{o.causa || ""”"}</div>
+                                  <div style={{ background: "#e6f7ec", border: "1px solid #c3ecd2", borderRadius: "9px", padding: "8px 10px", fontSize: "11.5px", color: "#1c7a44" }}>{recArr[idx] ? (typeof recArr[idx] === "string" ? recArr[idx] : recArr[idx].texto || ""”") : ""”"}</div>
                                 </div>
                               ))}
                             </div>
@@ -1041,10 +1041,10 @@ export default function VistaSede() {
                             {(historialesEquipo[eq.id] || []).map((h, idx) => (
                               <div key={h.id} style={s.historialItem}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
-                                  <div><div style={{ fontWeight: 700, fontSize: "11.5px", color: "#26314d" }}>{h.marca} {h.modelo} {h.serie ? `Â· ${h.serie}` : ""}</div><div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "2px" }}>{h.fechaInstalacion || "?"} â€“ {h.fechaBaja || "?"}</div></div>
+                                  <div><div style={{ fontWeight: 700, fontSize: "11.5px", color: "#26314d" }}>{h.marca} {h.modelo} {h.serie ? `· ${h.serie}` : ""}</div><div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "2px" }}>{h.fechaInstalacion || "?"} "“ {h.fechaBaja || "?"}</div></div>
                                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><span style={s.chipReemplazado}>Reemplazado</span><button style={s.btnEditarMov} onClick={() => abrirEditarHistorialItem(eq.id, h)} title="Editar"><SvgEditarChico /></button><button style={s.btnEliminarMov} onClick={() => eliminarHistorialItem(eq, idx)} title="Eliminar"><SvgEliminar /></button></div>
                                 </div>
-                                {h.kgRecuperados > 0 && <div style={s.chipRecuperado}><SvgGota color="#a8720b" /> RecuperaciÃ³n final: {h.kgRecuperados.toFixed(1)} kg {h.tipoRefrigerante || ""} al dar de baja</div>}
+                                {h.kgRecuperados > 0 && <div style={s.chipRecuperado}><SvgGota color="#a8720b" /> Recuperación final: {h.kgRecuperados.toFixed(1)} kg {h.tipoRefrigerante || ""} al dar de baja</div>}
                               </div>
                             ))}
                             <div style={{ fontSize: "10px", color: "#c3cad9", textAlign: "center", marginTop: "2px" }}>Editar/eliminar historial solo visible para admin y superadmin</div>
@@ -1067,13 +1067,13 @@ export default function VistaSede() {
         {vista === "refrigerantes" && (<>
             <div style={s.statsGrid}>
               <div style={s.statCard}><div style={{ ...s.statNum, color: "#1a4fc0" }}>{kgInstalados.toFixed(1)}</div><div style={s.statLabel}>Kg instalados</div></div>
-              <div style={s.statCard}><div style={{ ...s.statNum, color: "#1c7a44" }}>{kgAnadidosTotal.toFixed(1)}</div><div style={s.statLabel}>Kg aÃ±adidos 12m</div></div>
+              <div style={s.statCard}><div style={{ ...s.statNum, color: "#1c7a44" }}>{kgAnadidosTotal.toFixed(1)}</div><div style={s.statLabel}>Kg añadidos 12m</div></div>
               <div style={{ ...s.statCard, background: tasaFugaPromedio >= 10 ? "#fff3d6" : "white" }}><div style={{ ...s.statNum, color: tasaFugaPromedio >= 20 ? "#a52b2b" : tasaFugaPromedio >= 10 ? "#a8720b" : "#1c7a44" }}>{tasaFugaPromedio.toFixed(1)}%</div><div style={s.statLabel}>Tasa de fuga</div></div>
               <div style={{ ...s.statCard, background: enAlerta > 0 ? "#fdeeee" : "white" }}><div style={{ ...s.statNum, color: enAlerta > 0 ? "#a52b2b" : "#8a92a6" }}>{enAlerta} / {equiposConGas.length}</div><div style={s.statLabel}>En alerta</div></div>
-              <div style={s.statCard}><div style={{ ...s.statNum, color: "#7c3fd8" }}>{kgRecuperadosHistorico === null ? "â€¦" : kgRecuperadosHistorico.toFixed(1)}</div><div style={s.statLabel}>Kg recuperados (histÃ³rico)</div></div>
+              <div style={s.statCard}><div style={{ ...s.statNum, color: "#7c3fd8" }}>{kgRecuperadosHistorico === null ? "…" : kgRecuperadosHistorico.toFixed(1)}</div><div style={s.statLabel}>Kg recuperados (histórico)</div></div>
             </div>
             <div style={s.barrasCard}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}><span style={{ fontSize: "14px", fontWeight: 800, color: "#12245e" }}>Refrigerante aÃ±adido por mes (kg)</span><button style={s.btnPrimary} onClick={() => abrirModalCarga()}>+ Registrar carga</button></div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}><span style={{ fontSize: "14px", fontWeight: 800, color: "#12245e" }}>Refrigerante añadido por mes (kg)</span><button style={s.btnPrimary} onClick={() => abrirModalCarga()}>+ Registrar carga</button></div>
               {cargandoMovimientos ? (<div style={{ textAlign: "center", color: "#8a92a6", padding: "20px 0" }}>Cargando...</div>) : (
                 <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", height: "140px", padding: "0 4px" }}>
                   {mesesChart.map((m, i) => (<div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}><div style={{ width: "100%", maxWidth: "26px", height: `${Math.max(3, (m.kg / maxKgMes) * 110)}px`, background: m.kg > 0 ? "#1a4fc0" : "#eef1f6", borderRadius: "4px 4px 0 0" }} title={`${m.kg.toFixed(1)} kg`}></div><span style={{ fontSize: "10px", color: "#8a92a6", fontWeight: 600, textTransform: "capitalize" }}>{m.label}</span></div>))}
@@ -1084,7 +1084,7 @@ export default function VistaSede() {
               <div style={{ padding: "14px 18px", borderBottom: "1px solid #f2f4f8" }}><span style={{ fontSize: "14.5px", fontWeight: 800, color: "#12245e" }}>Equipos con carga de gas</span></div>
               {refrigerantesData.length === 0 ? (<div style={{ padding: "30px", textAlign: "center", color: "#8a92a6", fontSize: "13px", fontWeight: 600 }}>No hay equipos Split, VRV o Chiller registrados en esta sede.</div>) : (
                 <div>
-                  <div style={s.tablaHeaderRef}>{["CÃ³digo", "Piso", "Equipo", "Gas", "Carga nominal", "AÃ±adido 12m", "Fuga", "Estado", ""].map(h => <span key={h} style={s.thCell}>{h}</span>)}</div>
+                  <div style={s.tablaHeaderRef}>{["Código", "Piso", "Equipo", "Gas", "Carga nominal", "Añadido 12m", "Fuga", "Estado", ""].map(h => <span key={h} style={s.thCell}>{h}</span>)}</div>
                   {refrigerantesData.map((r, i) => {
                     const movsEquipo = (movimientos || []).filter(m => m.equipoId === r.equipo.id).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
                     const cargasAbierto = historialCargasAbierto[r.equipo.id];
@@ -1093,11 +1093,11 @@ export default function VistaSede() {
                     <div style={{ ...s.tablaRowRef, background: i % 2 === 0 ? "white" : "#fafbfd" }}>
                       <span style={s.tdCell}>{r.equipo.codigo ? <span style={s.codigo}>{r.equipo.codigo}</span> : <span style={{ color: "#c3cad9" }}>-</span>}</span>
                       <span style={s.tdCell}>{r.equipo.piso || "-"}</span>
-                      <span style={{ ...s.tdCell, minWidth: 0 }}><div style={{ fontWeight: 700, color: "#0f1b3d" }}>{r.equipo.tipoEquipo} â€” {r.equipo.ambiente || "-"}</div><div style={{ fontSize: "10.5px", color: "#9aa2b3", marginTop: "2px" }}>{r.equipo.marca || ""} {r.equipo.modelo || ""}{r.equipo.serie ? ` Â· ${r.equipo.serie}` : ""}</div></span>
-                      <span style={s.tdCell}>{r.equipo.tipoRefrigerante || "â€”"}</span>
+                      <span style={{ ...s.tdCell, minWidth: 0 }}><div style={{ fontWeight: 700, color: "#0f1b3d" }}>{r.equipo.tipoEquipo} "” {r.equipo.ambiente || "-"}</div><div style={{ fontSize: "10.5px", color: "#9aa2b3", marginTop: "2px" }}>{r.equipo.marca || ""} {r.equipo.modelo || ""}{r.equipo.serie ? ` · ${r.equipo.serie}` : ""}</div></span>
+                      <span style={s.tdCell}>{r.equipo.tipoRefrigerante || ""”"}</span>
                       <span style={s.tdCell}>{r.nominal > 0 ? `${r.nominal.toFixed(1)} kg` : "Sin dato"}</span>
                       <span style={s.tdCell}>{r.anadido.toFixed(1)} kg</span>
-                      <span style={{ ...s.tdCell, fontWeight: 700, color: r.estado.color }}>{r.pct === null ? "â€”" : `${r.pct.toFixed(1)}%`}</span>
+                      <span style={{ ...s.tdCell, fontWeight: 700, color: r.estado.color }}>{r.pct === null ? ""”" : `${r.pct.toFixed(1)}%`}</span>
                       <span style={s.tdCell}><span style={{ fontSize: "11px", padding: "3px 9px", borderRadius: "20px", background: r.estado.bg, color: r.estado.color, fontWeight: 700 }}>{r.estado.label}</span></span>
                       <span style={{ ...s.tdCell, display: "flex", gap: "5px" }}>
                         <button style={s.btnRegistrarChico} onClick={() => abrirModalCarga(r.equipo.id)}>+ Carga</button>
@@ -1108,10 +1108,10 @@ export default function VistaSede() {
                       <div style={s.historialCargasPanel}>
                         {movsEquipo.map(m => (
                           <div key={m.id} style={s.historialCargaItem}>
-                            <span style={{ ...s.chipMovimiento, ...(m.tipo === "carga" ? s.chipCarga : m.tipo === "recuperacion_baja" ? s.chipRecuperacionBaja : s.chipRecuperacion) }}>{m.tipo === "carga" ? "Carga" : m.tipo === "recuperacion_baja" ? "RecuperaciÃ³n (baja)" : "RecuperaciÃ³n"}</span>
+                            <span style={{ ...s.chipMovimiento, ...(m.tipo === "carga" ? s.chipCarga : m.tipo === "recuperacion_baja" ? s.chipRecuperacionBaja : s.chipRecuperacion) }}>{m.tipo === "carga" ? "Carga" : m.tipo === "recuperacion_baja" ? "Recuperación (baja)" : "Recuperación"}</span>
                             <span style={{ fontSize: "12px", fontWeight: 700, color: "#0f1b3d" }}>{Number(m.kg).toFixed(1)} kg</span>
                             <span style={{ fontSize: "11.5px", color: "#8a92a6" }}>{m.fecha}</span>
-                            <span style={{ fontSize: "11.5px", color: "#8a92a6" }}>{m.tecnico || "â€”"}</span>
+                            <span style={{ fontSize: "11.5px", color: "#8a92a6" }}>{m.tecnico || ""”"}</span>
                             <div style={{ display: "flex", gap: "4px", justifyContent: "flex-end" }}><button style={s.btnEditarMov} onClick={() => abrirEditarMovimiento(m)} title="Editar registro"><SvgEditarChico /></button><button style={s.btnEliminarMov} onClick={() => handleEliminarMovimiento(m.id)} title="Eliminar registro"><SvgEliminar /></button></div>
                           </div>
                         ))}
@@ -1131,9 +1131,9 @@ export default function VistaSede() {
           <div style={{ ...s.averiaCard, maxWidth: "440px" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: "15px", fontWeight: 800, color: "#12245e", marginBottom: "16px" }}>{editandoMovimiento ? "Editar registro de refrigerante" : "Registrar carga de refrigerante"}</div>
             <form onSubmit={guardarCarga} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <div><label style={s.labelModal}>Equipo</label>{editandoMovimiento ? (<div style={{ ...s.inputModal, background: "#f4f6fb", color: "#8a92a6" }}>{equiposConGas.find(eq => eq.id === formCarga.equipoId)?.ambiente || editandoMovimiento.equipoAmbiente || "Equipo"}</div>) : (<select style={s.inputModal} value={formCarga.equipoId} onChange={e => setFormCarga({ ...formCarga, equipoId: e.target.value })} required><option value="">Seleccionar equipo...</option>{equiposConGas.map(eq => <option key={eq.id} value={eq.id}>{eq.tipoEquipo} â€” {eq.ambiente || "-"} {eq.codigo ? `(${eq.codigo})` : ""}</option>)}</select>)}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Movimiento</label><select style={s.inputModal} value={formCarga.tipo} onChange={e => setFormCarga({ ...formCarga, tipo: e.target.value })}><option value="carga">Carga (gas aÃ±adido)</option><option value="recuperacion">RecuperaciÃ³n</option></select></div><div><label style={s.labelModal}>Kg</label><input style={s.inputModal} type="number" step="0.1" placeholder="0.5" value={formCarga.kg} onChange={e => setFormCarga({ ...formCarga, kg: e.target.value })} required /></div></div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Fecha</label><input style={s.inputModal} type="date" value={formCarga.fecha} onChange={e => setFormCarga({ ...formCarga, fecha: e.target.value })} required /></div><div><label style={s.labelModal}>TÃ©cnico</label><input style={s.inputModal} placeholder="Nombre" value={formCarga.tecnico} onChange={e => setFormCarga({ ...formCarga, tecnico: e.target.value })} /></div></div>
+              <div><label style={s.labelModal}>Equipo</label>{editandoMovimiento ? (<div style={{ ...s.inputModal, background: "#f4f6fb", color: "#8a92a6" }}>{equiposConGas.find(eq => eq.id === formCarga.equipoId)?.ambiente || editandoMovimiento.equipoAmbiente || "Equipo"}</div>) : (<select style={s.inputModal} value={formCarga.equipoId} onChange={e => setFormCarga({ ...formCarga, equipoId: e.target.value })} required><option value="">Seleccionar equipo...</option>{equiposConGas.map(eq => <option key={eq.id} value={eq.id}>{eq.tipoEquipo} "” {eq.ambiente || "-"} {eq.codigo ? `(${eq.codigo})` : ""}</option>)}</select>)}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Movimiento</label><select style={s.inputModal} value={formCarga.tipo} onChange={e => setFormCarga({ ...formCarga, tipo: e.target.value })}><option value="carga">Carga (gas añadido)</option><option value="recuperacion">Recuperación</option></select></div><div><label style={s.labelModal}>Kg</label><input style={s.inputModal} type="number" step="0.1" placeholder="0.5" value={formCarga.kg} onChange={e => setFormCarga({ ...formCarga, kg: e.target.value })} required /></div></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Fecha</label><input style={s.inputModal} type="date" value={formCarga.fecha} onChange={e => setFormCarga({ ...formCarga, fecha: e.target.value })} required /></div><div><label style={s.labelModal}>Técnico</label><input style={s.inputModal} placeholder="Nombre" value={formCarga.tecnico} onChange={e => setFormCarga({ ...formCarga, tecnico: e.target.value })} /></div></div>
               <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}><button type="button" style={s.btnVerProtocolo} onClick={() => { setModalCargaAbierto(false); setEditandoMovimiento(null); }}>Cancelar</button><button type="submit" style={s.btnMarcarAtendida} disabled={guardandoCarga}>{guardandoCarga ? "Guardando..." : editandoMovimiento ? "Guardar cambios" : "Guardar"}</button></div>
             </form>
           </div>
@@ -1147,13 +1147,13 @@ export default function VistaSede() {
             <div style={{ fontSize: "15px", fontWeight: 800, color: "#12245e", marginBottom: "16px" }}>Editar equipo del historial</div>
             <form onSubmit={guardarEditHistorial} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <div style={s.seccionLabel}>Datos generales</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Marca</label><input style={s.inputModal} value={formEditHistorial.marca} onChange={e => setFormEditHistorial({ ...formEditHistorial, marca: e.target.value })} /></div><div><label style={s.labelModal}>Modelo</label><input style={s.inputModal} value={formEditHistorial.modelo} onChange={e => setFormEditHistorial({ ...formEditHistorial, modelo: e.target.value })} /></div><div><label style={s.labelModal}>NÂ° de serie</label><input style={s.inputModal} value={formEditHistorial.serie} onChange={e => setFormEditHistorial({ ...formEditHistorial, serie: e.target.value })} /></div><div><label style={s.labelModal}>Capacidad (BTU)</label><input style={s.inputModal} value={formEditHistorial.capacidad} onChange={e => setFormEditHistorial({ ...formEditHistorial, capacidad: e.target.value })} /></div></div>
-              <div style={{ ...s.seccionLabel, color: "#1a4fc0" }}>Datos elÃ©ctricos y refrigerante</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Tipo de refrigerante</label><select style={s.inputModal} value={formEditHistorial.tipoRefrigerante} onChange={e => setFormEditHistorial({ ...formEditHistorial, tipoRefrigerante: e.target.value })}><option value="">Seleccionar...</option>{["R-22", "R-410A", "R-32", "R-407C", "R-134A", "Otro"].map(r => <option key={r}>{r}</option>)}</select></div><div><label style={s.labelModal}>Fases</label><select style={s.inputModal} value={formEditHistorial.fases} onChange={e => setFormEditHistorial({ ...formEditHistorial, fases: e.target.value })}><option>MonofÃ¡sico</option><option>TrifÃ¡sico</option></select></div><div><label style={s.labelModal}>Voltaje de placa (V)</label><input style={s.inputModal} value={formEditHistorial.voltaje} onChange={e => setFormEditHistorial({ ...formEditHistorial, voltaje: e.target.value })} /></div><div><label style={s.labelModal}>Amperaje de placa (A)</label><input style={s.inputModal} value={formEditHistorial.amperaje} onChange={e => setFormEditHistorial({ ...formEditHistorial, amperaje: e.target.value })} /></div><div><label style={s.labelModal}>Carga nominal (kg)</label><input style={s.inputModal} type="number" step="0.1" value={formEditHistorial.cargaNominal} onChange={e => setFormEditHistorial({ ...formEditHistorial, cargaNominal: e.target.value })} /></div><div><label style={s.labelModal}>Carga adicional por instalaciÃ³n (kg)</label><input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formEditHistorial.cargaAdicionalInstalacion} onChange={e => setFormEditHistorial({ ...formEditHistorial, cargaAdicionalInstalacion: e.target.value })} /></div></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Marca</label><input style={s.inputModal} value={formEditHistorial.marca} onChange={e => setFormEditHistorial({ ...formEditHistorial, marca: e.target.value })} /></div><div><label style={s.labelModal}>Modelo</label><input style={s.inputModal} value={formEditHistorial.modelo} onChange={e => setFormEditHistorial({ ...formEditHistorial, modelo: e.target.value })} /></div><div><label style={s.labelModal}>N° de serie</label><input style={s.inputModal} value={formEditHistorial.serie} onChange={e => setFormEditHistorial({ ...formEditHistorial, serie: e.target.value })} /></div><div><label style={s.labelModal}>Capacidad (BTU)</label><input style={s.inputModal} value={formEditHistorial.capacidad} onChange={e => setFormEditHistorial({ ...formEditHistorial, capacidad: e.target.value })} /></div></div>
+              <div style={{ ...s.seccionLabel, color: "#1a4fc0" }}>Datos eléctricos y refrigerante</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Tipo de refrigerante</label><select style={s.inputModal} value={formEditHistorial.tipoRefrigerante} onChange={e => setFormEditHistorial({ ...formEditHistorial, tipoRefrigerante: e.target.value })}><option value="">Seleccionar...</option>{["R-22", "R-410A", "R-32", "R-407C", "R-134A", "Otro"].map(r => <option key={r}>{r}</option>)}</select></div><div><label style={s.labelModal}>Fases</label><select style={s.inputModal} value={formEditHistorial.fases} onChange={e => setFormEditHistorial({ ...formEditHistorial, fases: e.target.value })}><option>Monofásico</option><option>Trifásico</option></select></div><div><label style={s.labelModal}>Voltaje de placa (V)</label><input style={s.inputModal} value={formEditHistorial.voltaje} onChange={e => setFormEditHistorial({ ...formEditHistorial, voltaje: e.target.value })} /></div><div><label style={s.labelModal}>Amperaje de placa (A)</label><input style={s.inputModal} value={formEditHistorial.amperaje} onChange={e => setFormEditHistorial({ ...formEditHistorial, amperaje: e.target.value })} /></div><div><label style={s.labelModal}>Carga nominal (kg)</label><input style={s.inputModal} type="number" step="0.1" value={formEditHistorial.cargaNominal} onChange={e => setFormEditHistorial({ ...formEditHistorial, cargaNominal: e.target.value })} /></div><div><label style={s.labelModal}>Carga adicional por instalación (kg)</label><input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formEditHistorial.cargaAdicionalInstalacion} onChange={e => setFormEditHistorial({ ...formEditHistorial, cargaAdicionalInstalacion: e.target.value })} /></div></div>
               <div style={{ ...s.seccionLabel, color: "#a52b2b" }}>Baja del equipo</div>
               <div><label style={s.labelModal}>Kg de refrigerante recuperados al dar de baja</label><input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formEditHistorial.kgRecuperados} onChange={e => setFormEditHistorial({ ...formEditHistorial, kgRecuperados: e.target.value })} /></div>
               <div style={s.seccionLabel}>Fechas de servicio</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Fecha instalaciÃ³n</label><input style={s.inputModal} type="date" value={formEditHistorial.fechaInstalacion} onChange={e => setFormEditHistorial({ ...formEditHistorial, fechaInstalacion: e.target.value })} /></div><div><label style={s.labelModal}>Fecha de baja</label><input style={s.inputModal} type="date" value={formEditHistorial.fechaBaja} onChange={e => setFormEditHistorial({ ...formEditHistorial, fechaBaja: e.target.value })} /></div></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Fecha instalación</label><input style={s.inputModal} type="date" value={formEditHistorial.fechaInstalacion} onChange={e => setFormEditHistorial({ ...formEditHistorial, fechaInstalacion: e.target.value })} /></div><div><label style={s.labelModal}>Fecha de baja</label><input style={s.inputModal} type="date" value={formEditHistorial.fechaBaja} onChange={e => setFormEditHistorial({ ...formEditHistorial, fechaBaja: e.target.value })} /></div></div>
               <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}><button type="button" style={s.btnVerProtocolo} onClick={() => setEditandoHistorialItem(null)}>Cancelar</button><button type="submit" style={s.btnMarcarAtendida} disabled={guardandoEditHistorial}>{guardandoEditHistorial ? "Guardando..." : "Guardar cambios"}</button></div>
             </form>
           </div>
@@ -1165,15 +1165,15 @@ export default function VistaSede() {
         <div style={s.modalOverlay} onClick={() => setModalReemplazoAbierto(null)}>
           <div style={{ ...s.averiaCard, maxWidth: "520px", maxHeight: "88vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: "15px", fontWeight: 800, color: "#12245e", marginBottom: "4px" }}>Reemplazar equipo</div>
-            <div style={{ fontSize: "12px", color: "#8a92a6", marginBottom: "16px", fontWeight: 600 }}>{modalReemplazoAbierto.codigo ? `${modalReemplazoAbierto.codigo} Â· ` : ""}{modalReemplazoAbierto.ambiente || "-"} â€” el equipo actual queda como historial, no se elimina.</div>
+            <div style={{ fontSize: "12px", color: "#8a92a6", marginBottom: "16px", fontWeight: 600 }}>{modalReemplazoAbierto.codigo ? `${modalReemplazoAbierto.codigo} · ` : ""}{modalReemplazoAbierto.ambiente || "-"} "” el equipo actual queda como historial, no se elimina.</div>
             <form onSubmit={guardarReemplazo} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <div style={s.seccionLabel}>Datos generales</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Marca (nuevo equipo)</label><input style={s.inputModal} value={formReemplazo.marca} onChange={e => setFormReemplazo({ ...formReemplazo, marca: e.target.value })} required /></div><div><label style={s.labelModal}>Modelo</label><input style={s.inputModal} value={formReemplazo.modelo} onChange={e => setFormReemplazo({ ...formReemplazo, modelo: e.target.value })} /></div><div><label style={s.labelModal}>NÂ° de serie</label><input style={s.inputModal} value={formReemplazo.serie} onChange={e => setFormReemplazo({ ...formReemplazo, serie: e.target.value })} /></div><div><label style={s.labelModal}>Capacidad (BTU)</label><input style={s.inputModal} value={formReemplazo.capacidad} onChange={e => setFormReemplazo({ ...formReemplazo, capacidad: e.target.value })} /></div></div>
-              <div style={{ ...s.seccionLabel, color: "#1a4fc0" }}>Datos elÃ©ctricos y refrigerante</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Tipo de refrigerante</label><select style={s.inputModal} value={formReemplazo.tipoRefrigerante} onChange={e => setFormReemplazo({ ...formReemplazo, tipoRefrigerante: e.target.value })}><option value="">Seleccionar...</option>{["R-22", "R-410A", "R-32", "R-407C", "R-134A", "Otro"].map(r => <option key={r}>{r}</option>)}</select></div><div><label style={s.labelModal}>Fases</label><select style={s.inputModal} value={formReemplazo.fases} onChange={e => setFormReemplazo({ ...formReemplazo, fases: e.target.value })}><option>MonofÃ¡sico</option><option>TrifÃ¡sico</option></select></div><div><label style={s.labelModal}>Voltaje de placa (V)</label><input style={s.inputModal} value={formReemplazo.voltaje} onChange={e => setFormReemplazo({ ...formReemplazo, voltaje: e.target.value })} /></div><div><label style={s.labelModal}>Amperaje de placa (A)</label><input style={s.inputModal} value={formReemplazo.amperaje} onChange={e => setFormReemplazo({ ...formReemplazo, amperaje: e.target.value })} /></div><div><label style={s.labelModal}>Carga nominal (kg)</label><input style={s.inputModal} type="number" step="0.1" value={formReemplazo.cargaNominal} onChange={e => setFormReemplazo({ ...formReemplazo, cargaNominal: e.target.value })} /></div><div><label style={s.labelModal}>Carga adicional por instalaciÃ³n (kg)</label><input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formReemplazo.cargaAdicionalInstalacion} onChange={e => setFormReemplazo({ ...formReemplazo, cargaAdicionalInstalacion: e.target.value })} /></div></div>
-              <div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "-8px" }}>Si la tuberÃ­a requiere mÃ¡s gas que la carga de fÃ¡brica, se registra como la carga inicial del equipo nuevo.</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Marca (nuevo equipo)</label><input style={s.inputModal} value={formReemplazo.marca} onChange={e => setFormReemplazo({ ...formReemplazo, marca: e.target.value })} required /></div><div><label style={s.labelModal}>Modelo</label><input style={s.inputModal} value={formReemplazo.modelo} onChange={e => setFormReemplazo({ ...formReemplazo, modelo: e.target.value })} /></div><div><label style={s.labelModal}>N° de serie</label><input style={s.inputModal} value={formReemplazo.serie} onChange={e => setFormReemplazo({ ...formReemplazo, serie: e.target.value })} /></div><div><label style={s.labelModal}>Capacidad (BTU)</label><input style={s.inputModal} value={formReemplazo.capacidad} onChange={e => setFormReemplazo({ ...formReemplazo, capacidad: e.target.value })} /></div></div>
+              <div style={{ ...s.seccionLabel, color: "#1a4fc0" }}>Datos eléctricos y refrigerante</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}><div><label style={s.labelModal}>Tipo de refrigerante</label><select style={s.inputModal} value={formReemplazo.tipoRefrigerante} onChange={e => setFormReemplazo({ ...formReemplazo, tipoRefrigerante: e.target.value })}><option value="">Seleccionar...</option>{["R-22", "R-410A", "R-32", "R-407C", "R-134A", "Otro"].map(r => <option key={r}>{r}</option>)}</select></div><div><label style={s.labelModal}>Fases</label><select style={s.inputModal} value={formReemplazo.fases} onChange={e => setFormReemplazo({ ...formReemplazo, fases: e.target.value })}><option>Monofásico</option><option>Trifásico</option></select></div><div><label style={s.labelModal}>Voltaje de placa (V)</label><input style={s.inputModal} value={formReemplazo.voltaje} onChange={e => setFormReemplazo({ ...formReemplazo, voltaje: e.target.value })} /></div><div><label style={s.labelModal}>Amperaje de placa (A)</label><input style={s.inputModal} value={formReemplazo.amperaje} onChange={e => setFormReemplazo({ ...formReemplazo, amperaje: e.target.value })} /></div><div><label style={s.labelModal}>Carga nominal (kg)</label><input style={s.inputModal} type="number" step="0.1" value={formReemplazo.cargaNominal} onChange={e => setFormReemplazo({ ...formReemplazo, cargaNominal: e.target.value })} /></div><div><label style={s.labelModal}>Carga adicional por instalación (kg)</label><input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formReemplazo.cargaAdicionalInstalacion} onChange={e => setFormReemplazo({ ...formReemplazo, cargaAdicionalInstalacion: e.target.value })} /></div></div>
+              <div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "-8px" }}>Si la tubería requiere más gas que la carga de fábrica, se registra como la carga inicial del equipo nuevo.</div>
               <div style={{ ...s.seccionLabel, color: "#a52b2b" }}>Baja del equipo anterior</div>
-              <div><label style={s.labelModal}>Kg de refrigerante recuperados del equipo dado de baja</label><input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formReemplazo.kgRecuperados} onChange={e => setFormReemplazo({ ...formReemplazo, kgRecuperados: e.target.value })} /><div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "4px" }}>Queda registrado como recuperaciÃ³n final â€” evidencia de cumplimiento, no se libera a la atmÃ³sfera.</div></div>
+              <div><label style={s.labelModal}>Kg de refrigerante recuperados del equipo dado de baja</label><input style={s.inputModal} type="number" step="0.1" placeholder="0.0" value={formReemplazo.kgRecuperados} onChange={e => setFormReemplazo({ ...formReemplazo, kgRecuperados: e.target.value })} /><div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "4px" }}>Queda registrado como recuperación final "” evidencia de cumplimiento, no se libera a la atmósfera.</div></div>
               <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}><button type="button" style={s.btnVerProtocolo} onClick={() => setModalReemplazoAbierto(null)}>Cancelar</button><button type="submit" style={s.btnMarcarAtendida} disabled={guardandoReemplazo}>{guardandoReemplazo ? "Guardando..." : "Confirmar reemplazo"}</button></div>
             </form>
           </div>
@@ -1181,13 +1181,13 @@ export default function VistaSede() {
       )}
 
       {/* Modal lista de emergencias activas */}
-      {listaEmergencia && (<div style={s.modalOverlay} onClick={() => setListaEmergencia(null)}><div style={s.listaCard} onClick={e => e.stopPropagation()}><div style={s.listaHeader}><SvgAlerta color="#a52b2b" /><span style={s.listaTitulo}>Equipos con emergencia</span><span style={s.listaBadgeCount}>{listaEmergencia.length}</span><button style={s.btnCerrarX} onClick={() => setListaEmergencia(null)}>X</button></div><div style={s.listaBody}>{listaEmergencia.map(a => { const eq = equipos.find(e => e.id === a.equipoId); return (<div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.listaItem}><div style={{ minWidth: 0, flex: 1 }}><div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} â€” {a.ambiente || eq?.ambiente || "-"}</div><div style={s.listaItemMeta}>{a.piso ? `Piso ${a.piso}` : ""}{eq?.serie ? ` Â· Serie ${eq.serie}` : ""}</div></div><div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}><span style={s.listaItemFecha}>{a.fecha?.toDate ? a.fecha.toDate().toLocaleDateString("es-PE") + ", " + a.fecha.toDate().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : ""}</span><SvgChevron /></div></div>); })}</div></div></div>)}
+      {listaEmergencia && (<div style={s.modalOverlay} onClick={() => setListaEmergencia(null)}><div style={s.listaCard} onClick={e => e.stopPropagation()}><div style={s.listaHeader}><SvgAlerta color="#a52b2b" /><span style={s.listaTitulo}>Equipos con emergencia</span><span style={s.listaBadgeCount}>{listaEmergencia.length}</span><button style={s.btnCerrarX} onClick={() => setListaEmergencia(null)}>X</button></div><div style={s.listaBody}>{listaEmergencia.map(a => { const eq = equipos.find(e => e.id === a.equipoId); return (<div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.listaItem}><div style={{ minWidth: 0, flex: 1 }}><div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} "” {a.ambiente || eq?.ambiente || "-"}</div><div style={s.listaItemMeta}>{a.piso ? `Piso ${a.piso}` : ""}{eq?.serie ? ` · Serie ${eq.serie}` : ""}</div></div><div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}><span style={s.listaItemFecha}>{a.fecha?.toDate ? a.fecha.toDate().toLocaleDateString("es-PE") + ", " + a.fecha.toDate().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : ""}</span><SvgChevron /></div></div>); })}</div></div></div>)}
 
       {/* Modal historial */}
-      {historialAbierto && (<div style={s.modalOverlay} onClick={() => setHistorialAbierto(false)}><div style={s.listaCard} onClick={e => e.stopPropagation()}><div style={s.listaHeader}><span style={s.listaTitulo}>Historial de averÃ­as â€” {sede}</span><button style={s.btnCerrarX} onClick={() => setHistorialAbierto(false)}>X</button></div><div style={s.listaBody}>{cargandoHistorial ? (<div style={{ fontSize: "12.5px", color: "#8a92a6", textAlign: "center", padding: "20px 0" }}>Cargando historial...</div>) : !historialAverias || historialAverias.length === 0 ? (<div style={{ fontSize: "12.5px", color: "#aab1c2", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>Sin averÃ­as atendidas registradas</div>) : historialAverias.slice().sort((a, b) => (b.atendidaEn?.toDate ? b.atendidaEn.toDate().getTime() : 0) - (a.atendidaEn?.toDate ? a.atendidaEn.toDate().getTime() : 0)).map(a => { const eq = equipos.find(e => e.id === a.equipoId); return (<div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.listaItem}><div style={{ minWidth: 0, flex: 1 }}><div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} â€” {a.ambiente || eq?.ambiente || "-"}</div><div style={s.listaItemMeta}>{a.piso ? `Piso ${a.piso}` : ""}</div></div><div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}><span style={s.atendidaChip}>Atendida</span><SvgChevron /></div></div>); })}</div></div></div>)}
+      {historialAbierto && (<div style={s.modalOverlay} onClick={() => setHistorialAbierto(false)}><div style={s.listaCard} onClick={e => e.stopPropagation()}><div style={s.listaHeader}><span style={s.listaTitulo}>Historial de averías "” {sede}</span><button style={s.btnCerrarX} onClick={() => setHistorialAbierto(false)}>X</button></div><div style={s.listaBody}>{cargandoHistorial ? (<div style={{ fontSize: "12.5px", color: "#8a92a6", textAlign: "center", padding: "20px 0" }}>Cargando historial...</div>) : !historialAverias || historialAverias.length === 0 ? (<div style={{ fontSize: "12.5px", color: "#aab1c2", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>Sin averías atendidas registradas</div>) : historialAverias.slice().sort((a, b) => (b.atendidaEn?.toDate ? b.atendidaEn.toDate().getTime() : 0) - (a.atendidaEn?.toDate ? a.atendidaEn.toDate().getTime() : 0)).map(a => { const eq = equipos.find(e => e.id === a.equipoId); return (<div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.listaItem}><div style={{ minWidth: 0, flex: 1 }}><div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} "” {a.ambiente || eq?.ambiente || "-"}</div><div style={s.listaItemMeta}>{a.piso ? `Piso ${a.piso}` : ""}</div></div><div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}><span style={s.atendidaChip}>Atendida</span><SvgChevron /></div></div>); })}</div></div></div>)}
 
-      {/* Modal detalle de averÃ­a */}
-      {detalleAveria && (() => { const eq = equipos.find(e => e.id === detalleAveria.equipoId); const atendida = !!detalleAveria.atendida; return (<div style={s.modalOverlay} onClick={cerrarDetalleAveria}><div style={{ ...s.averiaCard, border: `1px solid ${atendida ? "#c3ecd2" : "#f6d3d3"}` }} onClick={e => e.stopPropagation()}><div style={s.averiaHeaderRow}><div><div style={s.averiaTitulo}>{eq?.tipoEquipo || "Equipo"} â€” {(detalleAveria.ambiente || eq?.ambiente || "").toString().toLowerCase()}</div><div style={s.averiaSub}>Piso {detalleAveria.piso || eq?.piso || "-"} Â· {eq?.marca || "-"} Â· {eq?.modelo || detalleAveria.equipoCodigo || "-"}</div></div><span style={atendida ? s.badgeAtendida : s.badgeEmergencia}>{atendida ? "Atendida" : "Con emergencia"}</span></div><div style={s.averiaTabla}><div style={s.averiaFila}><span style={s.averiaLabel}>NÂ° de serie</span><span style={s.averiaValor}>{eq?.serie || "-"}</span></div><div style={s.averiaFila}><span style={s.averiaLabel}>Estado</span><span style={s.averiaValor}>{eq?.estado || "-"}</span></div><div style={s.averiaFila}><span style={s.averiaLabel}>Ãšlt. mantenimiento</span><span style={s.averiaValor}>{eq?.ultimoMantenimiento || "Sin registro"}</span></div><div style={s.averiaFila}><span style={s.averiaLabel}>Observaciones abiertas</span><span style={s.averiaValor}>{eq ? getObsCount(eq) : 0}</span></div></div><div style={s.averiaDivider}></div><div style={{ ...s.averiaMsgLabel, color: atendida ? "#1c7a44" : "#a52b2b" }}>{atendida ? "AverÃ­a atendida" : "Mensaje de emergencia"}</div><div style={{ ...s.averiaMsgBox, background: atendida ? "#e6f7ec" : "#fdeeee", border: `1px solid ${atendida ? "#c3ecd2" : "#f6d3d3"}` }}><div style={s.averiaMsgTxt}>{detalleAveria.mensaje}</div><div style={{ fontSize: "11px", color: "#8a92a6" }}>{detalleAveria.fecha?.toDate ? detalleAveria.fecha.toDate().toLocaleString("es-PE") : ""}</div></div>{atendida ? (<div style={s.averiaAtendidaTxt}>Atendida: {detalleAveria.atendidaEn?.toDate ? detalleAveria.atendidaEn.toDate().toLocaleString("es-PE") : "-"}</div>) : (<><div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>{eq && <button style={s.btnVerProtocolo} onClick={() => navigate(`/protocolo?equipo=${eq.id}`)}>Ver protocolo</button>}<button style={s.btnMarcarAtendida} onClick={() => marcarAveriaAtendida(detalleAveria.id)}>Marcar como atendida</button></div><div style={s.averiaCaption}>No se elimina: pasa a historial de averÃ­as atendidas y deja de contar en el badge de emergencia.</div></>)}</div></div>); })()}
+      {/* Modal detalle de avería */}
+      {detalleAveria && (() => { const eq = equipos.find(e => e.id === detalleAveria.equipoId); const atendida = !!detalleAveria.atendida; return (<div style={s.modalOverlay} onClick={cerrarDetalleAveria}><div style={{ ...s.averiaCard, border: `1px solid ${atendida ? "#c3ecd2" : "#f6d3d3"}` }} onClick={e => e.stopPropagation()}><div style={s.averiaHeaderRow}><div><div style={s.averiaTitulo}>{eq?.tipoEquipo || "Equipo"} "” {(detalleAveria.ambiente || eq?.ambiente || "").toString().toLowerCase()}</div><div style={s.averiaSub}>Piso {detalleAveria.piso || eq?.piso || "-"} · {eq?.marca || "-"} · {eq?.modelo || detalleAveria.equipoCodigo || "-"}</div></div><span style={atendida ? s.badgeAtendida : s.badgeEmergencia}>{atendida ? "Atendida" : "Con emergencia"}</span></div><div style={s.averiaTabla}><div style={s.averiaFila}><span style={s.averiaLabel}>N° de serie</span><span style={s.averiaValor}>{eq?.serie || "-"}</span></div><div style={s.averiaFila}><span style={s.averiaLabel}>Estado</span><span style={s.averiaValor}>{eq?.estado || "-"}</span></div><div style={s.averiaFila}><span style={s.averiaLabel}>Últ. mantenimiento</span><span style={s.averiaValor}>{eq?.ultimoMantenimiento || "Sin registro"}</span></div><div style={s.averiaFila}><span style={s.averiaLabel}>Observaciones abiertas</span><span style={s.averiaValor}>{eq ? getObsCount(eq) : 0}</span></div></div><div style={s.averiaDivider}></div><div style={{ ...s.averiaMsgLabel, color: atendida ? "#1c7a44" : "#a52b2b" }}>{atendida ? "Avería atendida" : "Mensaje de emergencia"}</div><div style={{ ...s.averiaMsgBox, background: atendida ? "#e6f7ec" : "#fdeeee", border: `1px solid ${atendida ? "#c3ecd2" : "#f6d3d3"}` }}><div style={s.averiaMsgTxt}>{detalleAveria.mensaje}</div><div style={{ fontSize: "11px", color: "#8a92a6" }}>{detalleAveria.fecha?.toDate ? detalleAveria.fecha.toDate().toLocaleString("es-PE") : ""}</div></div>{atendida ? (<div style={s.averiaAtendidaTxt}>Atendida: {detalleAveria.atendidaEn?.toDate ? detalleAveria.atendidaEn.toDate().toLocaleString("es-PE") : "-"}</div>) : (<><div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>{eq && <button style={s.btnVerProtocolo} onClick={() => navigate(`/protocolo?equipo=${eq.id}`)}>Ver protocolo</button>}<button style={s.btnMarcarAtendida} onClick={() => marcarAveriaAtendida(detalleAveria.id)}>Marcar como atendida</button></div><div style={s.averiaCaption}>No se elimina: pasa a historial de averías atendidas y deja de contar en el badge de emergencia.</div></>)}</div></div>); })()}
     </div>
   );
 }

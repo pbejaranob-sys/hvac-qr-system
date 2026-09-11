@@ -9,7 +9,7 @@ const FONT = "'Manrope', -apple-system, sans-serif";
 
 const TIPOS_CON_GAS = [
   "Split Piso Techo", "Split Pared", "Split Ducto", "Split Fancoil", "Split Cassete",
-  "Ventana", "Autocontenido", "Precisi├│n", "VRV Evaporador", "VRV Condensador", "Chiller",
+  "Ventana", "Autocontenido", "Precisión", "VRV Evaporador", "VRV Condensador", "Chiller",
 ];
 
 const initiales = (nombre) => {
@@ -63,7 +63,7 @@ function useManropeAndBodyReset() {
 const parsePiso = (p) => {
   if (!p) return [99, 0, 0];
   const s = String(p).toLowerCase().trim();
-  const m = s.match(/s[o├│]tano\s*(\d*)/);
+  const m = s.match(/s[oó]tano\s*(\d*)/);
   if (m) return [-1, -(parseInt(m[1]) || 1), 0];
   const match = s.match(/^(\d+)\s*([a-z]?)/);
   if (match) {
@@ -380,7 +380,7 @@ export default function PanelCliente() {
       }
       cerrarDetalleAveria();
     } catch (e) {
-      console.error("Error marcando aver├¡a como atendida:", e);
+      console.error("Error marcando avería como atendida:", e);
     }
   };
 
@@ -395,7 +395,7 @@ export default function PanelCliente() {
       const hSnap = await getDocs(query(collection(db, "averias"), where("cliente", "==", empresa), where("atendida", "==", true)));
       setHistorialAverias(hSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (e) {
-      console.error("Error cargando historial de aver├¡as:", e);
+      console.error("Error cargando historial de averías:", e);
       setHistorialAverias([]);
     }
     setCargandoHistorial(false);
@@ -457,7 +457,7 @@ export default function PanelCliente() {
       const snap = await getDocs(query(collection(db, "movimientosRefrigerante"), ...filtros));
       setKgRecuperadosHistorico(snap.docs.reduce((acc, d) => acc + (Number(d.data().kg) || 0), 0));
     } catch (e) {
-      console.error("Error cargando recuperaci├│n hist├│rica:", e);
+      console.error("Error cargando recuperación histórica:", e);
       setKgRecuperadosHistorico(0);
     }
   };
@@ -474,7 +474,7 @@ export default function PanelCliente() {
 
   const estadoFuga = (pct) => {
     if (pct === null) return { label: "Sin datos", bg: "#f4f6fb", color: "#8a92a6" };
-    if (pct >= 20) return { label: "Cr├¡tico", bg: "#fdeeee", color: "#a52b2b" };
+    if (pct >= 20) return { label: "Crítico", bg: "#fdeeee", color: "#a52b2b" };
     if (pct >= 10) return { label: "Alerta", bg: "#fff3d6", color: "#a8720b" };
     return { label: "OK", bg: "#e6f7ec", color: "#1c7a44" };
   };
@@ -640,7 +640,7 @@ export default function PanelCliente() {
           {sedeActual ? (
             <>
               <a href="#" onClick={(e) => { e.preventDefault(); setSedeActual(null); setVistaActual("sedes"); setFiltroEstado("Todos"); }} style={s.breadcrumbLink}>
-                ÔåÉ {usuario?.empresa}
+                ← {usuario?.empresa}
               </a>
               <span style={{ color: "#c3cad9" }}>/</span>
               <span>{sedeActual.nombre}</span>
@@ -693,7 +693,7 @@ export default function PanelCliente() {
                       <div style={{ fontSize: "10px", color: averiasSede.length > 0 ? "#a52b2b" : "#9aa2b3", textAlign: "center", marginTop: "3px", textDecoration: "underline", cursor: "pointer" }} onClick={() => abrirHistorial(sede)}>Historial</div>
                     </div>
                   </div>
-                  <button style={s.btnVerSede} onClick={() => { setSedeActual(sede); setVistaActual("equipos"); }}>Ver equipos ÔåÆ</button>
+                  <button style={s.btnVerSede} onClick={() => { setSedeActual(sede); setVistaActual("equipos"); }}>Ver equipos →</button>
                 </div>
               );
             })}
@@ -763,7 +763,7 @@ export default function PanelCliente() {
                   <div style={{ position: "relative" }}>
                     <button onClick={() => setPisoDropdownAbierto(o => !o)} style={s.filterSelect}>
                       <span>{pisosSeleccionados.length === 0 ? "Todos los pisos" : pisosSeleccionados.length === 1 ? `Piso ${pisosSeleccionados[0]}` : `${pisosSeleccionados.length} pisos`}</span>
-                      <span style={{ fontSize: "10px", color: "#8a92a6" }}>{pisoDropdownAbierto ? "Ôû┤" : "Ôû¥"}</span>
+                      <span style={{ fontSize: "10px", color: "#8a92a6" }}>{pisoDropdownAbierto ? "▴" : "▾"}</span>
                     </button>
                     {pisoDropdownAbierto && (
                       <>
@@ -790,7 +790,7 @@ export default function PanelCliente() {
                     <option value="Sin fecha">Sin fecha</option>
                   </select>
                   {filtroMes !== "Todos" && (
-                    <button onClick={() => setFiltroMes("Todos")} style={{ fontSize: "10.5px", padding: "3px 9px", borderRadius: "20px", background: "#1a4fc0", color: "white", border: "none", cursor: "pointer", fontWeight: 700 }}>{filtroMes} Ô£ò</button>
+                    <button onClick={() => setFiltroMes("Todos")} style={{ fontSize: "10.5px", padding: "3px 9px", borderRadius: "20px", background: "#1a4fc0", color: "white", border: "none", cursor: "pointer", fontWeight: 700 }}>{filtroMes} ✕</button>
                   )}
                 </div>
               </div>
@@ -798,7 +798,7 @@ export default function PanelCliente() {
               <div style={{ overflowX: "auto", paddingRight: "4px" }}>
                 <div style={{ minWidth: "0" }}>
                   <div style={s.tablaColHead}>
-                    {["#", "C├ôDIGO", "PISO", "AMBIENTE", "TIPO EQUIPO", "MARCA/MODELO", "SERIE", "ESTADO", "├ÜLT. MANT.", "ACCIONES"].map(h => (
+                    {["#", "CÓDIGO", "PISO", "AMBIENTE", "TIPO EQUIPO", "MARCA/MODELO", "SERIE", "ESTADO", "ÚLT. MANT.", "ACCIONES"].map(h => (
                       <div key={h} style={{ fontWeight: 700, fontSize: "11.5px", color: "#8a92a6", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</div>
                     ))}
                   </div>
@@ -821,10 +821,10 @@ export default function PanelCliente() {
                             <div style={{ fontWeight: 600, fontSize: "11px", color: "#9aa2b3", marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={equipo.modelo || ""}>{equipo.modelo || "-"}</div>
                           </div>
                           <div style={{ minWidth: 0, overflow: "hidden" }}>
-                            <span style={{ fontWeight: 600, color: "#6b7488", fontSize: "12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }} title={equipo.serie || ""}>{equipo.serie || "ÔÇö"}</span>
+                            <span style={{ fontWeight: 600, color: "#6b7488", fontSize: "12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }} title={equipo.serie || ""}>{equipo.serie || "—"}</span>
                           </div>
                           <div style={{ minWidth: 0, overflow: "hidden" }}>{getBadge(equipo.estado)}</div>
-                          <div style={{ minWidth: 0, overflow: "hidden" }}>{equipo.ultimoMantenimiento ? <span style={s.ultMantChip}>{fechaAMesAnio(equipo.ultimoMantenimiento) || equipo.ultimoMantenimiento}</span> : <span style={{ fontSize: "11px", color: "#c3cad9" }}>ÔÇö</span>}</div>
+                          <div style={{ minWidth: 0, overflow: "hidden" }}>{equipo.ultimoMantenimiento ? <span style={s.ultMantChip}>{fechaAMesAnio(equipo.ultimoMantenimiento) || equipo.ultimoMantenimiento}</span> : <span style={{ fontSize: "11px", color: "#c3cad9" }}>—</span>}</div>
                           <div style={{ display: "flex", gap: "8px", flexWrap: "nowrap", justifyContent: "flex-end", alignItems: "center", minWidth: 0, paddingLeft: "10px" }}>
                             <button style={s.btnInfo} onClick={() => window.open(`/equipo/${equipo.id}?noqr=1`, "_blank")}>Info</button>
                             <button style={{ ...s.btnObs, ...(abierto ? { background: "#8a5b0a", color: "white" } : {}), opacity: numObs === 0 ? 0.5 : 1 }} onClick={() => setObsAbierto(abierto ? null : equipo.id)}>
@@ -848,14 +848,14 @@ export default function PanelCliente() {
                                   <div key={h.id} style={{ border: "1px dashed #d3d1c7", borderRadius: "10px", padding: "9px 12px", opacity: 0.75, background: "white" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
                                       <div>
-                                        <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#26314d" }}>{h.marca} {h.modelo} {h.serie ? `┬À ${h.serie}` : ""}</div>
+                                        <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#26314d" }}>{h.marca} {h.modelo} {h.serie ? `· ${h.serie}` : ""}</div>
                                         <div style={{ fontSize: "10.5px", color: "#8a92a6", marginTop: "2px" }}>{h.fechaInstalacion || "?"} ÔÇô {h.fechaBaja || "?"}</div>
                                       </div>
                                       <span style={{ fontSize: "9.5px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", background: "#f4f6fb", color: "#8a92a6", whiteSpace: "nowrap" }}>Reemplazado</span>
                                     </div>
                                     {h.kgRecuperados > 0 && (
                                       <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10.5px", color: "#a8720b", fontWeight: 600, background: "#fff3d6", border: "1px solid #f3dfa3", borderRadius: "9px", padding: "7px 10px", marginTop: "9px" }}>
-                                        Recuperaci├│n final: {h.kgRecuperados.toFixed(1)} kg {h.tipoRefrigerante || ""} al dar de baja
+                                        Recuperación final: {h.kgRecuperados.toFixed(1)} kg {h.tipoRefrigerante || ""} al dar de baja
                                       </div>
                                     )}
                                   </div>
@@ -866,7 +866,7 @@ export default function PanelCliente() {
                         )}
                         {abierto && (
                           <div style={{ background: "white", borderBottom: "1px solid #f2f4f8", padding: "14px 0 18px", width: "100%", boxSizing: "border-box" }}>
-                            <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#8a5b0a", marginBottom: "10px" }}>{numObs} observaci├│n{numObs !== 1 ? "es" : ""} ÔÇö {equipo.codigo || equipo.ambiente}</div>
+                            <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#8a5b0a", marginBottom: "10px" }}>{numObs} observación{numObs !== 1 ? "es" : ""} — {equipo.codigo || equipo.ambiente}</div>
                             {numObs === 0 ? (
                               <div style={{ fontSize: "12.5px", color: "#aab1c2", fontStyle: "italic" }}>Sin observaciones registradas</div>
                             ) : (
@@ -876,10 +876,10 @@ export default function PanelCliente() {
                                     <div style={{ fontSize: "10px", color: "#8a92a6", paddingTop: "7px", textAlign: "center" }}>{idx + 1}</div>
                                     <div style={{ background: "#fff8e6", border: "1px solid #f3dfa3", borderRadius: "8px", padding: "6px 8px", minWidth: 0, overflow: "hidden" }}>
                                       <div style={{ fontSize: "10.5px", color: "#26314d", lineHeight: 1.3 }}>{o.texto}</div>
-                                      {(o.fecha || o.tecnico) && <div style={{ fontSize: "8.5px", color: "#aab1c2", marginTop: "3px" }}>{o.fecha}{o.fecha && o.tecnico ? " ┬À " : ""}{o.tecnico}</div>}
+                                      {(o.fecha || o.tecnico) && <div style={{ fontSize: "8.5px", color: "#aab1c2", marginTop: "3px" }}>{o.fecha}{o.fecha && o.tecnico ? " · " : ""}{o.tecnico}</div>}
                                     </div>
-                                    <div style={{ background: "#fdeeee", border: "1px solid #f6d3d3", borderRadius: "8px", padding: "6px 8px", fontSize: "10.5px", color: "#a52b2b", minWidth: 0, overflow: "hidden" }}>{o.causa || "ÔÇö"}</div>
-                                    <div style={{ background: "#e6f7ec", border: "1px solid #c3ecd2", borderRadius: "8px", padding: "6px 8px", fontSize: "10.5px", color: "#1c7a44", minWidth: 0, overflow: "hidden" }}>{recArr[idx] ? (typeof recArr[idx] === "string" ? recArr[idx] : recArr[idx].texto || "ÔÇö") : "ÔÇö"}</div>
+                                    <div style={{ background: "#fdeeee", border: "1px solid #f6d3d3", borderRadius: "8px", padding: "6px 8px", fontSize: "10.5px", color: "#a52b2b", minWidth: 0, overflow: "hidden" }}>{o.causa || "—"}</div>
+                                    <div style={{ background: "#e6f7ec", border: "1px solid #c3ecd2", borderRadius: "8px", padding: "6px 8px", fontSize: "10.5px", color: "#1c7a44", minWidth: 0, overflow: "hidden" }}>{recArr[idx] ? (typeof recArr[idx] === "string" ? recArr[idx] : recArr[idx].texto || "—") : "—"}</div>
                                   </div>
                                 )); })()}
                               </div>
@@ -904,7 +904,7 @@ export default function PanelCliente() {
                   </div>
                   <div style={s.statCard}>
                     <div style={{ ...s.statNum, color: "#1c7a44" }}>{kgAnadidosTotal.toFixed(1)}</div>
-                    <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>KG A├æADIDOS 12M</div>
+                    <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>KG AÑADIDOS 12M</div>
                   </div>
                   <div style={{ ...s.statCard, background: tasaFugaPromedio >= 10 ? "#fff3d6" : "white" }}>
                     <div style={{ ...s.statNum, color: tasaFugaPromedio >= 20 ? "#a52b2b" : tasaFugaPromedio >= 10 ? "#a8720b" : "#1c7a44" }}>{tasaFugaPromedio.toFixed(1)}%</div>
@@ -916,14 +916,14 @@ export default function PanelCliente() {
                   </div>
                   <div style={s.statCard}>
                     <div style={{ ...s.statNum, color: "#7c3fd8" }}>
-                      {kgRecuperadosHistorico === null ? "ÔÇª" : kgRecuperadosHistorico.toFixed(1)}
+                      {kgRecuperadosHistorico === null ? "…" : kgRecuperadosHistorico.toFixed(1)}
                     </div>
-                    <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>KG RECUPERADOS (HIST├ôRICO)</div>
+                    <div style={{ fontWeight: 700, fontSize: "11.5px", color: "#6b7488", letterSpacing: "0.06em" }}>KG RECUPERADOS (HISTÓRICO)</div>
                   </div>
                 </div>
 
                 <div style={s.progressCard}>
-                  <div style={{ fontSize: "14px", fontWeight: 800, color: "#12245e", marginBottom: "14px" }}>Refrigerante a├▒adido por mes (kg)</div>
+                  <div style={{ fontSize: "14px", fontWeight: 800, color: "#12245e", marginBottom: "14px" }}>Refrigerante añadido por mes (kg)</div>
                   {cargandoMovimientos ? (
                     <div style={{ textAlign: "center", color: "#8a92a6", padding: "20px 0" }}>Cargando...</div>
                   ) : (
@@ -950,7 +950,7 @@ export default function PanelCliente() {
                     <div style={{ overflowX: "auto" }}>
                       <div style={{ minWidth: "860px" }}>
                         <div style={s.tablaHeaderRef}>
-                          {["C├│digo", "Piso", "Equipo", "Gas", "Carga nominal", "A├▒adido 12m", "Fuga", "Estado"].map(h => (
+                          {["Código", "Piso", "Equipo", "Gas", "Carga nominal", "Añadido 12m", "Fuga", "Estado"].map(h => (
                             <span key={h} style={{ fontWeight: 700, fontSize: "11px", color: "#8a92a6", letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</span>
                           ))}
                         </div>
@@ -959,13 +959,13 @@ export default function PanelCliente() {
                             <span>{r.equipo.codigo ? <span style={s.codigoChip}>{r.equipo.codigo}</span> : <span style={{ color: "#c3cad9" }}>-</span>}</span>
                             <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.equipo.piso || "-"}</span>
                             <span style={{ minWidth: 0 }}>
-                              <div style={{ fontWeight: 700, color: "#0f1b3d", fontSize: "12.5px" }}>{r.equipo.tipoEquipo} ÔÇö {r.equipo.ambiente || "-"}</div>
-                              <div style={{ fontSize: "10.5px", color: "#9aa2b3", marginTop: "2px" }}>{r.equipo.marca || ""} {r.equipo.modelo || ""}{r.equipo.serie ? ` ┬À ${r.equipo.serie}` : ""}</div>
+                              <div style={{ fontWeight: 700, color: "#0f1b3d", fontSize: "12.5px" }}>{r.equipo.tipoEquipo} — {r.equipo.ambiente || "-"}</div>
+                              <div style={{ fontSize: "10.5px", color: "#9aa2b3", marginTop: "2px" }}>{r.equipo.marca || ""} {r.equipo.modelo || ""}{r.equipo.serie ? ` · ${r.equipo.serie}` : ""}</div>
                             </span>
-                            <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.equipo.tipoRefrigerante || "ÔÇö"}</span>
+                            <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.equipo.tipoRefrigerante || "—"}</span>
                             <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.nominal > 0 ? `${r.nominal.toFixed(1)} kg` : "Sin dato"}</span>
                             <span style={{ fontSize: "12.5px", color: "#26314d" }}>{r.anadido.toFixed(1)} kg</span>
-                            <span style={{ fontWeight: 700, fontSize: "12.5px", color: r.estado.color }}>{r.pct === null ? "ÔÇö" : `${r.pct.toFixed(1)}%`}</span>
+                            <span style={{ fontWeight: 700, fontSize: "12.5px", color: r.estado.color }}>{r.pct === null ? "—" : `${r.pct.toFixed(1)}%`}</span>
                             <span><span style={{ fontSize: "11px", padding: "3px 9px", borderRadius: "20px", background: r.estado.bg, color: r.estado.color, fontWeight: 700 }}>{r.estado.label}</span></span>
                           </div>
                         ))}
@@ -984,10 +984,10 @@ export default function PanelCliente() {
         <div style={s.modalOverlay} onClick={() => setListaEmergenciaSede(null)}>
           <div style={s.listaCard} onClick={e => e.stopPropagation()}>
             <div style={s.listaHeader}>
-              <span style={{ fontSize: "15px" }}>ÔÜá</span>
+              <span style={{ fontSize: "15px" }}>⚠️</span>
               <span style={s.listaTitulo}>Equipos con emergencia</span>
               <span style={s.listaBadgeCount}>{listaEmergenciaSede.length}</span>
-              <button style={s.btnCerrarX} onClick={() => setListaEmergenciaSede(null)}>Ô£ò</button>
+              <button style={s.btnCerrarX} onClick={() => setListaEmergenciaSede(null)}>✕</button>
             </div>
             <div style={s.listaBody}>
               {listaEmergenciaSede.map(a => {
@@ -995,12 +995,12 @@ export default function PanelCliente() {
                 return (
                   <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.listaItem}>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} ÔÇö {a.ambiente || eq?.ambiente || "-"}</div>
-                      <div style={s.listaItemMeta}>{a.piso ? `Piso ${a.piso}` : ""}{eq?.serie ? ` ┬À Serie ${eq.serie}` : ""}</div>
+                      <div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
+                      <div style={s.listaItemMeta}>{a.piso ? `Piso ${a.piso}` : ""}{eq?.serie ? ` · Serie ${eq.serie}` : ""}</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, whiteSpace: "nowrap" }}>
                       <span style={s.listaItemFecha}>{a.fecha?.toDate ? a.fecha.toDate().toLocaleDateString("es-PE") + ", " + a.fecha.toDate().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : ""}</span>
-                      <span style={s.chevron}>ÔÇ║</span>
+                      <span style={s.chevron}>›</span>
                     </div>
                   </div>
                 );
@@ -1016,14 +1016,14 @@ export default function PanelCliente() {
           <div style={s.listaCard} onClick={e => e.stopPropagation()}>
             <div style={s.listaHeader}>
               <span style={{ fontSize: "15px", color: "#8a92a6" }}>­ƒòÿ</span>
-              <span style={s.listaTitulo}>Historial de aver├¡as{historialSedeFiltro ? ` ÔÇö ${historialSedeFiltro.nombre}` : ""}</span>
-              <button style={s.btnCerrarX} onClick={() => setHistorialAbierto(false)}>Ô£ò</button>
+              <span style={s.listaTitulo}>Historial de averías{historialSedeFiltro ? ` — ${historialSedeFiltro.nombre}` : ""}</span>
+              <button style={s.btnCerrarX} onClick={() => setHistorialAbierto(false)}>✕</button>
             </div>
             <div style={s.listaBody}>
               {cargandoHistorial ? (
                 <div style={{ fontSize: "12.5px", color: "#8a92a6", textAlign: "center", padding: "20px 0" }}>Cargando historial...</div>
               ) : historialFiltrado.length === 0 ? (
-                <div style={{ fontSize: "12.5px", color: "#aab1c2", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>Sin aver├¡as atendidas registradas</div>
+                <div style={{ fontSize: "12.5px", color: "#aab1c2", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>Sin averías atendidas registradas</div>
               ) : historialFiltrado
                   .slice()
                   .sort((a, b) => (b.atendidaEn?.toDate ? b.atendidaEn.toDate().getTime() : 0) - (a.atendidaEn?.toDate ? a.atendidaEn.toDate().getTime() : 0))
@@ -1032,12 +1032,12 @@ export default function PanelCliente() {
                     return (
                       <div key={a.id} onClick={() => abrirDetalleAveria(a)} style={s.listaItem}>
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} ÔÇö {a.ambiente || eq?.ambiente || "-"}</div>
-                          <div style={s.listaItemMeta}>{a.sede ? `${a.sede} ┬À ` : ""}{a.piso ? `Piso ${a.piso}` : ""}</div>
+                          <div style={s.listaItemNombre}>{eq?.tipoEquipo || "Equipo"} — {a.ambiente || eq?.ambiente || "-"}</div>
+                          <div style={s.listaItemMeta}>{a.sede ? `${a.sede} · ` : ""}{a.piso ? `Piso ${a.piso}` : ""}</div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
                           <span style={s.atendidaChip}>Atendida</span>
-                          <span style={s.chevron}>ÔÇ║</span>
+                          <span style={s.chevron}>›</span>
                         </div>
                       </div>
                     );
@@ -1047,7 +1047,7 @@ export default function PanelCliente() {
         </div>
       )}
 
-      {/* Modal detalle de aver├¡a */}
+      {/* Modal detalle de avería */}
       {detalleAveria && (() => {
         const eq = equipos.find(e => e.id === detalleAveria.equipoId);
         const numObsAbiertas = eq ? getObs(eq).length : 0;
@@ -1057,32 +1057,32 @@ export default function PanelCliente() {
             <div style={{ ...s.averiaCard, border: `1px solid ${atendida ? "#c3ecd2" : "#f6d3d3"}` }} onClick={e => e.stopPropagation()}>
               <div style={s.averiaHeaderRow}>
                 <div>
-                  <div style={s.averiaTitulo}>{eq?.tipoEquipo || "Equipo"} ÔÇö {(detalleAveria.ambiente || eq?.ambiente || "").toString().toLowerCase()}</div>
-                  <div style={s.averiaSub}>Piso {detalleAveria.piso || eq?.piso || "-"} ┬À {eq?.marca || "-"} ┬À {eq?.modelo || detalleAveria.equipoCodigo || "-"}</div>
+                  <div style={s.averiaTitulo}>{eq?.tipoEquipo || "Equipo"} — {(detalleAveria.ambiente || eq?.ambiente || "").toString().toLowerCase()}</div>
+                  <div style={s.averiaSub}>Piso {detalleAveria.piso || eq?.piso || "-"} · {eq?.marca || "-"} · {eq?.modelo || detalleAveria.equipoCodigo || "-"}</div>
                 </div>
                 <span style={atendida ? s.badgeAtendida : s.badgeEmergencia}>{atendida ? "Atendida" : "Con emergencia"}</span>
               </div>
               <div style={s.averiaTabla}>
                 <div style={s.averiaFila}><span style={s.averiaLabel}>N┬░ de serie</span><span style={s.averiaValor}>{eq?.serie || "-"}</span></div>
                 <div style={s.averiaFila}><span style={s.averiaLabel}>Estado</span><span style={s.averiaValor}>{eq?.estado || "-"}</span></div>
-                <div style={s.averiaFila}><span style={s.averiaLabel}>├Ült. mantenimiento</span><span style={s.averiaValor}>{eq?.ultimoMantenimiento || "Sin registro"}</span></div>
+                <div style={s.averiaFila}><span style={s.averiaLabel}>Últ. mantenimiento</span><span style={s.averiaValor}>{eq?.ultimoMantenimiento || "Sin registro"}</span></div>
                 <div style={s.averiaFila}><span style={s.averiaLabel}>Observaciones abiertas</span><span style={s.averiaValor}>{numObsAbiertas}</span></div>
               </div>
               <div style={s.averiaDivider}></div>
-              <div style={{ ...s.averiaMsgLabel, color: atendida ? "#1c7a44" : "#a52b2b" }}>{atendida ? "Ô£ô Aver├¡a atendida" : "ÔÜá Mensaje de emergencia"}</div>
+              <div style={{ ...s.averiaMsgLabel, color: atendida ? "#1c7a44" : "#a52b2b" }}>{atendida ? "✔ Avería atendida" : "⚠️ Mensaje de emergencia"}</div>
               <div style={{ ...s.averiaMsgBox, background: atendida ? "#e6f7ec" : "#fdeeee", border: `1px solid ${atendida ? "#c3ecd2" : "#f6d3d3"}` }}>
                 <div style={s.averiaMsgTxt}>{detalleAveria.mensaje}</div>
                 <div style={{ fontSize: "11px", color: "#8a92a6" }}>­ƒòÉ {detalleAveria.fecha?.toDate ? detalleAveria.fecha.toDate().toLocaleString("es-PE") : ""}</div>
               </div>
               {atendida ? (
-                <div style={s.averiaAtendidaTxt}>Ô£ô Atendida: {detalleAveria.atendidaEn?.toDate ? detalleAveria.atendidaEn.toDate().toLocaleString("es-PE") : "-"}</div>
+                <div style={s.averiaAtendidaTxt}>✔ Atendida: {detalleAveria.atendidaEn?.toDate ? detalleAveria.atendidaEn.toDate().toLocaleString("es-PE") : "-"}</div>
               ) : (
                 <>
                   <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
                     {eq && <button style={s.btnVerProtocolo} onClick={() => navigate(`/protocolo?equipo=${eq.id}&origen=cliente${sedeActual ? `&sede=${encodeURIComponent(sedeActual.id)}` : ""}`)}>Ver protocolo</button>}
                     <button style={s.btnMarcarAtendida} onClick={() => marcarAveriaAtendida(detalleAveria.id)}>Marcar como atendida</button>
                   </div>
-                  <div style={s.averiaCaption}>No se elimina: pasa a historial de aver├¡as atendidas y deja de contar en el badge de emergencia.</div>
+                  <div style={s.averiaCaption}>No se elimina: pasa a historial de averías atendidas y deja de contar en el badge de emergencia.</div>
                 </>
               )}
             </div>
