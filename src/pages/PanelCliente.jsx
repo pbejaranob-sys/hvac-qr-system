@@ -1220,9 +1220,12 @@ export default function PanelCliente() {
                             <span style={{ fontWeight: 600, color: "#6b7488", fontSize: "12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }} title={equipo.serie || ""}>{equipo.serie || "—"}</span>
                           </div>
                           <div style={{ minWidth: 0, overflow: "hidden" }}>{getBadge(equipo.estado)}</div>
-                          <div style={{ minWidth: 0, overflow: "hidden" }}>{equipo.ultimoMantenimiento ? <span style={s.ultMantChip}>{fechaAMesAnio(equipo.ultimoMantenimiento) || equipo.ultimoMantenimiento}</span> : <span style={{ fontSize: "11px", color: "#c3cad9" }}>—</span>}</div>
+                          <div style={{ minWidth: 0, overflow: "hidden" }}>
+                            {equipo.ultimoMantenimiento ? <span style={s.ultMantChip}>{fechaAMesAnio(equipo.ultimoMantenimiento) || equipo.ultimoMantenimiento}</span> : <span style={{ fontSize: "11px", color: "#c3cad9" }}>—</span>}
+                            {equipo.ultimoTecnico && <div style={{ fontSize: "10.5px", color: "#8a92a6", fontWeight: 600, marginTop: "3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={equipo.ultimoTecnico}>👤 {equipo.ultimoTecnico}</div>}
+                          </div>
                           <div style={{ display: "flex", gap: "8px", flexWrap: "nowrap", justifyContent: "flex-end", alignItems: "center", minWidth: 0, paddingLeft: "10px" }}>
-                            <button style={s.btnInfo} onClick={() => window.open(`/equipo/${equipo.id}?noqr=1`, "_blank")}>Info</button>
+                            <button style={s.btnInfo} onClick={() => navigate(`/equipo/${equipo.id}?noqr=1`)}>Info</button>
                             <button style={{ ...s.btnObs, ...(abierto ? { background: "#8a5b0a", color: "white" } : {}), opacity: numObs === 0 ? 0.5 : 1 }} onClick={() => setObsAbierto(abierto ? null : equipo.id)}>
                               Obs <span style={{ background: abierto ? "white" : "#f3dfa3", color: "#8a5b0a", borderRadius: "20px", padding: "1px 5px", fontSize: "10px" }}>{numObs}</span>
                             </button>
@@ -1806,7 +1809,7 @@ function PanelClienteMobile({
               <div style={{ fontWeight: 700, fontSize: 14.5, color: "#0f1b3d" }}>{equipo.ambiente || "—"}</div>
               <div style={{ fontWeight: 600, fontSize: 12.5, color: "#26314d" }}>{equipo.tipoEquipo} · {equipo.marca} {equipo.modelo}</div>
               {equipo.ultimoMantenimiento && (
-                <div style={{ fontSize: 12, color: "#6b7488", fontWeight: 600 }}>📅 {equipo.ultimoMantenimiento}</div>
+                <div style={{ fontSize: 12, color: "#6b7488", fontWeight: 600 }}>📅 {equipo.ultimoMantenimiento}{equipo.ultimoTecnico ? <span style={{ marginLeft: 8, color: "#8a92a6" }}>👤 {equipo.ultimoTecnico}</span> : null}</div>
               )}
               <div style={{ display: "flex", gap: 8 }}>
                 <button style={m.btnInfo} onClick={() => setEquipoInfo(equipo)}>Info</button>
