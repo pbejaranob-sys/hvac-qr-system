@@ -1222,7 +1222,6 @@ export default function PanelCliente() {
                           <div style={{ minWidth: 0, overflow: "hidden" }}>{getBadge(equipo.estado)}</div>
                           <div style={{ minWidth: 0, overflow: "hidden" }}>
                             {equipo.ultimoMantenimiento ? <span style={s.ultMantChip}>{fechaAMesAnio(equipo.ultimoMantenimiento) || equipo.ultimoMantenimiento}</span> : <span style={{ fontSize: "11px", color: "#c3cad9" }}>—</span>}
-                            {equipo.ultimoTecnico && <div style={{ fontSize: "10.5px", color: "#8a92a6", fontWeight: 600, marginTop: "3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={equipo.ultimoTecnico}>👤 {equipo.ultimoTecnico}</div>}
                           </div>
                           <div style={{ display: "flex", gap: "8px", flexWrap: "nowrap", justifyContent: "flex-end", alignItems: "center", minWidth: 0, paddingLeft: "10px" }}>
                             <button style={s.btnInfo} onClick={() => navigate(`/equipo/${equipo.id}?noqr=1`)}>Info</button>
@@ -1682,6 +1681,15 @@ function PanelClienteMobile({
             <div style={m.infoCard}>
               <div style={m.infoSecTitulo}>ÚLTIMO MANTENIMIENTO</div>
               <div style={{ fontWeight: 700, fontSize: 14, color: "#12245e" }}>{equipoInfo.ultimoMantenimiento}</div>
+              {equipoInfo.ultimoTecnico && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="8" r="4" stroke="#8a92a6" strokeWidth="1.7"/>
+                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#8a92a6" strokeWidth="1.7" strokeLinecap="round"/>
+                  </svg>
+                  <span style={{ fontSize: 12.5, color: "#6b7488", fontWeight: 600 }}>Realizado por: <span style={{ color: "#12245e", fontWeight: 700 }}>{equipoInfo.ultimoTecnico}</span></span>
+                </div>
+              )}
             </div>
           )}
           {obsArr.length > 0 && (
@@ -1809,7 +1817,7 @@ function PanelClienteMobile({
               <div style={{ fontWeight: 700, fontSize: 14.5, color: "#0f1b3d" }}>{equipo.ambiente || "—"}</div>
               <div style={{ fontWeight: 600, fontSize: 12.5, color: "#26314d" }}>{equipo.tipoEquipo} · {equipo.marca} {equipo.modelo}</div>
               {equipo.ultimoMantenimiento && (
-                <div style={{ fontSize: 12, color: "#6b7488", fontWeight: 600 }}>📅 {equipo.ultimoMantenimiento}{equipo.ultimoTecnico ? <span style={{ marginLeft: 8, color: "#8a92a6" }}>👤 {equipo.ultimoTecnico}</span> : null}</div>
+                <div style={{ fontSize: 12, color: "#6b7488", fontWeight: 600 }}>📅 {equipo.ultimoMantenimiento}</div>
               )}
               <div style={{ display: "flex", gap: 8 }}>
                 <button style={m.btnInfo} onClick={() => setEquipoInfo(equipo)}>Info</button>

@@ -44,6 +44,10 @@ export default function VistaEquipo() {
   const [authChecked, setAuthChecked] = useState(false);
   const [pdfGenerado, setPdfGenerado] = useState(false);
 
+  // Si venimos desde QR+login, el Login guardó un flag en sessionStorage
+  // (el router state se pierde en iOS Safari PWA)
+  const vieneDesdLogin = sessionStorage.getItem("qr_autenticado") === "1";
+
   useEffect(() => {
     if (!document.getElementById("font-manrope")) {
       const link = document.createElement("link");
@@ -62,11 +66,22 @@ export default function VistaEquipo() {
     };
   }, []);
 
-  // Firebase siempre emite null primero al montar, luego el usuario real.
-  // Si llegamos desde QR+login, el primer emit null haría que esPub=true por error.
-  // Solución: si el primer emit es null, esperamos hasta 1500ms por si hay sesión
-  // activa que aún no fue restaurada desde localStorage.
   useEffect(() => {
+    // Si venimos de QR+login, sabemos que hay sesión activa — no esperamos a Firebase
+    if (vieneDesdLogin) {
+      sessionStorage.removeItem("qr_autenticado"); // limpiar el flag
+      setEsPub(false);
+      setAuthChecked(true);
+      getDoc(doc(db, "equipos", id))
+        .then(snap => { if (snap.exists()) setEquipo({ id: snap.id, ...snap.data() }); })
+        .catch(e => console.error(e))
+        .finally(() => setCargando(false));
+      return;
+    }
+
+    // Flujo normal: esperar a Firebase Auth
+    // Firebase emite null primero, luego el usuario real.
+    // Si el primer emit es null, esperamos 1500ms antes de decidir que es público.
     let resuelto = false;
     let timer = null;
 
@@ -76,17 +91,15 @@ export default function VistaEquipo() {
       try {
         const snap = await getDoc(doc(db, "equipos", id));
         if (snap.exists()) setEquipo({ id: snap.id, ...snap.data() });
-      } catch (e) { console.error("Error cargando equipo:", e); }
+      } catch (e) { console.error(e); }
       setCargando(false);
     };
 
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // Sesión confirmada — resolver inmediatamente
         if (timer) clearTimeout(timer);
         if (!resuelto) { resuelto = true; cargar(false); }
       } else {
-        // Primer emit null — esperar por si hay sesión restaurándose
         if (!resuelto) {
           timer = setTimeout(() => {
             if (!resuelto) { resuelto = true; cargar(true); }
@@ -96,7 +109,7 @@ export default function VistaEquipo() {
     });
 
     return () => { unsub(); if (timer) clearTimeout(timer); };
-  }, [id]);
+  }, [id, vieneDesdLogin]);
 
   // Si es acceso público y hay protocolo, abrir PDF automáticamente
   useEffect(() => {
@@ -354,6 +367,15 @@ export default function VistaEquipo() {
             <div style={s.sCard}>
               <div style={s.sLbl}>Último mantenimiento</div>
               <div style={s.sRow}><SvgCalendario /><div style={s.sValStrong}>{equipo.ultimoMantenimiento || "Sin registro"}</div></div>
+              {equipo.ultimoTecnico && (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="8" r="4" stroke="#8a92a6" strokeWidth="1.7"/>
+                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#8a92a6" strokeWidth="1.7" strokeLinecap="round"/>
+                  </svg>
+                  <span style={{ fontSize: "12px", color: "#6b7488", fontWeight: 600 }}>Realizado por: <strong style={{ color: "#12245e" }}>{equipo.ultimoTecnico}</strong></span>
+                </div>
+              )}
             </div>
 
             {!sinQR && <button style={s.btnOutline} onClick={imprimirQR}><SvgPrint /> Imprimir QR</button>}
