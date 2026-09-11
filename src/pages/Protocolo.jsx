@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { db, auth } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import jsPDF from "jspdf";
 
-// ============ DEFINICIÓN DE TIPOS DE PROTOCOLO ============
+// ============ DEFINICIÃ“N DE TIPOS DE PROTOCOLO ============
 // Mapea cada tipoEquipo al grupo de protocolo que le corresponde
 const GRUPO_POR_TIPO = {
-  // Grupo 1 → Expansión Directa
+  // Grupo 1 â†’ ExpansiÃ³n Directa
   "Split Piso Techo": "expansion",
   "Split Pared": "expansion",
   "Split Ducto": "expansion",
@@ -15,7 +15,7 @@ const GRUPO_POR_TIPO = {
   "Split Cassete": "expansion",
   "Ventana": "expansion",
   "Autocontenido": "expansion",
-  "Precisión": "expansion",
+  "PrecisiÃ³n": "expansion",
   "VRV Evaporador": "vrv",
   "VRV Condensador": "vrv",
   // Compatibilidad nombres anteriores
@@ -24,33 +24,33 @@ const GRUPO_POR_TIPO = {
   "Cassette": "expansion",
   "Casete": "expansion",
   "Cassete": "expansion",
-  // Grupo 2 → Fancoil / UMA Agua Helada
+  // Grupo 2 â†’ Fancoil / UMA Agua Helada
   "Fancoil AH": "fancoil",
   "Pared AH": "fancoil",
   "UMA AH": "fancoil",
   "Fan Coil": "fancoil",
-  // Grupo 3 → Ventilación
-  "Ventilación": "ventilacion",
+  // Grupo 3 â†’ VentilaciÃ³n
+  "VentilaciÃ³n": "ventilacion",
   "Extractor": "ventilacion",
   "Inyector": "ventilacion",
   "Cortina de aire": "ventilacion",
   "Jetfan": "ventilacion",
   "Presurizador": "ventilacion",
-  // Grupo 4 → En preparación
+  // Grupo 4 â†’ En preparaciÃ³n
   "Chiller": "pendiente",
   "Torre de Enfriamiento": "pendiente",
   "Bombas de agua": "pendiente",
 };
 
 const GRUPOS = {
-  expansion: { label: "Expansión Directa (Split / VRV)", color: "#1a5fa8", icon: "❄️" },
-  fancoil: { label: "Manejadora / Fan Coil / UMA Agua Helada", color: "#185fa5", icon: "💧" },
-  ventilacion: { label: "Ventilación / Extracción / Inyección", color: "#0f6e56", icon: "🌀" },
-  vrv: { label: "Sistema VRV", color: "#5c35cc", icon: "🔁" },
-  pendiente: { label: "Protocolo en preparación", color: "#888", icon: "🔧" },
+  expansion: { label: "ExpansiÃ³n Directa (Split / VRV)", color: "#1a5fa8", icon: "â„ï¸" },
+  fancoil: { label: "Manejadora / Fan Coil / UMA Agua Helada", color: "#185fa5", icon: "ðŸ’§" },
+  ventilacion: { label: "VentilaciÃ³n / ExtracciÃ³n / InyecciÃ³n", color: "#0f6e56", icon: "ðŸŒ€" },
+  vrv: { label: "Sistema VRV", color: "#5c35cc", icon: "ðŸ”" },
+  pendiente: { label: "Protocolo en preparaciÃ³n", color: "#888", icon: "ðŸ”§" },
 };
 
-// ============ CÁLCULOS AUTOMÁTICOS ============
+// ============ CÃLCULOS AUTOMÃTICOS ============
 const calcDesbalance = (a, b, c) => {
   const vals = [a, b, c].map(parseFloat).filter(v => !isNaN(v));
   if (vals.length < 2) return "";
@@ -66,21 +66,21 @@ const calcDelta = (a, b) => {
   return Math.abs(x - y).toFixed(1);
 };
 
-// ============ ESTRUCTURA VACÍA DE UN PROTOCOLO ============
+// ============ ESTRUCTURA VACÃA DE UN PROTOCOLO ============
 const protocoloVacio = (grupo) => ({
   grupo,
   fecha: new Date().toISOString().split("T")[0],
   tecnico: "",
   tipoServicio: "Preventivo",
   ordenTrabajo: "",
-  // Eléctricos (comunes)
+  // ElÃ©ctricos (comunes)
   vL1L2: "", vL2L3: "", vL3L1: "",
   vPlacaL1L2: "", vPlacaL2L3: "", vPlacaL3L1: "",
   aL1: "", aL2: "", aL3: "",
   aPlacaL1: "", aPlacaL2: "", aPlacaL3: "",
   megL1T: "", megL2T: "", megL3T: "",
   megL1L2: "", megL2L3: "", megL3L1: "",
-  // Refrigeración (expansion)
+  // RefrigeraciÃ³n (expansion)
   presSuccion: "", presLiquido: "", tSatMedida: "", tSatTabla: "",
   tRetornoEvap: "", tSuministroEvap: "", tAmbCondensador: "",
   calentadorAceite: false,
@@ -91,7 +91,7 @@ const protocoloVacio = (grupo) => ({
   modeloCompresor: "",
   // Ventilacion
   ventiladorNum: "", tipoVentilador: "",
-  // Ventilación
+  // VentilaciÃ³n
   tTrabajoMotor: "", caudalAire: "",
   // Fancoil agua
   tEntradaAgua: "", tSalidaAgua: "", presEntradaAgua: "", presSalidaAgua: "",
@@ -100,13 +100,13 @@ const protocoloVacio = (grupo) => ({
   sensorArranque: "OK", sensorTempAmb: "OK", sensorSuministro: "OK",
   sensorDifPresion: "OK", estadoContactores: "OK", estadoImpulsor: "OK",
   llaveTermo: "OK", balanceCaudal: "OK",
-  // Campos específicos Fan Coil / UMA (formato Carrier)
+  // Campos especÃ­ficos Fan Coil / UMA (formato Carrier)
   contrato: "", modeloFaja: "", numFajas: "", marcaMotor: "", modeloMotor: "", serieMotor: "", fancoilNum: "",
-  // Actividades (checklist) - objeto dinámico
+  // Actividades (checklist) - objeto dinÃ¡mico
   actividades: {},
   // Estatus de items (formato Carrier: OK / Observado / Falla / N/A)
   estatusItems: {},
-  // Observaciones dinámicas
+  // Observaciones dinÃ¡micas
   observaciones: [{ obs: "", causa: "", rec: "" }],
   // Resultado
   estadoFinal: "Operativo",
@@ -130,32 +130,32 @@ const obsDesFicha = (data) => {
 // ============ CHECKLISTS POR GRUPO ============
 const CHECKLISTS = {
   expansion: {
-    "Evaporador": ["Limpieza filtros de aire", "Limpieza serpentín", "Limpieza bandeja drenaje", "Limpieza difusores/rejillas"],
-    "Condensador": ["Limpieza serpentín", "Limpieza externa", "Descarte visual de fugas", "Filtros secadores"],
-    "Eléctrico/Control": ["Ajuste terminales compresor", "Ajuste borneras/contactores", "Control, termostato, tarjetas", "Pintado bases y soportes"],
+    "Evaporador": ["Limpieza filtros de aire", "Limpieza serpentÃ­n", "Limpieza bandeja drenaje", "Limpieza difusores/rejillas"],
+    "Condensador": ["Limpieza serpentÃ­n", "Limpieza externa", "Descarte visual de fugas", "Filtros secadores"],
+    "ElÃ©ctrico/Control": ["Ajuste terminales compresor", "Ajuste borneras/contactores", "Control, termostato, tarjetas", "Pintado bases y soportes"],
   },
   ventilacion: {
     "Limpieza": ["Limpieza filtros de aire", "Ajuste y limpieza impulsores", "Pintado impulsores de aire", "Pintura de estructura", "Desmontaje y limpieza motor"],
-    "Mecánica": ["Revisión rodamientos motor", "Lubricación bocinas/rodamientos", "Lubricación chumaceras", "Revisión y templado de fajas", "Pernos anclaje/antivibratorios"],
-    "Eléctrico": ["Prueba tableros de arranque", "Medición caudal de aire", "Verificación funcionamiento"],
+    "MecÃ¡nica": ["RevisiÃ³n rodamientos motor", "LubricaciÃ³n bocinas/rodamientos", "LubricaciÃ³n chumaceras", "RevisiÃ³n y templado de fajas", "Pernos anclaje/antivibratorios"],
+    "ElÃ©ctrico": ["Prueba tableros de arranque", "MediciÃ³n caudal de aire", "VerificaciÃ³n funcionamiento"],
   },
   fancoil: {
-    "Actividades": ["Limpieza filtros de aire", "Lavado de coil", "Limpieza bandeja condensado", "Limpieza de contactos", "Lubricación chumaceras", "Templado de fajas", "Alineamiento de poleas", "Aislamiento térmico", "Lubricación de motores"],
+    "Actividades": ["Limpieza filtros de aire", "Lavado de coil", "Limpieza bandeja condensado", "Limpieza de contactos", "LubricaciÃ³n chumaceras", "Templado de fajas", "Alineamiento de poleas", "Aislamiento tÃ©rmico", "LubricaciÃ³n de motores"],
   },
   chiller: {
     "Limpieza": ["Condensador (aire/agua)", "Evaporador / tubos", "Ventiladores condensador", "Filtros tipo Y agua", "Gabinete general"],
-    "Revisión": ["Detección de fugas", "Conexiones eléctricas", "Contactores / relés", "Sensores y sondas", "Códigos de falla"],
-    "Control/Agua": ["Flow switch", "Presostatos alta/baja", "Tratamiento de agua", "Calibración setpoint", "Prueba funcionamiento"],
+    "RevisiÃ³n": ["DetecciÃ³n de fugas", "Conexiones elÃ©ctricas", "Contactores / relÃ©s", "Sensores y sondas", "CÃ³digos de falla"],
+    "Control/Agua": ["Flow switch", "Presostatos alta/baja", "Tratamiento de agua", "CalibraciÃ³n setpoint", "Prueba funcionamiento"],
   },
   torre: {
-    "Limpieza": ["Relleno / fill (panal)", "Tina / depósito", "Boquillas aspersión", "Separador de gotas", "Filtro / colador", "Desincrustación"],
-    "Mecánica": ["Engrase rodamientos", "Tensión de fajas", "Aceite del reductor", "Aspas ventilador", "Estructura / soportes"],
-    "Agua/Control": ["Válvula flotador", "Dosificación química", "Control legionella", "Conexiones eléctricas", "Prueba funcionamiento"],
+    "Limpieza": ["Relleno / fill (panal)", "Tina / depÃ³sito", "Boquillas aspersiÃ³n", "Separador de gotas", "Filtro / colador", "DesincrustaciÃ³n"],
+    "MecÃ¡nica": ["Engrase rodamientos", "TensiÃ³n de fajas", "Aceite del reductor", "Aspas ventilador", "Estructura / soportes"],
+    "Agua/Control": ["VÃ¡lvula flotador", "DosificaciÃ³n quÃ­mica", "Control legionella", "Conexiones elÃ©ctricas", "Prueba funcionamiento"],
   },
 };
 
 // ============ FORMATO CARRIER FAN COIL / UMA ============
-// Columna izquierda: parámetros con valor numérico (key del form, etiqueta, unidad)
+// Columna izquierda: parÃ¡metros con valor numÃ©rico (key del form, etiqueta, unidad)
 const FANCOIL_PARAMS_IZQ = [
   { tipo: "elec3", label: "Voltaje en placa", sub: "Voltaje en marcha", unidad: "V", keys: ["vL1L2", "vL2L3", "vL3L1"], heads: ["L1-L2", "L2-L3", "L3-L1"] },
   { tipo: "auto", label: "Desbalance de voltaje", unidad: "%", calc: "desbV" },
@@ -167,59 +167,73 @@ const FANCOIL_PARAMS_IZQ = [
   { tipo: "meg", label: "", sub: "L1-L2", unidad: "\u03A9", key: "megL1L2" },
   { tipo: "meg", label: "", sub: "L2-L3", unidad: "\u03A9", key: "megL2L3" },
   { tipo: "meg", label: "", sub: "L3-L1", unidad: "\u03A9", key: "megL3L1" },
-  { tipo: "val", label: "Temperatura de trabajo de motor", unidad: "°C", key: "tTrabajoMotor" },
-  { tipo: "val", label: "Temperatura de entrada de agua", unidad: "°C", key: "tEntradaAgua" },
-  { tipo: "val", label: "Temperatura de salida de agua", unidad: "°C", key: "tSalidaAgua" },
-  { tipo: "auto", label: "∆ Temperatura de agua", unidad: "°C", calc: "dTagua" },
+  { tipo: "val", label: "Temperatura de trabajo de motor", unidad: "Â°C", key: "tTrabajoMotor" },
+  { tipo: "val", label: "Temperatura de entrada de agua", unidad: "Â°C", key: "tEntradaAgua" },
+  { tipo: "val", label: "Temperatura de salida de agua", unidad: "Â°C", key: "tSalidaAgua" },
+  { tipo: "auto", label: "âˆ† Temperatura de agua", unidad: "Â°C", calc: "dTagua" },
   { tipo: "val", label: "Presion de entrada de agua", unidad: "PSI", key: "presEntradaAgua" },
   { tipo: "val", label: "Presion de salida de agua", unidad: "PSI", key: "presSalidaAgua" },
-  { tipo: "auto", label: "∆ Presion de agua", unidad: "PSI", calc: "dPagua" },
-  { tipo: "val", label: "Temperatura de retorno de aire", unidad: "°C", key: "tRetornoAire" },
-  { tipo: "val", label: "Temperatura de suministro de aire", unidad: "°C", key: "tSuministroAire" },
-  { tipo: "auto", label: "∆ Temperatura de aire", unidad: "°C", calc: "dTaire" },
+  { tipo: "auto", label: "âˆ† Presion de agua", unidad: "PSI", calc: "dPagua" },
+  { tipo: "val", label: "Temperatura de retorno de aire", unidad: "Â°C", key: "tRetornoAire" },
+  { tipo: "val", label: "Temperatura de suministro de aire", unidad: "Â°C", key: "tSuministroAire" },
+  { tipo: "auto", label: "âˆ† Temperatura de aire", unidad: "Â°C", calc: "dTaire" },
 ];
-// Columna derecha: ítems con Estatus (OK / Observado / Falla / N/A)
+// Columna derecha: Ã­tems con Estatus (OK / Observado / Falla / N/A)
 const FANCOIL_ITEMS_DER = [
-  "Balance de caudal de aire", "Estado válvula agua helada", "Aislamiento térmico",
-  "Estado de llave termomagnética", "Estado de contactores", "Funcionamiento de dampers",
-  "Velocidad motores ventiladores", "Sensor de suministros de aire", "Sensor de diferencial de presión",
+  "Balance de caudal de aire", "Estado vÃ¡lvula agua helada", "Aislamiento tÃ©rmico",
+  "Estado de llave termomagnÃ©tica", "Estado de contactores", "Funcionamiento de dampers",
+  "Velocidad motores ventiladores", "Sensor de suministros de aire", "Sensor de diferencial de presiÃ³n",
   "Sensor de arranque y parada", "Sensor de temperatura ambiente", "Limpieza de contactos",
-  "Lubricación de motores", "Lubricación de chumaceras", "Templado de fajas",
+  "LubricaciÃ³n de motores", "LubricaciÃ³n de chumaceras", "Templado de fajas",
   "Alineamiento de poleas", "Estado de impulsor de aire", "Limpieza de filtros de aire",
   "Limpieza bandeja de condesado", "Lavado de coil",
 ];
 
-// ============ ÍTEMS ESTATUS EXPANSIÓN DIRECTA ============
+// ============ ÃTEMS ESTATUS EXPANSIÃ“N DIRECTA ============
 const EXPANSION_ITEMS_DER = [
   "Descarte visual de fugas de refrigerante",
-  "Limpieza de serpentín condensador",
+  "Limpieza de serpentÃ­n condensador",
   "Limpieza externa condensador",
-  "Ajuste de terminales eléctricos de compresores y motores",
-  "Ajuste de terminales eléctricos de contactores y borneras",
+  "Ajuste de terminales elÃ©ctricos de compresores y motores",
+  "Ajuste de terminales elÃ©ctricos de contactores y borneras",
   "Limpieza de difusores y rejillas",
-  "Comprobación de eficiencia de filtros secadores",
-  "Verificación de operación del sistema de control termostato y tarjetas",
+  "ComprobaciÃ³n de eficiencia de filtros secadores",
+  "VerificaciÃ³n de operaciÃ³n del sistema de control termostato y tarjetas",
   "Pintado de impulsores, bases y soportes",
 ];
 
-// ============ ÍTEMS ESTATUS VENTILACIÓN ============
+// ============ ÃTEMS ESTATUS VENTILACIÃ“N ============
 const VENTILACION_ITEMS_DER = [
-  "Verificación de funcionamiento",
+  "VerificaciÃ³n de funcionamiento",
   "Ajuste y limpieza de impulsores de aire",
-  "Revisión y templado de fajas",
+  "RevisiÃ³n y templado de fajas",
   "Ajuste de pernos de anclaje y elementos antivibratorios",
   "Prueba del normal funcionamiento de tableros de arranque",
   "Limpieza de filtros de aire",
-  "Lubricación de bocinas y rodamientos(s)",
+  "LubricaciÃ³n de bocinas y rodamientos(s)",
   "Pintado de impulsores de aire",
-  "Lubricación de chumaceras(s)",
-  "Medición de caudal de aire",
-  "Revisión de rodamientos del motor(s)",
-  "Desmontaje parcial y limpieza de los motores eléctricos(s)",
+  "LubricaciÃ³n de chumaceras(s)",
+  "MediciÃ³n de caudal de aire",
+  "RevisiÃ³n de rodamientos del motor(s)",
+  "Desmontaje parcial y limpieza de los motores elÃ©ctricos(s)",
   "Pintura de estructura(s)",
 ];
 
+
+// ---- Hook responsivo ----
+const useIsMobile = () => {
+  const isMobileDevice = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.navigator.standalone === true;
+  const [isMobile, setIsMobile] = React.useState(isMobileDevice);
+  React.useEffect(() => {
+    const h = () => setIsMobile(isMobileDevice());
+    window.addEventListener('orientationchange', h);
+    return () => window.removeEventListener('orientationchange', h);
+  }, []);
+  return isMobile;
+};
+
 export default function Protocolo() {
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const equipoId = searchParams.get("equipo");
@@ -241,7 +255,7 @@ export default function Protocolo() {
   const [equipo, setEquipo] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
-  const [protocolos, setProtocolos] = useState([]); // historial (máx 10)
+  const [protocolos, setProtocolos] = useState([]); // historial (mÃ¡x 10)
   const [indexActual, setIndexActual] = useState(0);
   const [form, setForm] = useState(null);
   const [soloLectura, setSoloLectura] = useState(false); // true = cliente (solo ve)
@@ -269,13 +283,13 @@ export default function Protocolo() {
         setSoloLectura(esLectura);
         cargarEquipo(esLectura);
       } else if (equipoId && esAccesoTecnico) {
-        // Técnico llega vía código de acceso (sin login Firebase): puede editar el protocolo.
+        // TÃ©cnico llega vÃ­a cÃ³digo de acceso (sin login Firebase): puede editar el protocolo.
         setEsPub(false);
         setAuthChecked(true);
         setSoloLectura(false);
         cargarEquipo(false);
       } else if (equipoId) {
-        // Acceso público (QR escaneado sin sesión): solo lectura, mostrar/abrir PDF
+        // Acceso pÃºblico (QR escaneado sin sesiÃ³n): solo lectura, mostrar/abrir PDF
         setEsPub(true);
         setAuthChecked(true);
         setSoloLectura(true);
@@ -285,7 +299,7 @@ export default function Protocolo() {
     return () => unsub();
   }, [equipoId]);
 
-  // Si es acceso público, generar y abrir el PDF automáticamente
+  // Si es acceso pÃºblico, generar y abrir el PDF automÃ¡ticamente
   useEffect(() => {
     if (authChecked && esPub && equipo && form && !cargando && !pdfGenerado) {
       setPdfGenerado(true);
@@ -347,7 +361,7 @@ export default function Protocolo() {
     ...prev, estatusItems: { ...(prev.estatusItems || {}), [item]: val }
   }));
 
-  // Observaciones dinámicas
+  // Observaciones dinÃ¡micas
   const addObs = () => setForm(prev => ({ ...prev, observaciones: [...prev.observaciones, { obs: "", causa: "", rec: "" }] }));
   const removeObs = (i) => setForm(prev => ({ ...prev, observaciones: prev.observaciones.filter((_, idx) => idx !== i) }));
   const updateObs = (i, campo, val) => setForm(prev => {
@@ -358,7 +372,7 @@ export default function Protocolo() {
 
   const nuevoProtocolo = () => {
     if (protocolos.length >= 10) {
-      alert("Máximo 10 protocolos por equipo. Elimina uno antiguo para crear uno nuevo.");
+      alert("MÃ¡ximo 10 protocolos por equipo. Elimina uno antiguo para crear uno nuevo.");
       return;
     }
     const grupo = GRUPO_POR_TIPO[equipo.tipoEquipo] || "expansion";
@@ -409,7 +423,7 @@ export default function Protocolo() {
 
       setProtocolos(nuevos);
       setIndexActual(indexActual === -1 ? 0 : indexActual);
-      alert("Protocolo guardado y ficha del equipo actualizada ✅");
+      alert("Protocolo guardado y ficha del equipo actualizada âœ…");
     } catch (err) {
       alert("Error al guardar: " + err.message);
     }
@@ -417,7 +431,7 @@ export default function Protocolo() {
   };
 
   const eliminarProtocolo = async (i) => {
-    if (!window.confirm("¿Eliminar este protocolo? No se puede deshacer.")) return;
+    if (!window.confirm("Â¿Eliminar este protocolo? No se puede deshacer.")) return;
     const nuevos = protocolos.filter((_, idx) => idx !== i);
     await updateDoc(doc(db, "equipos", equipoId), { protocolos: nuevos });
     setProtocolos(nuevos);
@@ -425,7 +439,7 @@ export default function Protocolo() {
     else nuevoProtocolo();
   };
 
-  // ===== REPORTE EXPANSIÓN DIRECTA =====
+  // ===== REPORTE EXPANSIÃ“N DIRECTA =====
   const exportarPDFExpansion = async (modo = "descargar") => {
     if (!equipo || !form) return;
     const pdf = new jsPDF("p", "mm", "a4");
@@ -459,7 +473,7 @@ export default function Protocolo() {
     pdf.text(equipo.sede || "", W - M, y + 6, { align: "right" });
     y += 14;
 
-    // Título
+    // TÃ­tulo
     pdf.rect(M, y, C, 7);
     pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(0);
     pdf.text("REPORTE DE MANTENIMIENTO DE EXPANSION DIRECTA", W / 2, y + 5, { align: "center" });
@@ -487,8 +501,8 @@ export default function Protocolo() {
     pdf.setFillColor(220, 220, 220);
     pdf.rect(M, y, half, pH, "FD"); pdf.rect(M + half, y, half, pH, "FD");
     pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(0);
-    pdf.text("PARAMETROS — EVAPORADOR", M + half / 2, y + 3.5, { align: "center" });
-    pdf.text("PARAMETROS — CONDENSADOR", M + half + half / 2, y + 3.5, { align: "center" });
+    pdf.text("PARAMETROS â€” EVAPORADOR", M + half / 2, y + 3.5, { align: "center" });
+    pdf.text("PARAMETROS â€” CONDENSADOR", M + half + half / 2, y + 3.5, { align: "center" });
     y += pH;
 
     // Proporciones tabla izquierda
@@ -499,7 +513,7 @@ export default function Protocolo() {
     const RH2 = 5.5;
     const esMono = equipo?.fases === "Monof\u00e1sico";
 
-    // Función helper fila electrica
+    // FunciÃ³n helper fila electrica
     const drawElecRow = (ry, nm, un, vals, hds, placa) => {
       if (placa) { pdf.setFillColor(240, 244, 248); pdf.rect(LX, ry, LW, RH2, "F"); }
       pdf.setDrawColor(0); pdf.rect(LX, ry, LW, RH2);
@@ -560,7 +574,7 @@ export default function Protocolo() {
 
     const getEst = (item) => (form.estatusItems || {})[item] || "";
 
-    // Sección EVAPORADOR izquierda + CONDENSADOR derecha (etiqueta vertical)
+    // SecciÃ³n EVAPORADOR izquierda + CONDENSADOR derecha (etiqueta vertical)
     // Construir filas lado izquierdo (evaporador)
     const vHds = esMono ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"];
     const vVals = esMono ? [form.vL1L2||""] : [form.vL1L2||"",form.vL2L3||"",form.vL3L1||""];
@@ -576,7 +590,7 @@ export default function Protocolo() {
     const rowsIzq = [
       { type: "estL", nm: "Limpieza de filtros de aire" },
       { type: "estL", nm: "Limpieza de bandeja de drenaje" },
-      { type: "estL", nm: "Limpieza de serpentín evaporador" },
+      { type: "estL", nm: "Limpieza de serpentÃ­n evaporador" },
       { type: "elec", nm: "Voltaje en marcha", un: "V", vals: vVals, hds: vHds, placa: false },
       { type: "elec", nm: "Voltaje en placa", un: "V", vals: vPlaca, hds: vHds, placa: true },
       { type: "simple", nm: "Desbalance de voltaje", un: "%", val: cv("desbV") },
@@ -593,7 +607,7 @@ export default function Protocolo() {
 
     const rowsDer = [
       { type: "estR", nm: "Descarte visual de fugas de refrigerante" },
-      { type: "estR", nm: "Limpieza de serpentín condensador" },
+      { type: "estR", nm: "Limpieza de serpentÃ­n condensador" },
       { type: "estR", nm: "Limpieza externa condensador" },
       { type: "elecR", nm: "Voltaje en marcha", un: "V", vals: condVVals, hds: vHds, placa: false },
       { type: "elecR", nm: "Voltaje en placa", un: "V", vals: condVPlaca, hds: vHds, placa: true },
@@ -609,7 +623,7 @@ export default function Protocolo() {
       { type: "simpleR", nm: "", sub: "L3-L1", un: "\u03A9", val: form.condMegL3L1||"" },
     ];
 
-    // Segunda sección: filas izquierda con parámetros refrigeración + estatus actividades der
+    // Segunda secciÃ³n: filas izquierda con parÃ¡metros refrigeraciÃ³n + estatus actividades der
     const rowsIzq2 = [
       { type: "simple", nm: "Temperatura de motor", un: "\xB0C", val: form.tTrabajoMotor||"" },
       { type: "estatus", nm: "Calentador de aceite", item: "Calentador de aceite" },
@@ -635,7 +649,7 @@ export default function Protocolo() {
     const condH = rowsDer.length * RH2;
     const labelW = 5;
 
-    // Dibujar sección 1
+    // Dibujar secciÃ³n 1
     for (let i = 0; i < nR1; i++) {
       const ry = yT + i * RH2;
       const rL = rowsIzq[i];
@@ -703,7 +717,7 @@ export default function Protocolo() {
 
     y = yT + nR1 * RH2;
 
-    // Sección 2: izq2 + der2
+    // SecciÃ³n 2: izq2 + der2
     const nR2 = Math.max(rowsIzq2.length, rowsDer2.length);
     const yT2 = y;
 
@@ -785,7 +799,7 @@ export default function Protocolo() {
     else pdf.save(nombre);
   };
 
-  // ===== REPORTE VENTILACIÓN =====
+  // ===== REPORTE VENTILACIÃ“N =====
   const exportarPDFVentilacion = async (modo = "descargar") => {
     if (!equipo || !form) return;
     const pdf = new jsPDF("p", "mm", "a4");
@@ -818,7 +832,7 @@ export default function Protocolo() {
     pdf.text(equipo.sede || "", W-M, y+6, {align:"right"});
     y += 14;
 
-    // Título
+    // TÃ­tulo
     pdf.rect(M, y, C, 7);
     pdf.setFont("helvetica","bold"); pdf.setFontSize(9); pdf.setTextColor(0);
     pdf.text("REPORTE DE MANTENIMIENTO DE INYECTORES/EXTRACTORES DE AIRE", W/2, y+5, {align:"center"});
@@ -846,8 +860,8 @@ export default function Protocolo() {
     pdf.setFillColor(220,220,220);
     pdf.rect(M, y, half, pH, "FD"); pdf.rect(M+half, y, half, pH, "FD");
     pdf.setFont("helvetica","bold"); pdf.setFontSize(8); pdf.setTextColor(0);
-    pdf.text("PARAMETROS — COMPRESOR / ELÉCTRICO", M+half/2, y+3.5, {align:"center"});
-    pdf.text("PARAMETROS — REFRIGERACIÓN / ACTIVIDADES", M+half+half/2, y+3.5, {align:"center"});
+    pdf.text("PARAMETROS â€” COMPRESOR / ELÃ‰CTRICO", M+half/2, y+3.5, {align:"center"});
+    pdf.text("PARAMETROS â€” REFRIGERACIÃ“N / ACTIVIDADES", M+half+half/2, y+3.5, {align:"center"});
     y += pH;
 
     const LW = half, RW = half, LX = M, RX = M+half;
@@ -1006,7 +1020,7 @@ export default function Protocolo() {
     pdf.text(`${equipo.cliente || ""}`, W - M, y + 6, { align: "right" });
     y += 14;
 
-    // === TÍTULO ===
+    // === TÃTULO ===
     pdf.setFillColor(255, 255, 255);
     pdf.rect(M, y, C, 7);
     pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(0);
@@ -1064,7 +1078,7 @@ export default function Protocolo() {
     const DE = RW2 * 0.17;
     const DV = RW2 * 0.18;
 
-    const esMono = equipo?.fases === "Monofásico";
+    const esMono = equipo?.fases === "MonofÃ¡sico";
     const rowsL = [
       { nm: "Voltaje en marcha", un: "V",
         v3: esMono ? [form.vL1L2||""] : [form.vL1L2||"", form.vL2L3||"", form.vL3L1||""],
@@ -1188,7 +1202,7 @@ export default function Protocolo() {
 
     y = yT + nR * RH2 + 6;
 
-    // === TABLA OCR (ITEM | OBSERVACION | CAUSA | RECOMENDACIÓN) ===
+    // === TABLA OCR (ITEM | OBSERVACION | CAUSA | RECOMENDACIÃ“N) ===
     const obsValidas = form.observaciones.filter(o => o.obs?.trim());
     const numObs = Math.max(obsValidas.length, 9);
     const oH = 10;
@@ -1277,12 +1291,12 @@ export default function Protocolo() {
       y += rows * (cH + 2) + 2;
     };
 
-    // Franja título centrado (tipo de protocolo)
+    // Franja tÃ­tulo centrado (tipo de protocolo)
     pdf.setFillColor(248, 249, 250); pdf.rect(M, y, C, 16, "F");
     pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(26, 95, 168);
-    pdf.text(`PROTOCOLO DE MANTENIMIENTO — ${grupo.label.toUpperCase()}`, W / 2, y + 6.5, { align: "center" });
+    pdf.text(`PROTOCOLO DE MANTENIMIENTO â€” ${grupo.label.toUpperCase()}`, W / 2, y + 6.5, { align: "center" });
     pdf.setFont("helvetica", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(150, 150, 150);
-    pdf.text(`${equipo.marca || "-"} / ${equipo.modelo || "-"} — ${equipo.tipoEquipo || "-"}`, W / 2, y + 12.5, { align: "center" });
+    pdf.text(`${equipo.marca || "-"} / ${equipo.modelo || "-"} â€” ${equipo.tipoEquipo || "-"}`, W / 2, y + 12.5, { align: "center" });
     y += 20;
 
     // Datos del equipo (en celdas, como el formulario)
@@ -1291,10 +1305,10 @@ export default function Protocolo() {
       ["Cliente", equipo.cliente], ["Sede", equipo.sede], ["Piso", equipo.piso], ["Ambiente", equipo.ambiente],
     ], 4, 248, 249, 250);
     gridCards([
-      ["Marca", equipo.marca], ["Modelo", equipo.modelo], ["N° Serie", equipo.serie], ["Capacidad", equipo.capacidad ? equipo.capacidad + " BTU" : null],
+      ["Marca", equipo.marca], ["Modelo", equipo.modelo], ["NÂ° Serie", equipo.serie], ["Capacidad", equipo.capacidad ? equipo.capacidad + " BTU" : null],
     ], 4, 248, 249, 250);
 
-    // Datos de placa del equipo (de la ficha técnica registrada)
+    // Datos de placa del equipo (de la ficha tÃ©cnica registrada)
     secTit("Datos de placa del equipo", 26, 95, 168);
     gridCards([
       ["Tipo refrigerante", equipo.tipoRefrigerante], ["Voltaje de placa", equipo.voltaje ? equipo.voltaje + "V" : null], ["Amperaje nominal", equipo.amperaje ? equipo.amperaje + "A" : null], ["Fases", equipo.fases],
@@ -1303,10 +1317,10 @@ export default function Protocolo() {
     // Datos del servicio
     secTit("Datos del servicio", 26, 95, 168);
     gridCards([
-      ["Fecha", form.fecha], ["Técnico", form.tecnico], ["Tipo de servicio", form.tipoServicio], ["N° de orden", form.ordenTrabajo],
+      ["Fecha", form.fecha], ["TÃ©cnico", form.tecnico], ["Tipo de servicio", form.tipoServicio], ["NÂ° de orden", form.ordenTrabajo],
     ], 4, 248, 249, 250);
 
-    // Parámetros eléctricos (solo para grupos que no usan formato Carrier propio)
+    // ParÃ¡metros elÃ©ctricos (solo para grupos que no usan formato Carrier propio)
     if (form.grupo !== "fancoil") {
       secTit("Par\u00e1metros el\u00e9ctricos", 230, 81, 0);
       gridCards([
@@ -1316,17 +1330,17 @@ export default function Protocolo() {
       ], 4, 255, 248, 240);
     }
 
-    // Parámetros específicos por grupo
+    // ParÃ¡metros especÃ­ficos por grupo
     if (form.grupo === "expansion") {
-      secTit("Parámetros de refrigeración", 26, 95, 168);
+      secTit("ParÃ¡metros de refrigeraciÃ³n", 26, 95, 168);
       gridCards([
-        ["Presión succión", form.presSuccion ? form.presSuccion + " PSI" : null], ["Presión líquido", form.presLiquido ? form.presLiquido + " PSI" : null], ["Superheat", calcDelta(form.tSatMedida, form.tSatTabla) ? calcDelta(form.tSatMedida, form.tSatTabla) + " °C" : null],
-        ["T° retorno aire", form.tRetornoEvap ? form.tRetornoEvap + " °C" : null], ["T° suministro", form.tSuministroEvap ? form.tSuministroEvap + " °C" : null], ["T° amb. condensador", form.tAmbCondensador ? form.tAmbCondensador + " °C" : null],
+        ["PresiÃ³n succiÃ³n", form.presSuccion ? form.presSuccion + " PSI" : null], ["PresiÃ³n lÃ­quido", form.presLiquido ? form.presLiquido + " PSI" : null], ["Superheat", calcDelta(form.tSatMedida, form.tSatTabla) ? calcDelta(form.tSatMedida, form.tSatTabla) + " Â°C" : null],
+        ["TÂ° retorno aire", form.tRetornoEvap ? form.tRetornoEvap + " Â°C" : null], ["TÂ° suministro", form.tSuministroEvap ? form.tSuministroEvap + " Â°C" : null], ["TÂ° amb. condensador", form.tAmbCondensador ? form.tAmbCondensador + " Â°C" : null],
       ], 3, 248, 249, 250);
     } else if (form.grupo === "ventilacion") {
-      secTit("Parámetros de operación", 26, 95, 168);
+      secTit("ParÃ¡metros de operaciÃ³n", 26, 95, 168);
       gridCards([
-        ["Temp. trabajo motor", form.tTrabajoMotor ? form.tTrabajoMotor + " °C" : null], ["Caudal de aire", form.caudalAire ? form.caudalAire + " CFM" : null],
+        ["Temp. trabajo motor", form.tTrabajoMotor ? form.tTrabajoMotor + " Â°C" : null], ["Caudal de aire", form.caudalAire ? form.caudalAire + " CFM" : null],
       ], 3, 248, 249, 250);
     } else if (form.grupo === "fancoil") {
       // ===== REPORTE CARRIER FAN COIL: replica exacta =====
@@ -1367,18 +1381,18 @@ export default function Protocolo() {
       const RH1 = 5.2; // altura de fila
       const rowsL = [
         { nm: "Voltaje en marcha", tipo: "elec", un: "V",
-          hds: equipo?.fases === "Monofásico" ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"],
-          v3: equipo?.fases === "Monofásico" ? [form.vL1L2] : [form.vL1L2, form.vL2L3, form.vL3L1] },
+          hds: equipo?.fases === "MonofÃ¡sico" ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"],
+          v3: equipo?.fases === "MonofÃ¡sico" ? [form.vL1L2] : [form.vL1L2, form.vL2L3, form.vL3L1] },
         { nm: "Voltaje en placa", tipo: "elec", placa: true, un: "V",
-          hds: equipo?.fases === "Monofásico" ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"],
-          v3: equipo?.fases === "Monofásico" ? [equipo?.voltaje||""] : [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""] },
+          hds: equipo?.fases === "MonofÃ¡sico" ? ["L1-L2"] : ["L1-L2","L2-L3","L3-L1"],
+          v3: equipo?.fases === "MonofÃ¡sico" ? [equipo?.voltaje||""] : [equipo?.voltaje||"", equipo?.voltaje||"", equipo?.voltaje||""] },
         { nm: "Desbalance de voltaje", un: "%", v1: cv("desbV") },
         { nm: "Amperaje en marcha", tipo: "elec", un: "A",
-          hds: equipo?.fases === "Monofásico" ? ["L1","L2"] : ["L1","L2","L3"],
-          v3: equipo?.fases === "Monofásico" ? [form.aL1, form.aL2] : [form.aL1, form.aL2, form.aL3] },
+          hds: equipo?.fases === "MonofÃ¡sico" ? ["L1","L2"] : ["L1","L2","L3"],
+          v3: equipo?.fases === "MonofÃ¡sico" ? [form.aL1, form.aL2] : [form.aL1, form.aL2, form.aL3] },
         { nm: "Amperaje en placa", tipo: "elec", placa: true, un: "A",
-          hds: equipo?.fases === "Monofásico" ? ["L1","L2"] : ["L1","L2","L3"],
-          v3: equipo?.fases === "Monofásico" ? [equipo?.amperaje||"", equipo?.amperaje||""] : [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""] },
+          hds: equipo?.fases === "MonofÃ¡sico" ? ["L1","L2"] : ["L1","L2","L3"],
+          v3: equipo?.fases === "MonofÃ¡sico" ? [equipo?.amperaje||"", equipo?.amperaje||""] : [equipo?.amperaje||"", equipo?.amperaje||"", equipo?.amperaje||""] },
         { nm: "Desbalance de amperaje", un: "%", v1: cv("desbA") },
         { nm: "MEGADO", sub: "L1-T", un: "\u03A9", v1: form.megL1T || "" },
         { nm: "", sub: "L2-T", un: "\u03A9", v1: form.megL2T || "" },
@@ -1408,7 +1422,7 @@ export default function Protocolo() {
       });
       const totalLH = curY - y;
 
-      // Lado derecho: altura fija RH1 para cada ítem
+      // Lado derecho: altura fija RH1 para cada Ã­tem
       const nItemsR = FANCOIL_ITEMS_DER.length;
       const totalRH = nItemsR * RH1;
       const totalH = Math.max(totalLH, totalRH);
@@ -1510,7 +1524,7 @@ export default function Protocolo() {
 
       categorias.forEach(([cat, items], ci) => {
         const x = M + ci * (colW + 4);
-        // Título de categoría
+        // TÃ­tulo de categorÃ­a
         pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(150, 150, 150);
         pdf.text(cat.toUpperCase(), x + colW / 2, yStart, { align: "center" });
         pdf.setDrawColor(230, 230, 230); pdf.line(x, yStart + 1.5, x + colW, yStart + 1.5);
@@ -1539,21 +1553,21 @@ export default function Protocolo() {
       y = yStart + 6 + maxItems * rowH + 4;
     }
 
-    // Observaciones · Causa · Recomendación (mismo estilo que la ficha)
+    // Observaciones Â· Causa Â· RecomendaciÃ³n (mismo estilo que la ficha)
     const obsValidas = form.observaciones.filter(o => o.obs?.trim());
     if (obsValidas.length > 0) {
-      secTit("Observación · Causa · Recomendación", 230, 81, 0);
+      secTit("ObservaciÃ³n Â· Causa Â· RecomendaciÃ³n", 230, 81, 0);
       const colW = (C - 4) / 3;
       check(6);
       pdf.setFont("helvetica", "bold"); pdf.setFontSize(6.5); pdf.setTextColor(140, 140, 140);
-      pdf.text("OBSERVACIÓN", M + 2, y);
+      pdf.text("OBSERVACIÃ“N", M + 2, y);
       pdf.text("CAUSA", M + colW + 4, y);
-      pdf.text("RECOMENDACIÓN", M + (colW + 2) * 2 + 2, y);
+      pdf.text("RECOMENDACIÃ“N", M + (colW + 2) * 2 + 2, y);
       y += 4;
       obsValidas.forEach((o) => {
-        const linObs = pdf.splitTextToSize(o.obs || "—", colW - 4);
-        const linCausa = pdf.splitTextToSize(o.causa || "—", colW - 4);
-        const linRec = pdf.splitTextToSize(o.rec || "—", colW - 4);
+        const linObs = pdf.splitTextToSize(o.obs || "â€”", colW - 4);
+        const linCausa = pdf.splitTextToSize(o.causa || "â€”", colW - 4);
+        const linRec = pdf.splitTextToSize(o.rec || "â€”", colW - 4);
         const maxLines = Math.max(linObs.length, linCausa.length, linRec.length, 1);
         const h = maxLines * 4 + 3;
         check(h + 2);
@@ -1578,7 +1592,7 @@ export default function Protocolo() {
     pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(...ec);
     pdf.text(form.estadoFinal === "Operativo con observaciones" ? "Operativo con observaciones" : (form.estadoFinal || "Operativo"), M + 3, y + 10);
     pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(150, 150, 150);
-    pdf.text("TÉCNICO RESPONSABLE", M + 100, y + 4);
+    pdf.text("TÃ‰CNICO RESPONSABLE", M + 100, y + 4);
     pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(30, 30, 30);
     pdf.text(form.tecnico || "-", M + 100, y + 10);
     y += 20;
@@ -1595,13 +1609,13 @@ export default function Protocolo() {
     if (qrImg) pdf.addImage(qrImg, "PNG", M, y, 22, 22);
     pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(150, 150, 150);
     pdf.text("Escanea para ver el", M + 26, y + 9);
-    pdf.text("protocolo más reciente", M + 26, y + 13);
+    pdf.text("protocolo mÃ¡s reciente", M + 26, y + 13);
     pdf.setFont("helvetica", "normal"); pdf.setFontSize(7.5); pdf.setTextColor(150, 150, 150);
     pdf.text("HVAC Sistema de Mantenimiento", W - M, y + 5, { align: "right" });
     pdf.text(`Generado: ${new Date().toLocaleDateString("es-PE")}`, W - M, y + 10, { align: "right" });
     pdf.setDrawColor(220, 220, 220); pdf.line(M, 287, W - M, 287);
     pdf.setFontSize(7); pdf.setTextColor(180, 180, 180);
-    pdf.text(`Protocolo · ${equipo.cliente || ""} · ${equipo.codigo || equipoId.slice(0, 6).toUpperCase()}`, M, 291);
+    pdf.text(`Protocolo Â· ${equipo.cliente || ""} Â· ${equipo.codigo || equipoId.slice(0, 6).toUpperCase()}`, M, 291);
 
     if (modo === "ver") {
       const blob = pdf.output("blob");
@@ -1615,50 +1629,50 @@ export default function Protocolo() {
   if (cargando) return <div style={s.centro}>Cargando protocolo...</div>;
   if (!equipo) return <div style={s.centro}>Equipo no encontrado.</div>;
 
-  // Acceso público (QR escaneado): preparar y abrir el PDF automáticamente
+  // Acceso pÃºblico (QR escaneado): preparar y abrir el PDF automÃ¡ticamente
   if (esPub) {
     if (!form && protocolos.length === 0) {
       return (
         <div style={s.centro}>
-          <div style={{ fontSize: "48px", marginBottom: "16px" }}>📋</div>
-          <div style={{ fontSize: "16px", color: "#333", fontWeight: 500, marginBottom: "8px" }}>Aún no hay protocolos de mantenimiento</div>
-          <div style={{ fontSize: "13px", color: "#888" }}>{equipo.marca} {equipo.modelo} · {equipo.cliente}</div>
-          <div style={{ fontSize: "12px", color: "#aaa", marginTop: "12px" }}>El protocolo aparecerá aquí cuando el equipo técnico registre el primer mantenimiento.</div>
+          <div style={{ fontSize: "48px", marginBottom: "16px" }}>ðŸ“‹</div>
+          <div style={{ fontSize: "16px", color: "#333", fontWeight: 500, marginBottom: "8px" }}>AÃºn no hay protocolos de mantenimiento</div>
+          <div style={{ fontSize: "13px", color: "#888" }}>{equipo.marca} {equipo.modelo} Â· {equipo.cliente}</div>
+          <div style={{ fontSize: "12px", color: "#aaa", marginTop: "12px" }}>El protocolo aparecerÃ¡ aquÃ­ cuando el equipo tÃ©cnico registre el primer mantenimiento.</div>
         </div>
       );
     }
     return (
       <div style={s.centro}>
-        <div style={{ fontSize: "48px", marginBottom: "16px" }}>📄</div>
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>ðŸ“„</div>
         <div style={{ fontSize: "16px", color: "#333", fontWeight: 500, marginBottom: "8px" }}>Preparando protocolo en PDF...</div>
-        <div style={{ fontSize: "13px", color: "#888" }}>{equipo.marca} {equipo.modelo} · {equipo.cliente}</div>
+        <div style={{ fontSize: "13px", color: "#888" }}>{equipo.marca} {equipo.modelo} Â· {equipo.cliente}</div>
         {pdfGenerado && (
           <button style={{ marginTop: "16px", padding: "10px 20px", background: "#1a5fa8", color: "white", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer" }} onClick={() => exportarPDF("ver")}>
-            Si no se abrió, toca aquí para ver el PDF
+            Si no se abriÃ³, toca aquÃ­ para ver el PDF
           </button>
         )}
       </div>
     );
   }
 
-  // Equipos sin protocolo definido aún
+  // Equipos sin protocolo definido aÃºn
   const grupoPendiente = GRUPO_POR_TIPO[equipo.tipoEquipo] === "pendiente" || (!GRUPO_POR_TIPO[equipo.tipoEquipo]);
   if (grupoPendiente) {
     return (
       <div style={s.page}>
-        <div style={{ ...s.navbar, background: "#607d8b" }}>
+        <div style={{ ...s.navbar(isMobile), background: "#607d8b" }}>
           <div>
-            <div style={s.navTitle}>🔧 Protocolo — {equipo.tipoEquipo}</div>
-            <div style={s.navSub}>{equipo.cliente} · {equipo.sede || "Sin sede"} · Piso {equipo.piso} · {equipo.ambiente}</div>
+            <div style={s.navTitle}>ðŸ”§ Protocolo â€” {equipo.tipoEquipo}</div>
+            <div style={s.navSub}>{equipo.cliente} Â· {equipo.sede || "Sin sede"} Â· Piso {equipo.piso} Â· {equipo.ambiente}</div>
           </div>
           <div style={s.navBtns}>
-            <button style={s.btnBack} onClick={handleVolver}>← Volver</button>
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔧</div>
-            <div style={{ fontSize: "16px", color: "#333", fontWeight: 500, marginBottom: "8px" }}>Protocolo en preparación</div>
+            <button style={s.btnBack} onClick={handleVolver}>â† Volver</button>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>ðŸ”§</div>
+            <div style={{ fontSize: "16px", color: "#333", fontWeight: 500, marginBottom: "8px" }}>Protocolo en preparaciÃ³n</div>
             <div style={{ fontSize: "13px", color: "#888", maxWidth: "380px", margin: "0 auto" }}>
-              El protocolo de mantenimiento para <strong>{equipo.tipoEquipo}</strong> está siendo desarrollado. Estará disponible próximamente.
+              El protocolo de mantenimiento para <strong>{equipo.tipoEquipo}</strong> estÃ¡ siendo desarrollado. EstarÃ¡ disponible prÃ³ximamente.
             </div>
-            <div style={{ marginTop: "20px", fontSize: "11px", color: "#aaa" }}>Equipo: {equipo.marca} {equipo.modelo} · {equipo.cliente}</div>
+            <div style={{ marginTop: "20px", fontSize: "11px", color: "#aaa" }}>Equipo: {equipo.marca} {equipo.modelo} Â· {equipo.cliente}</div>
           </div>
         </div>
       </div>
@@ -1669,20 +1683,20 @@ export default function Protocolo() {
   if (soloLectura && !form) {
     return (
       <div style={s.page}>
-        <div style={{ ...s.navbar, background: "#1a5fa8" }}>
+        <div style={{ ...s.navbar(isMobile), background: "#1a5fa8" }}>
           <div>
-            <div style={s.navTitle}>📋 Protocolos de mantenimiento</div>
-            <div style={s.navSub}>{equipo.cliente} · {equipo.sede || "Sin sede"} · {equipo.ambiente} · {equipo.marca} {equipo.modelo}</div>
+            <div style={s.navTitle}>ðŸ“‹ Protocolos de mantenimiento</div>
+            <div style={s.navSub}>{equipo.cliente} Â· {equipo.sede || "Sin sede"} Â· {equipo.ambiente} Â· {equipo.marca} {equipo.modelo}</div>
           </div>
           <div style={s.navBtns}>
-            <button style={s.btnBack} onClick={handleVolver}>← Volver</button>
+            <button style={s.btnBack} onClick={handleVolver}>â† Volver</button>
           </div>
         </div>
-        <div style={s.content}>
+        <div style={s.content(isMobile)}>
           <div style={{ background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "48px", textAlign: "center" }}>
-            <div style={{ fontSize: "40px", marginBottom: "12px" }}>📋</div>
-            <div style={{ fontSize: "15px", color: "#555", fontWeight: 500 }}>Aún no hay protocolos de mantenimiento</div>
-            <div style={{ fontSize: "13px", color: "#888", marginTop: "6px" }}>Los protocolos aparecerán aquí cuando el equipo técnico registre un mantenimiento.</div>
+            <div style={{ fontSize: "40px", marginBottom: "12px" }}>ðŸ“‹</div>
+            <div style={{ fontSize: "15px", color: "#555", fontWeight: 500 }}>AÃºn no hay protocolos de mantenimiento</div>
+            <div style={{ fontSize: "13px", color: "#888", marginTop: "6px" }}>Los protocolos aparecerÃ¡n aquÃ­ cuando el equipo tÃ©cnico registre un mantenimiento.</div>
           </div>
         </div>
       </div>
@@ -1697,48 +1711,48 @@ export default function Protocolo() {
   return (
     <div style={s.page}>
       {/* Navbar */}
-      <div style={{ ...s.navbar, background: grupoInfo.color }}>
+      <div style={{ ...s.navbar(isMobile), background: grupoInfo.color }}>
         <div>
-          <div style={s.navTitle}>📋 Protocolo de mantenimiento — {grupoInfo.label}</div>
-          <div style={s.navSub}>{equipo.cliente} · {equipo.sede || "Sin sede"} · Piso {equipo.piso} · {equipo.ambiente} · {equipo.marca} {equipo.modelo}</div>
+          <div style={s.navTitle}>ðŸ“‹ Protocolo de mantenimiento â€” {grupoInfo.label}</div>
+          <div style={s.navSub}>{equipo.cliente} Â· {equipo.sede || "Sin sede"} Â· Piso {equipo.piso} Â· {equipo.ambiente} Â· {equipo.marca} {equipo.modelo}</div>
         </div>
         <div style={s.navBtns}>
-          <button style={s.btnBack} onClick={handleVolver}>← Volver</button>
-          {!soloLectura && <button style={s.btnSave} onClick={guardar} disabled={guardando}>{guardando ? "Guardando..." : "💾 Guardar"}</button>}
-          <button style={s.btnPdf} onClick={exportarPDF}>📄 PDF</button>
+          <button style={s.btnBack} onClick={handleVolver}>â† Volver</button>
+          {!soloLectura && <button style={s.btnSave} onClick={guardar} disabled={guardando}>{guardando ? "Guardando..." : "ðŸ’¾ Guardar"}</button>}
+          <button style={s.btnPdf} onClick={exportarPDF}>ðŸ“„ PDF</button>
         </div>
       </div>
 
-      <div style={s.content}>
+      <div style={s.content(isMobile)}>
         {/* Historial */}
-        <div style={s.histBar}>
+        <div style={s.histBar(isMobile)}>
           <span style={s.histLabel}>{soloLectura ? "Mantenimientos:" : "Registros:"}</span>
           {!soloLectura && <button style={s.chipNew} onClick={nuevoProtocolo}>+ Nuevo</button>}
           {protocolos.map((p, i) => (
             <button key={i} style={{ ...s.chip, ...(indexActual === i ? s.chipActive : {}) }} onClick={() => seleccionarProtocolo(i)}>
               {p.fecha}
-              {!soloLectura && indexActual === i && <span style={s.chipDel} onClick={(e) => { e.stopPropagation(); eliminarProtocolo(i); }}>✕</span>}
+              {!soloLectura && indexActual === i && <span style={s.chipDel} onClick={(e) => { e.stopPropagation(); eliminarProtocolo(i); }}>âœ•</span>}
             </button>
           ))}
           {!soloLectura && indexActual === -1 && <span style={{ ...s.chip, ...s.chipActive }}>Nuevo (sin guardar)</span>}
-          <span style={s.histCount}>{protocolos.length}{soloLectura ? "" : " de 10 máx."}</span>
+          <span style={s.histCount}>{protocolos.length}{soloLectura ? "" : " de 10 mÃ¡x."}</span>
         </div>
 
         {/* Datos del equipo (solo lectura) */}
         <div style={s.sec}>
-          <div style={s.secT}>📋 Datos del equipo <span style={s.tag}>copiado de Info</span></div>
-          <div style={s.secB}>
-            <div style={s.g4}>
+          <div style={s.secT}>ðŸ“‹ Datos del equipo <span style={s.tag}>copiado de Info</span></div>
+          <div style={s.secB(isMobile)}>
+            <div style={s.g4(isMobile)}>
               <Campo label="Cliente" auto val={equipo.cliente} />
               <Campo label="Sede" auto val={equipo.sede} />
               <Campo label="Piso" auto val={equipo.piso} />
               <Campo label="Ambiente" auto val={equipo.ambiente} />
               <Campo label="Marca" auto val={equipo.marca} />
               <Campo label="Modelo" auto val={equipo.modelo} />
-              <Campo label="N° Serie" auto val={equipo.serie} />
+              <Campo label="NÂ° Serie" auto val={equipo.serie} />
               <Campo label="Capacidad" auto val={equipo.capacidad ? equipo.capacidad + (form.grupo === "ventilacion" ? " CFM" : " BTU") : ""} />
             </div>
-            <div style={{ ...s.g4, marginTop: "10px" }}>
+            <div style={{ ...s.g4(isMobile), marginTop: "10px" }}>
               {form.grupo !== "ventilacion" && <Campo label="Tipo refrigerante" auto val={equipo.tipoRefrigerante} />}
               <Campo label="Voltaje de placa" auto val={equipo.voltaje ? equipo.voltaje + "V" : ""} />
               <Campo label="Amperaje nominal" auto val={equipo.amperaje ? equipo.amperaje + "A" : ""} />
@@ -1746,18 +1760,18 @@ export default function Protocolo() {
               {equipo.condAmperaje && <Campo label="Amperaje nominal (cond.)" auto val={equipo.condAmperaje + "A"} />}
               {equipo.condVoltaje && <Campo label="Voltaje nominal (cond.)" auto val={equipo.condVoltaje + "V"} />}
               {equipo.modeloCompresor && <Campo label="Modelo de compresor" auto val={equipo.modeloCompresor} />}
-              {form.grupo === "ventilacion" && equipo.codigo && <Campo label="Ventilador N°" auto val={equipo.codigo} />}
+              {form.grupo === "ventilacion" && equipo.codigo && <Campo label="Ventilador NÂ°" auto val={equipo.codigo} />}
             </div>
-            {/* Campos específicos Fan Coil / UMA - solo si existen en la ficha */}
+            {/* Campos especÃ­ficos Fan Coil / UMA - solo si existen en la ficha */}
             {(equipo.fancoilNum || equipo.contrato || equipo.modeloFaja || equipo.marcaMotor) && (
-              <div style={{ ...s.g4, marginTop: "10px" }}>
-                {equipo.fancoilNum && <Campo label="UMA / Fan Coil N°" auto val={equipo.fancoilNum} />}
+              <div style={{ ...s.g4(isMobile), marginTop: "10px" }}>
+                {equipo.fancoilNum && <Campo label="UMA / Fan Coil NÂ°" auto val={equipo.fancoilNum} />}
                 {equipo.contrato && <Campo label="Contrato" auto val={equipo.contrato} />}
                 {equipo.modeloFaja && <Campo label="Modelo de faja" auto val={equipo.modeloFaja} />}
-                {equipo.numFajas && <Campo label="N° de fajas" auto val={equipo.numFajas} />}
+                {equipo.numFajas && <Campo label="NÂ° de fajas" auto val={equipo.numFajas} />}
                 {equipo.marcaMotor && <Campo label="Marca de motor" auto val={equipo.marcaMotor} />}
                 {equipo.modeloMotor && <Campo label="Modelo de motor" auto val={equipo.modeloMotor} />}
-                {equipo.serieMotor && <Campo label="N° serie motor" auto val={equipo.serieMotor} />}
+                {equipo.serieMotor && <Campo label="NÂ° serie motor" auto val={equipo.serieMotor} />}
               </div>
             )}
           </div>
@@ -1766,123 +1780,123 @@ export default function Protocolo() {
         {/* Datos del servicio */}
         <fieldset disabled={soloLectura} style={{ border: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
         <div style={s.sec}>
-          <div style={s.secT}>📝 Datos del servicio</div>
-          <div style={s.secB}>
-            <div style={s.g4}>
+          <div style={s.secT}>ðŸ“ Datos del servicio</div>
+          <div style={s.secB(isMobile)}>
+            <div style={s.g4(isMobile)}>
               <CampoInput label="Fecha" type="date" val={form.fecha} onChange={v => set("fecha", v)} />
-              <CampoInput label="Técnico" val={form.tecnico} onChange={v => set("tecnico", v)} placeholder="Nombre" />
+              <CampoInput label="TÃ©cnico" val={form.tecnico} onChange={v => set("tecnico", v)} placeholder="Nombre" />
               <CampoSelect label="Tipo servicio" val={form.tipoServicio} onChange={v => set("tipoServicio", v)} opciones={["Preventivo", "Correctivo"]} />
-              <CampoInput label="N° Orden trabajo" val={form.ordenTrabajo} onChange={v => set("ordenTrabajo", v)} placeholder="OT-001" />
+              <CampoInput label="NÂ° Orden trabajo" val={form.ordenTrabajo} onChange={v => set("ordenTrabajo", v)} placeholder="OT-001" />
             </div>
           </div>
         </div>
 
-        {/* Parámetros eléctricos (comunes - solo ventilacion) */}
+        {/* ParÃ¡metros elÃ©ctricos (comunes - solo ventilacion) */}
         {form.grupo !== "fancoil" && form.grupo !== "expansion" && <div style={s.sec}>
-          <div style={s.secT}>⚡ Parámetros eléctricos</div>
-          <div style={s.secB}>
-            <div style={s.g3}>
+          <div style={s.secT}>âš¡ ParÃ¡metros elÃ©ctricos</div>
+          <div style={s.secB(isMobile)}>
+            <div style={s.g3(isMobile)}>
               {/* Voltaje en marcha */}
               <div>
                 <label style={s.lblRow}>Voltaje en marcha (V)</label>
-                <div style={s.row3}>
-                  <input style={s.mini} placeholder="L1-L2" value={form.vL1L2} onChange={e => set("vL1L2", e.target.value)} />
-                  {equipo?.fases !== "Monofásico" && <input style={s.mini} placeholder="L2-L3" value={form.vL2L3} onChange={e => set("vL2L3", e.target.value)} />}
-                  {equipo?.fases !== "Monofásico" && <input style={s.mini} placeholder="L3-L1" value={form.vL3L1} onChange={e => set("vL3L1", e.target.value)} />}
+                <div style={s.row3(isMobile)}>
+                  <input style={s.mini(isMobile)} placeholder="L1-L2" value={form.vL1L2} onChange={e => set("vL1L2", e.target.value)} />
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={s.mini(isMobile)} placeholder="L2-L3" value={form.vL2L3} onChange={e => set("vL2L3", e.target.value)} />}
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={s.mini(isMobile)} placeholder="L3-L1" value={form.vL3L1} onChange={e => set("vL3L1", e.target.value)} />}
                 </div>
               </div>
               {/* Voltaje en placa */}
               <div>
                 <label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label>
-                <div style={s.row3}>
-                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1-L2" value={equipo?.voltaje || ""} readOnly />
-                  {equipo?.fases !== "Monofásico" && <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2-L3" value={equipo?.voltaje || ""} readOnly />}
-                  {equipo?.fases !== "Monofásico" && <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3-L1" value={equipo?.voltaje || ""} readOnly />}
+                <div style={s.row3(isMobile)}>
+                  <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1-L2" value={equipo?.voltaje || ""} readOnly />
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2-L3" value={equipo?.voltaje || ""} readOnly />}
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3-L1" value={equipo?.voltaje || ""} readOnly />}
                 </div>
               </div>
               {/* Amperaje en marcha */}
               <div>
                 <label style={s.lblRow}>Amperaje en marcha (A)</label>
-                <div style={s.row3}>
-                  <input style={s.mini} placeholder="L1" value={form.aL1} onChange={e => set("aL1", e.target.value)} />
-                  <input style={s.mini} placeholder="L2" value={form.aL2} onChange={e => set("aL2", e.target.value)} />
-                  {equipo?.fases !== "Monofásico" && <input style={s.mini} placeholder="L3" value={form.aL3} onChange={e => set("aL3", e.target.value)} />}
+                <div style={s.row3(isMobile)}>
+                  <input style={s.mini(isMobile)} placeholder="L1" value={form.aL1} onChange={e => set("aL1", e.target.value)} />
+                  <input style={s.mini(isMobile)} placeholder="L2" value={form.aL2} onChange={e => set("aL2", e.target.value)} />
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={s.mini(isMobile)} placeholder="L3" value={form.aL3} onChange={e => set("aL3", e.target.value)} />}
                 </div>
               </div>
               {/* Amperaje en placa */}
               <div>
                 <label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label>
-                <div style={s.row3}>
-                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1" value={equipo?.amperaje || ""} readOnly />
-                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2" value={equipo?.amperaje || ""} readOnly />
-                  {equipo?.fases !== "Monofásico" && <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3" value={equipo?.amperaje || ""} readOnly />}
+                <div style={s.row3(isMobile)}>
+                  <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1" value={equipo?.amperaje || ""} readOnly />
+                  <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2" value={equipo?.amperaje || ""} readOnly />
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3" value={equipo?.amperaje || ""} readOnly />}
                 </div>
               </div>
               <div>
                 <label style={s.lblRow}>Desbalance (auto)</label>
-                <div style={s.row2}>
-                  <div style={s.calc}>V: {calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1) || "—"}%</div>
-                  <div style={s.calc}>A: {calcDesbalance(form.aL1, form.aL2, form.aL3) || "—"}%</div>
+                <div style={s.row2(isMobile)}>
+                  <div style={s.calc}>V: {calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1) || "â€”"}%</div>
+                  <div style={s.calc}>A: {calcDesbalance(form.aL1, form.aL2, form.aL3) || "â€”"}%</div>
                 </div>
               </div>
             </div>
             <div style={{ marginTop: "10px" }}>
-              <label style={s.lblRow}>Megado — resistencia de aislamiento (MΩ)</label>
-              <div style={s.row3}>
-                <input style={s.mini} placeholder="L1-T" value={form.megL1T} onChange={e => set("megL1T", e.target.value)} />
-                <input style={s.mini} placeholder="L2-T" value={form.megL2T} onChange={e => set("megL2T", e.target.value)} />
-                <input style={s.mini} placeholder="L3-T" value={form.megL3T} onChange={e => set("megL3T", e.target.value)} />
+              <label style={s.lblRow}>Megado â€” resistencia de aislamiento (MÎ©)</label>
+              <div style={s.row3(isMobile)}>
+                <input style={s.mini(isMobile)} placeholder="L1-T" value={form.megL1T} onChange={e => set("megL1T", e.target.value)} />
+                <input style={s.mini(isMobile)} placeholder="L2-T" value={form.megL2T} onChange={e => set("megL2T", e.target.value)} />
+                <input style={s.mini(isMobile)} placeholder="L3-T" value={form.megL3T} onChange={e => set("megL3T", e.target.value)} />
               </div>
             </div>
           </div>
         </div>}
 
-        {/* Parámetros específicos por grupo */}
+        {/* ParÃ¡metros especÃ­ficos por grupo */}
         {form.grupo === "expansion" && (
           <div style={s.sec}>
-            <div style={s.secT}>❄️ Parámetros de Expansión Directa</div>
-            <div style={s.secB}>
+            <div style={s.secT}>â„ï¸ ParÃ¡metros de ExpansiÃ³n Directa</div>
+            <div style={s.secB(isMobile)}>
               <div style={{fontSize:"12px",fontWeight:500,color:"#0c447c",background:"#e6f1fb",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>Evaporador</div>
-              <div style={s.g4}>
-                <div><label style={s.lblRow}>Voltaje en marcha (V)</label><div style={s.row3}><input style={s.mini} placeholder="L1-L2" value={form.vL1L2} onChange={e=>set("vL1L2",e.target.value)}/>{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L2-L3" value={form.vL2L3} onChange={e=>set("vL2L3",e.target.value)}/>}{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L3-L1" value={form.vL3L1} onChange={e=>set("vL3L1",e.target.value)}/>}</div></div>
-                <div><label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}</div></div>
-                <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3}><input style={s.mini} placeholder="L1" value={form.aL1} onChange={e=>set("aL1",e.target.value)}/><input style={s.mini} placeholder="L2" value={form.aL2} onChange={e=>set("aL2",e.target.value)}/>{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L3" value={form.aL3} onChange={e=>set("aL3",e.target.value)}/>}</div></div>
-                <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>}</div></div>
-                <div><label style={s.lblRow}>Desbalance de voltaje (auto)</label><div style={s.calc}>{calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1) || "—"}%</div></div>
-                <div><label style={s.lblRow}>Desbalance de amperaje (auto)</label><div style={s.calc}>{calcDesbalance(form.aL1, form.aL2, form.aL3) || "—"}%</div></div>
+              <div style={s.g4(isMobile)}>
+                <div><label style={s.lblRow}>Voltaje en marcha (V)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1-L2" value={form.vL1L2} onChange={e=>set("vL1L2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L2-L3" value={form.vL2L3} onChange={e=>set("vL2L3",e.target.value)}/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L3-L1" value={form.vL3L1} onChange={e=>set("vL3L1",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3(isMobile)}><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1" value={form.aL1} onChange={e=>set("aL1",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2" value={form.aL2} onChange={e=>set("aL2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L3" value={form.aL3} onChange={e=>set("aL3",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3(isMobile)}><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>}</div></div>
+                <div><label style={s.lblRow}>Desbalance de voltaje (auto)</label><div style={s.calc}>{calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1) || "â€”"}%</div></div>
+                <div><label style={s.lblRow}>Desbalance de amperaje (auto)</label><div style={s.calc}>{calcDesbalance(form.aL1, form.aL2, form.aL3) || "â€”"}%</div></div>
               </div>
-              <div style={{marginTop:"8px"}}><label style={s.lblRow}>Megado evaporador (Ω)</label><div style={s.row3}><input style={s.mini} placeholder="L1-T" value={form.megL1T} onChange={e=>set("megL1T",e.target.value)}/><input style={s.mini} placeholder="L2-T" value={form.megL2T} onChange={e=>set("megL2T",e.target.value)}/><input style={s.mini} placeholder="L3-T" value={form.megL3T} onChange={e=>set("megL3T",e.target.value)}/></div><div style={{...s.row3,marginTop:"4px"}}><input style={s.mini} placeholder="L1-L2" value={form.megL1L2} onChange={e=>set("megL1L2",e.target.value)}/><input style={s.mini} placeholder="L2-L3" value={form.megL2L3} onChange={e=>set("megL2L3",e.target.value)}/><input style={s.mini} placeholder="L3-L1" value={form.megL3L1} onChange={e=>set("megL3L1",e.target.value)}/></div></div>
+              <div style={{marginTop:"8px"}}><label style={s.lblRow}>Megado evaporador (Î©)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1-T" value={form.megL1T} onChange={e=>set("megL1T",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2-T" value={form.megL2T} onChange={e=>set("megL2T",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L3-T" value={form.megL3T} onChange={e=>set("megL3T",e.target.value)}/></div><div style={{...s.row3(isMobile),marginTop:"4px"}}><input style={s.mini(isMobile)} placeholder="L1-L2" value={form.megL1L2} onChange={e=>set("megL1L2",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2-L3" value={form.megL2L3} onChange={e=>set("megL2L3",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L3-L1" value={form.megL3L1} onChange={e=>set("megL3L1",e.target.value)}/></div></div>
               <div style={{height:"0.5px",background:"#e0e0e0",margin:"12px 0"}}></div>
               <div style={{fontSize:"12px",fontWeight:500,color:"#085041",background:"#e1f5ee",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>Condensador</div>
-              <div style={s.g4}>
-                <div><label style={s.lblRow}>Voltaje en marcha (V)</label><div style={s.row3}><input style={s.mini} placeholder="L1-L2" value={form.condVL1L2} onChange={e=>set("condVL1L2",e.target.value)}/>{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L2-L3" value={form.condVL2L3} onChange={e=>set("condVL2L3",e.target.value)}/>}{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L3-L1" value={form.condVL3L1} onChange={e=>set("condVL3L1",e.target.value)}/>}</div></div>
-                <div><label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>}{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>}</div></div>
-                <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3}><input style={s.mini} placeholder="L1" value={form.condAL1} onChange={e=>set("condAL1",e.target.value)}/><input style={s.mini} placeholder="L2" value={form.condAL2} onChange={e=>set("condAL2",e.target.value)}/>{equipo?.fases!=="Monofásico"&&<input style={s.mini} placeholder="L3" value={form.condAL3} onChange={e=>set("condAL3",e.target.value)}/>}</div></div>
-                <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/>{equipo?.fases!=="Monofásico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/>}</div></div>
-                <div><label style={s.lblRow}>Desbalance de voltaje (auto)</label><div style={s.calc}>{calcDesbalance(form.condVL1L2, form.condVL2L3, form.condVL3L1) || "—"}%</div></div>
-                <div><label style={s.lblRow}>Desbalance de amperaje (auto)</label><div style={s.calc}>{calcDesbalance(form.condAL1, form.condAL2, form.condAL3) || "—"}%</div></div>
+              <div style={s.g4(isMobile)}>
+                <div><label style={s.lblRow}>Voltaje en marcha (V)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1-L2" value={form.condVL1L2} onChange={e=>set("condVL1L2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L2-L3" value={form.condVL2L3} onChange={e=>set("condVL2L3",e.target.value)}/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L3-L1" value={form.condVL3L1} onChange={e=>set("condVL3L1",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3(isMobile)}><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1" value={form.condAL1} onChange={e=>set("condAL1",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2" value={form.condAL2} onChange={e=>set("condAL2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L3" value={form.condAL3} onChange={e=>set("condAL3",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3(isMobile)}><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/>}</div></div>
+                <div><label style={s.lblRow}>Desbalance de voltaje (auto)</label><div style={s.calc}>{calcDesbalance(form.condVL1L2, form.condVL2L3, form.condVL3L1) || "â€”"}%</div></div>
+                <div><label style={s.lblRow}>Desbalance de amperaje (auto)</label><div style={s.calc}>{calcDesbalance(form.condAL1, form.condAL2, form.condAL3) || "â€”"}%</div></div>
               </div>
-              <div style={{marginTop:"8px"}}><label style={s.lblRow}>Megado condensador (Ω)</label><div style={s.row3}><input style={s.mini} placeholder="L1-T" value={form.condMegL1T} onChange={e=>set("condMegL1T",e.target.value)}/><input style={s.mini} placeholder="L2-T" value={form.condMegL2T} onChange={e=>set("condMegL2T",e.target.value)}/><input style={s.mini} placeholder="L3-T" value={form.condMegL3T} onChange={e=>set("condMegL3T",e.target.value)}/></div><div style={{...s.row3,marginTop:"4px"}}><input style={s.mini} placeholder="L1-L2" value={form.condMegL1L2} onChange={e=>set("condMegL1L2",e.target.value)}/><input style={s.mini} placeholder="L2-L3" value={form.condMegL2L3} onChange={e=>set("condMegL2L3",e.target.value)}/><input style={s.mini} placeholder="L3-L1" value={form.condMegL3L1} onChange={e=>set("condMegL3L1",e.target.value)}/></div></div>
+              <div style={{marginTop:"8px"}}><label style={s.lblRow}>Megado condensador (Î©)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1-T" value={form.condMegL1T} onChange={e=>set("condMegL1T",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2-T" value={form.condMegL2T} onChange={e=>set("condMegL2T",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L3-T" value={form.condMegL3T} onChange={e=>set("condMegL3T",e.target.value)}/></div><div style={{...s.row3(isMobile),marginTop:"4px"}}><input style={s.mini(isMobile)} placeholder="L1-L2" value={form.condMegL1L2} onChange={e=>set("condMegL1L2",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2-L3" value={form.condMegL2L3} onChange={e=>set("condMegL2L3",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L3-L1" value={form.condMegL3L1} onChange={e=>set("condMegL3L1",e.target.value)}/></div></div>
               <div style={{height:"0.5px",background:"#e0e0e0",margin:"12px 0"}}></div>
-              <div style={{fontSize:"12px",fontWeight:500,color:"#791f1f",background:"#fcebeb",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>Refrigeración</div>
-              <div style={s.g4}>
-                <CampoInput label="Presión succión (PSI)" val={form.presSuccion} onChange={v=>set("presSuccion",v)}/>
-                <CampoInput label="Presión líquido (PSI)" val={form.presLiquido} onChange={v=>set("presLiquido",v)}/>
-                <CampoInput label="T° sat. succión medida (°C)" val={form.tSatMedida} onChange={v=>set("tSatMedida",v)}/>
-                <CampoInput label="T° sat. succión tabla (°C)" val={form.tSatTabla} onChange={v=>set("tSatTabla",v)}/>
-                <Campo label="Superheat (auto)" calc val={calcDelta(form.tSatMedida,form.tSatTabla)?calcDelta(form.tSatMedida,form.tSatTabla)+" °C":""}/>
-                <CampoInput label="T° retorno aire (°C)" val={form.tRetornoEvap} onChange={v=>set("tRetornoEvap",v)}/>
-                <CampoInput label="T° suministro aire (°C)" val={form.tSuministroEvap} onChange={v=>set("tSuministroEvap",v)}/>
-                <CampoInput label="T° amb. condensador (°C)" val={form.tAmbCondensador} onChange={v=>set("tAmbCondensador",v)}/>
-                <CampoInput label="Temp. trabajo motor (°C)" val={form.tTrabajoMotor} onChange={v=>set("tTrabajoMotor",v)}/>
+              <div style={{fontSize:"12px",fontWeight:500,color:"#791f1f",background:"#fcebeb",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>RefrigeraciÃ³n</div>
+              <div style={s.g4(isMobile)}>
+                <CampoInput label="PresiÃ³n succiÃ³n (PSI)" val={form.presSuccion} onChange={v=>set("presSuccion",v)}/>
+                <CampoInput label="PresiÃ³n lÃ­quido (PSI)" val={form.presLiquido} onChange={v=>set("presLiquido",v)}/>
+                <CampoInput label="TÂ° sat. succiÃ³n medida (Â°C)" val={form.tSatMedida} onChange={v=>set("tSatMedida",v)}/>
+                <CampoInput label="TÂ° sat. succiÃ³n tabla (Â°C)" val={form.tSatTabla} onChange={v=>set("tSatTabla",v)}/>
+                <Campo label="Superheat (auto)" calc val={calcDelta(form.tSatMedida,form.tSatTabla)?calcDelta(form.tSatMedida,form.tSatTabla)+" Â°C":""}/>
+                <CampoInput label="TÂ° retorno aire (Â°C)" val={form.tRetornoEvap} onChange={v=>set("tRetornoEvap",v)}/>
+                <CampoInput label="TÂ° suministro aire (Â°C)" val={form.tSuministroEvap} onChange={v=>set("tSuministroEvap",v)}/>
+                <CampoInput label="TÂ° amb. condensador (Â°C)" val={form.tAmbCondensador} onChange={v=>set("tAmbCondensador",v)}/>
+                <CampoInput label="Temp. trabajo motor (Â°C)" val={form.tTrabajoMotor} onChange={v=>set("tTrabajoMotor",v)}/>
               </div>
               <div style={{height:"0.5px",background:"#e0e0e0",margin:"12px 0"}}></div>
               <div style={{fontSize:"12px",fontWeight:500,color:"var(--color-text-secondary)",marginBottom:"8px"}}>Estatus de actividades</div>
-              {["Limpieza de filtros de aire","Limpieza de bandeja de drenaje","Limpieza de serpentín evaporador",...EXPANSION_ITEMS_DER].map(item=>(
+              {["Limpieza de filtros de aire","Limpieza de bandeja de drenaje","Limpieza de serpentÃ­n evaporador",...EXPANSION_ITEMS_DER].map(item=>(
                 <div key={item} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"4px 0",borderBottom:"0.5px solid #f0f0f0"}}>
                   <span style={{fontSize:"11px",color:"#333",flex:1}}>{item}</span>
                   <select value={(form.estatusItems||{})[item]||""} onChange={e=>setEstatus(item,e.target.value)} disabled={soloLectura} style={{fontSize:"11px",padding:"2px 4px",borderRadius:"4px",border:"0.5px solid #ccc",width:"100px"}}>
-                    <option value="">—</option><option value="OK">OK</option><option value="Observado">Observado</option><option value="Falla">Falla</option><option value="N/A">N/A</option>
+                    <option value="">â€”</option><option value="OK">OK</option><option value="Observado">Observado</option><option value="Falla">Falla</option><option value="N/A">N/A</option>
                   </select>
                 </div>
               ))}
@@ -1892,19 +1906,19 @@ export default function Protocolo() {
 
         {form.grupo === "ventilacion" && (
           <div style={s.sec}>
-            <div style={s.secT}>🌀 Parámetros de operación</div>
-            <div style={s.secB}>
-              <div style={s.g4}>
-                <CampoInput label="Temp. trabajo motor (°C)" val={form.tTrabajoMotor} onChange={v => set("tTrabajoMotor", v)} />
+            <div style={s.secT}>ðŸŒ€ ParÃ¡metros de operaciÃ³n</div>
+            <div style={s.secB(isMobile)}>
+              <div style={s.g4(isMobile)}>
+                <CampoInput label="Temp. trabajo motor (Â°C)" val={form.tTrabajoMotor} onChange={v => set("tTrabajoMotor", v)} />
                 <CampoInput label="Caudal de aire (CFM)" val={form.caudalAire} onChange={v => set("caudalAire", v)} />
               </div>
-              <div style={{ ...s.g4, marginTop: "10px" }}>
+              <div style={{ ...s.g4(isMobile), marginTop: "10px" }}>
                 <div style={{ fontSize: "11px", fontWeight: 600, color: "#0f6e56", gridColumn: "1/-1", paddingBottom: "4px", borderBottom: "0.5px solid #eee" }}>Estatus de actividades</div>
                 {VENTILACION_ITEMS_DER.map(item => (
                   <div key={item} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px", padding: "3px 0", borderBottom: "0.5px solid #f0f0f0", gridColumn: "1/-1" }}>
                     <span style={{ fontSize: "11px", color: "#333", flex: 1 }}>{item}</span>
                     <select value={(form.estatusItems||{})[item]||""} onChange={e => setEstatus(item, e.target.value)} disabled={soloLectura} style={{ fontSize: "11px", padding: "2px 4px", borderRadius: "4px", border: "0.5px solid #ccc", width: "100px" }}>
-                      <option value="">—</option>
+                      <option value="">â€”</option>
                       <option value="OK">OK</option>
                       <option value="Observado">Observado</option>
                       <option value="Falla">Falla</option>
@@ -1919,50 +1933,50 @@ export default function Protocolo() {
 
         {form.grupo === "fancoil" && (
           <div style={s.sec}>
-            <div style={s.secT}>💧 Parámetros — Fan Coil / UMA (formato Carrier)</div>
-            <div style={s.secB}>
+            <div style={s.secT}>ðŸ’§ ParÃ¡metros â€” Fan Coil / UMA (formato Carrier)</div>
+            <div style={s.secB(isMobile)}>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
 
-                {/* Columna izquierda: parámetros numéricos */}
+                {/* Columna izquierda: parÃ¡metros numÃ©ricos */}
                 <div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#1a5fa8", textAlign: "center", padding: "4px", background: "#f0f4f8", borderRadius: "4px", marginBottom: "8px" }}>PARÁMETROS</div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#1a5fa8", textAlign: "center", padding: "4px", background: "#f0f4f8", borderRadius: "4px", marginBottom: "8px" }}>PARÃMETROS</div>
 
                   {/* Voltaje en marcha */}
                   <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Voltaje en marcha (V)</div>
-                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "Monofásico" ? "1fr" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "MonofÃ¡sico" ? "1fr" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
                     <CampoInput label="L1-L2" val={form.vL1L2} onChange={v => set("vL1L2", v)} />
-                    {equipo?.fases !== "Monofásico" && <CampoInput label="L2-L3" val={form.vL2L3} onChange={v => set("vL2L3", v)} />}
-                    {equipo?.fases !== "Monofásico" && <CampoInput label="L3-L1" val={form.vL3L1} onChange={v => set("vL3L1", v)} />}
+                    {equipo?.fases !== "MonofÃ¡sico" && <CampoInput label="L2-L3" val={form.vL2L3} onChange={v => set("vL2L3", v)} />}
+                    {equipo?.fases !== "MonofÃ¡sico" && <CampoInput label="L3-L1" val={form.vL3L1} onChange={v => set("vL3L1", v)} />}
                   </div>
 
                   {/* Voltaje en placa */}
                   <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#aaa"}}>(ficha equipo)</span></div>
-                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "Monofásico" ? "1fr" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "MonofÃ¡sico" ? "1fr" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
                     <CampoInput label="L1-L2" val={equipo?.voltaje || ""} readOnly />
-                    {equipo?.fases !== "Monofásico" && <CampoInput label="L2-L3" val={equipo?.voltaje || ""} readOnly />}
-                    {equipo?.fases !== "Monofásico" && <CampoInput label="L3-L1" val={equipo?.voltaje || ""} readOnly />}
+                    {equipo?.fases !== "MonofÃ¡sico" && <CampoInput label="L2-L3" val={equipo?.voltaje || ""} readOnly />}
+                    {equipo?.fases !== "MonofÃ¡sico" && <CampoInput label="L3-L1" val={equipo?.voltaje || ""} readOnly />}
                   </div>
                   <Campo label="Desbalance V (auto) %" calc val={calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1)} />
 
                   {/* Amperaje en marcha */}
                   <div style={{ fontSize: "10px", color: "#888", margin: "8px 0 2px" }}>Amperaje en marcha (A)</div>
-                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "Monofásico" ? "repeat(2,1fr)" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "MonofÃ¡sico" ? "repeat(2,1fr)" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
                     <CampoInput label="L1" val={form.aL1} onChange={v => set("aL1", v)} />
                     <CampoInput label="L2" val={form.aL2} onChange={v => set("aL2", v)} />
-                    {equipo?.fases !== "Monofásico" && <CampoInput label="L3" val={form.aL3} onChange={v => set("aL3", v)} />}
+                    {equipo?.fases !== "MonofÃ¡sico" && <CampoInput label="L3" val={form.aL3} onChange={v => set("aL3", v)} />}
                   </div>
 
                   {/* Amperaje en placa */}
                   <div style={{ fontSize: "10px", color: "#888", marginBottom: "2px" }}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#aaa"}}>(ficha equipo)</span></div>
-                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "Monofásico" ? "repeat(2,1fr)" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: equipo?.fases === "MonofÃ¡sico" ? "repeat(2,1fr)" : "repeat(3,1fr)", gap: "4px", marginBottom: "6px" }}>
                     <CampoInput label="L1" val={equipo?.amperaje || ""} readOnly />
                     <CampoInput label="L2" val={equipo?.amperaje || ""} readOnly />
-                    {equipo?.fases !== "Monofásico" && <CampoInput label="L3" val={equipo?.amperaje || ""} readOnly />}
+                    {equipo?.fases !== "MonofÃ¡sico" && <CampoInput label="L3" val={equipo?.amperaje || ""} readOnly />}
                   </div>
                   <Campo label="Desbalance A (auto) %" calc val={calcDesbalance(form.aL1, form.aL2, form.aL3)} />
 
-                  <div style={{ fontSize: "10px", color: "#888", margin: "8px 0 2px" }}>Megado (Ω)</div>
+                  <div style={{ fontSize: "10px", color: "#888", margin: "8px 0 2px" }}>Megado (Î©)</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "4px", marginBottom: "6px" }}>
                     <CampoInput label="L1-T" val={form.megL1T} onChange={v => set("megL1T", v)} />
                     <CampoInput label="L2-T" val={form.megL2T} onChange={v => set("megL2T", v)} />
@@ -1974,27 +1988,27 @@ export default function Protocolo() {
 
                   <div style={{ fontSize: "10px", color: "#888", margin: "8px 0 2px" }}>Temperaturas y presiones</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "4px" }}>
-                    <CampoInput label="T° trabajo motor (°C)" val={form.tTrabajoMotor} onChange={v => set("tTrabajoMotor", v)} />
-                    <CampoInput label="T° entrada agua (°C)" val={form.tEntradaAgua} onChange={v => set("tEntradaAgua", v)} />
-                    <CampoInput label="T° salida agua (°C)" val={form.tSalidaAgua} onChange={v => set("tSalidaAgua", v)} />
-                    <Campo label="∆ Temp. agua (°C)" calc val={calcDelta(form.tEntradaAgua, form.tSalidaAgua)} />
-                    <CampoInput label="Presión entrada (PSI)" val={form.presEntradaAgua} onChange={v => set("presEntradaAgua", v)} />
-                    <CampoInput label="Presión salida (PSI)" val={form.presSalidaAgua} onChange={v => set("presSalidaAgua", v)} />
-                    <Campo label="∆ Presión agua (PSI)" calc val={calcDelta(form.presEntradaAgua, form.presSalidaAgua)} />
-                    <CampoInput label="T° retorno aire (°C)" val={form.tRetornoAire} onChange={v => set("tRetornoAire", v)} />
-                    <CampoInput label="T° suministro aire (°C)" val={form.tSuministroAire} onChange={v => set("tSuministroAire", v)} />
-                    <Campo label="∆ Temp. aire (°C)" calc val={calcDelta(form.tRetornoAire, form.tSuministroAire)} />
+                    <CampoInput label="TÂ° trabajo motor (Â°C)" val={form.tTrabajoMotor} onChange={v => set("tTrabajoMotor", v)} />
+                    <CampoInput label="TÂ° entrada agua (Â°C)" val={form.tEntradaAgua} onChange={v => set("tEntradaAgua", v)} />
+                    <CampoInput label="TÂ° salida agua (Â°C)" val={form.tSalidaAgua} onChange={v => set("tSalidaAgua", v)} />
+                    <Campo label="âˆ† Temp. agua (Â°C)" calc val={calcDelta(form.tEntradaAgua, form.tSalidaAgua)} />
+                    <CampoInput label="PresiÃ³n entrada (PSI)" val={form.presEntradaAgua} onChange={v => set("presEntradaAgua", v)} />
+                    <CampoInput label="PresiÃ³n salida (PSI)" val={form.presSalidaAgua} onChange={v => set("presSalidaAgua", v)} />
+                    <Campo label="âˆ† PresiÃ³n agua (PSI)" calc val={calcDelta(form.presEntradaAgua, form.presSalidaAgua)} />
+                    <CampoInput label="TÂ° retorno aire (Â°C)" val={form.tRetornoAire} onChange={v => set("tRetornoAire", v)} />
+                    <CampoInput label="TÂ° suministro aire (Â°C)" val={form.tSuministroAire} onChange={v => set("tSuministroAire", v)} />
+                    <Campo label="âˆ† Temp. aire (Â°C)" calc val={calcDelta(form.tRetornoAire, form.tSuministroAire)} />
                   </div>
                 </div>
 
-                {/* Columna derecha: ítems con Estatus */}
+                {/* Columna derecha: Ã­tems con Estatus */}
                 <div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#1a5fa8", textAlign: "center", padding: "4px", background: "#f0f4f8", borderRadius: "4px", marginBottom: "8px" }}>PARÁMETROS (ESTATUS)</div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#1a5fa8", textAlign: "center", padding: "4px", background: "#f0f4f8", borderRadius: "4px", marginBottom: "8px" }}>PARÃMETROS (ESTATUS)</div>
                   {FANCOIL_ITEMS_DER.map(item => (
                     <div key={item} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "3px 0", borderBottom: "0.5px solid #eee" }}>
                       <span style={{ fontSize: "11px", color: "#333", flex: 1 }}>{item}</span>
                       <select value={(form.estatusItems || {})[item] || ""} onChange={e => setEstatus(item, e.target.value)} disabled={soloLectura} style={{ fontSize: "11px", padding: "2px 4px", borderRadius: "4px", border: "0.5px solid #ccc", width: "100px" }}>
-                        <option value="">—</option>
+                        <option value="">â€”</option>
                         <option value="OK">OK</option>
                         <option value="Observado">Observado</option>
                         <option value="Falla">Falla</option>
@@ -2012,14 +2026,14 @@ export default function Protocolo() {
         {/* Actividades (solo para grupos que NO usan formato Carrier de estatus) */}
         {form.grupo !== "fancoil" && form.grupo !== "expansion" && form.grupo !== "ventilacion" && (
         <div style={s.sec}>
-          <div style={s.secT}>✅ Actividades realizadas</div>
-          <div style={s.secB}>
-            <div style={s.gActividades}>
+          <div style={s.secT}>âœ… Actividades realizadas</div>
+          <div style={s.secB(isMobile)}>
+            <div style={s.gActividades(isMobile)}>
               {Object.entries(checklist).map(([cat, items]) => (
                 <div key={cat}>
-                  <div style={s.colH}>{cat}</div>
+                  <div style={s.colH(isMobile)}>{cat}</div>
                   {items.map(item => (
-                    <label key={item} style={s.ckRow}>
+                    <label key={item} style={s.ckRow(isMobile)}>
                       <input type="checkbox" checked={!!form.actividades[item]} onChange={e => setActividad(item, e.target.checked)} />
                       {item}
                     </label>
@@ -2031,41 +2045,41 @@ export default function Protocolo() {
         </div>
         )}
 
-        {/* Observaciones dinámicas */}
+        {/* Observaciones dinÃ¡micas */}
         <div style={s.sec}>
-          <div style={s.secT}>📋 Observación · Causa · Recomendación <span style={s.tag}>{form.observaciones.length} registro{form.observaciones.length !== 1 ? "s" : ""}</span></div>
-          <div style={s.secB}>
-            <div style={s.obsHead}>
-              <span></span><span style={s.obsHeadLbl}>Observación</span><span style={s.obsHeadLbl}>Causa</span><span style={s.obsHeadLbl}>Recomendación</span><span></span>
+          <div style={s.secT}>ðŸ“‹ ObservaciÃ³n Â· Causa Â· RecomendaciÃ³n <span style={s.tag}>{form.observaciones.length} registro{form.observaciones.length !== 1 ? "s" : ""}</span></div>
+          <div style={s.secB(isMobile)}>
+            <div style={s.obsHead(isMobile)}>
+              <span></span><span style={s.obsHeadLbl}>ObservaciÃ³n</span><span style={s.obsHeadLbl}>Causa</span><span style={s.obsHeadLbl}>RecomendaciÃ³n</span><span></span>
             </div>
             {form.observaciones.map((o, i) => (
-              <div key={i} style={s.obsFila}>
+              <div key={i} style={s.obsFila(isMobile)}>
                 <div style={s.obsNum}>{i + 1}</div>
-                <textarea style={{ ...s.obsInp, background: "#fff8e1", borderColor: "#ffe082" }} placeholder="Observación..." value={o.obs} onChange={e => updateObs(i, "obs", e.target.value)} />
+                <textarea style={{ ...s.obsInp, background: "#fff8e1", borderColor: "#ffe082" }} placeholder="ObservaciÃ³n..." value={o.obs} onChange={e => updateObs(i, "obs", e.target.value)} />
                 <textarea style={{ ...s.obsInp, background: "#fef0f0", borderColor: "#f5c4c4" }} placeholder="Causa..." value={o.causa} onChange={e => updateObs(i, "causa", e.target.value)} />
-                <textarea style={{ ...s.obsInp, background: "#e8f5e9", borderColor: "#a5d6a7" }} placeholder="Recomendación..." value={o.rec} onChange={e => updateObs(i, "rec", e.target.value)} />
-                {!soloLectura && form.observaciones.length > 1 && <button style={s.obsDel} onClick={() => removeObs(i)}>🗑</button>}
+                <textarea style={{ ...s.obsInp, background: "#e8f5e9", borderColor: "#a5d6a7" }} placeholder="RecomendaciÃ³n..." value={o.rec} onChange={e => updateObs(i, "rec", e.target.value)} />
+                {!soloLectura && form.observaciones.length > 1 && <button style={s.obsDel} onClick={() => removeObs(i)}>ðŸ—‘</button>}
               </div>
             ))}
-            {!soloLectura && <button style={s.addBtn} onClick={addObs}>+ Agregar observación</button>}
+            {!soloLectura && <button style={s.addBtn} onClick={addObs}>+ Agregar observaciÃ³n</button>}
           </div>
         </div>
 
         {/* Estado final */}
         <div style={s.sec}>
-          <div style={s.secT}>🏁 Resultado del servicio</div>
-          <div style={s.secB}>
-            <div style={s.g2}>
+          <div style={s.secT}>ðŸ Resultado del servicio</div>
+          <div style={s.secB(isMobile)}>
+            <div style={s.g2(isMobile)}>
               <CampoSelect label="Estado final del equipo" val={form.estadoFinal} onChange={v => set("estadoFinal", v)} opciones={["Operativo", "Operativo con observaciones", "Fuera de servicio"]} />
-              <Campo label="Técnico responsable" auto val={form.tecnico} />
+              <Campo label="TÃ©cnico responsable" auto val={form.tecnico} />
             </div>
           </div>
         </div>
         </fieldset>
 
-        <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "8px" }}>
-          {!soloLectura && <button style={s.btnSaveBig} onClick={guardar} disabled={guardando}>{guardando ? "Guardando..." : "💾 Guardar protocolo"}</button>}
-          <button style={s.btnPdfBig} onClick={exportarPDF}>📄 Descargar PDF</button>
+        <div style={{ display: "flex", gap: "10px", justifyContent: isMobile ? "stretch" : "flex-end", flexDirection: isMobile ? "column" : "row", marginTop: "8px" }}>
+          {!soloLectura && <button style={s.btnSaveBig(isMobile)} onClick={guardar} disabled={guardando}>{guardando ? "Guardando..." : "ðŸ’¾ Guardar protocolo"}</button>}
+          <button style={s.btnPdfBig(isMobile)} onClick={exportarPDF}>ðŸ“„ Descargar PDF</button>
         </div>
       </div>
     </div>
@@ -2075,20 +2089,20 @@ export default function Protocolo() {
 // ============ COMPONENTES AUXILIARES ============
 const Campo = ({ label, val, auto, calc }) => (
   <div style={s.f}>
-    <label style={s.fLabel}>{label}</label>
-    <div style={auto ? s.fAuto : calc ? s.fCalc : s.fPh}>{val || "—"}</div>
+    <label style={s.fLabel(isMobile)}>{label}</label>
+    <div style={auto ? s.fAuto : calc ? s.fCalc : s.fPh}>{val || "â€”"}</div>
   </div>
 );
 const CampoInput = ({ label, val, onChange, placeholder, type, readOnly }) => (
   <div style={s.f}>
-    <label style={s.fLabel}>{label}</label>
-    <input style={{...s.fInp, ...(readOnly ? {background:"#f0f4f8", color:"#555", cursor:"not-allowed"} : {})}} type={type || "text"} value={val} placeholder={placeholder || ""} readOnly={readOnly} onChange={readOnly ? undefined : e => onChange(e.target.value)} />
+    <label style={s.fLabel(isMobile)}>{label}</label>
+    <input style={{...s.fInp(isMobile), ...(readOnly ? {background:"#f0f4f8", color:"#555", cursor:"not-allowed"} : {})}} type={type || "text"} value={val} placeholder={placeholder || ""} readOnly={readOnly} onChange={readOnly ? undefined : e => onChange(e.target.value)} />
   </div>
 );
 const CampoSelect = ({ label, val, onChange, opciones }) => (
   <div style={s.f}>
-    <label style={s.fLabel}>{label}</label>
-    <select style={s.fInp} value={val} onChange={e => onChange(e.target.value)}>
+    <label style={s.fLabel(isMobile)}>{label}</label>
+    <select style={s.fInp(isMobile)} value={val} onChange={e => onChange(e.target.value)}>
       {opciones.map(o => <option key={o}>{o}</option>)}
     </select>
   </div>
@@ -2096,15 +2110,15 @@ const CampoSelect = ({ label, val, onChange, opciones }) => (
 
 const s = {
   page: { minHeight: "100vh", background: "#f0f4f8", fontFamily: "Inter, Arial, sans-serif" },
-  navbar: { padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
+  navbar: (m) => ({ padding: m ? "10px 14px" : "12px 20px", display: "flex", alignItems: m ? "flex-start" : "center", flexDirection: m ? "column" : "row", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, gap: m ? "8px" : 0 }),
   navTitle: { color: "white", fontSize: "14px", fontWeight: 500 },
   navSub: { color: "rgba(255,255,255,0.75)", fontSize: "11px", marginTop: "2px" },
-  navBtns: { display: "flex", gap: "8px" },
+  navBtns: { display: "flex", gap: "8px", flexWrap: "wrap" },
   btnBack: { background: "rgba(255,255,255,0.2)", color: "white", border: "none", borderRadius: "8px", padding: "7px 12px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
   btnSave: { background: "#1e7e34", color: "white", border: "none", borderRadius: "8px", padding: "7px 12px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
   btnPdf: { background: "#c62828", color: "white", border: "none", borderRadius: "8px", padding: "7px 12px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
-  content: { maxWidth: "1100px", margin: "0 auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "12px" },
-  histBar: { display: "flex", gap: "6px", alignItems: "center", padding: "10px 14px", background: "white", borderRadius: "10px", border: "0.5px solid #e0e0e0", flexWrap: "wrap" },
+  content: (m) => ({ maxWidth: "1100px", margin: "0 auto", padding: m ? "10px 12px" : "16px 20px", display: "flex", flexDirection: "column", gap: "12px" }),
+  histBar: (m) => ({ display: "flex", gap: "6px", alignItems: "center", padding: m ? "8px 10px" : "10px 14px", background: "white", borderRadius: "10px", border: "0.5px solid #e0e0e0", flexWrap: "wrap" }),
   histLabel: { fontSize: "11px", color: "#888", fontWeight: 500 },
   histCount: { marginLeft: "auto", fontSize: "10px", color: "#aaa" },
   chip: { fontSize: "11px", padding: "4px 10px", borderRadius: "20px", background: "#e8f0fe", color: "#1a5fa8", border: "0.5px solid #c5d5e8", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px" },
@@ -2113,33 +2127,33 @@ const s = {
   chipDel: { fontSize: "10px", opacity: 0.8 },
   sec: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "10px", overflow: "hidden" },
   secT: { fontSize: "10px", color: "#888", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500, padding: "9px 14px", background: "#f8f9fa", borderBottom: "0.5px solid #e0e0e0", display: "flex", alignItems: "center", gap: "8px" },
-  secB: { padding: "12px 14px" },
+  secB: (m) => ({ padding: m ? "14px 12px" : "12px 14px" }),
   tag: { fontSize: "8px", padding: "1px 7px", borderRadius: "20px", background: "#e8f0fe", color: "#1a5fa8", border: "0.5px solid #c5d5e8" },
-  g4: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "8px" },
-  g3: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "8px" },
-  g2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" },
-  gActividades: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px" },
+  g4: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr 1fr" : "repeat(4,1fr)", gap: m ? "10px" : "8px" }),
+  g3: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr" : "repeat(3,1fr)", gap: m ? "10px" : "8px" }),
+  g2: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr" : "1fr 1fr", gap: m ? "10px" : "8px" }),
+  gActividades: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr" : "repeat(3,1fr)", gap: "12px" }),
   f: { display: "flex", flexDirection: "column", gap: "3px" },
-  fLabel: { fontSize: "9px", color: "#888", textTransform: "uppercase", letterSpacing: "0.03em" },
+  fLabel: (m) => ({ fontSize: m ? "10px" : "9px", color: "#888", textTransform: "uppercase", letterSpacing: "0.03em" }),
   fPh: { fontSize: "11px", color: "#aaa", background: "#fafafa", padding: "7px 9px", borderRadius: "6px", border: "0.5px solid #ddd" },
   fAuto: { fontSize: "11px", fontWeight: 500, color: "#222", background: "#f0f4f8", padding: "7px 9px", borderRadius: "6px" },
   fCalc: { fontSize: "11px", fontWeight: 500, color: "#185fa5", background: "#e6f1fb", padding: "7px 9px", borderRadius: "6px", border: "0.5px solid #b5d4f4" },
-  fInp: { fontSize: "11px", padding: "7px 9px", borderRadius: "6px", border: "0.5px solid #ddd", background: "#fafafa", color: "#222", width: "100%", boxSizing: "border-box" },
+  fInp: (m) => ({ fontSize: m ? "14px" : "11px", padding: m ? "10px 12px" : "7px 9px", borderRadius: "8px", border: "0.5px solid #ddd", background: "#fafafa", color: "#222", width: "100%", boxSizing: "border-box" }),
   lblRow: { fontSize: "9px", color: "#888", textTransform: "uppercase", marginBottom: "4px", display: "block" },
-  row3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "5px" },
-  row2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px" },
-  mini: { fontSize: "10px", padding: "6px 6px", borderRadius: "5px", border: "0.5px solid #ddd", background: "#fafafa", color: "#222", width: "100%", boxSizing: "border-box", textAlign: "center" },
+  row3: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr" : "1fr 1fr 1fr", gap: "5px" }),
+  row2: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr" : "1fr 1fr", gap: "5px" }),
+  mini: (m) => ({ fontSize: m ? "13px" : "10px", padding: m ? "9px" : "6px 6px", borderRadius: "5px", border: "0.5px solid #ddd", background: "#fafafa", color: "#222", width: "100%", boxSizing: "border-box", textAlign: "center" }),
   calc: { fontSize: "10px", padding: "6px", borderRadius: "5px", background: "#e6f1fb", color: "#185fa5", border: "0.5px solid #b5d4f4", textAlign: "center", fontWeight: 500 },
-  colH: { fontSize: "9px", color: "#888", textTransform: "uppercase", fontWeight: 500, marginBottom: "6px" },
-  ckRow: { display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#222", padding: "3px 0", cursor: "pointer" },
-  obsHead: { display: "grid", gridTemplateColumns: "24px 1fr 1fr 1fr 30px", gap: "8px", padding: "0 0 4px" },
+  colH: (m) => ({ fontSize: m ? "11px" : "9px", color: "#888", textTransform: "uppercase", fontWeight: 500, marginBottom: "6px" }),
+  ckRow: (m) => ({ display: "flex", alignItems: "center", gap: m ? "10px" : "6px", fontSize: m ? "14px" : "11px", color: "#222", padding: m ? "6px 0" : "3px 0", cursor: "pointer" }),
+  obsHead: (m) => m ? { display: "none" } : { display: "grid", gridTemplateColumns: "24px 1fr 1fr 1fr 30px", gap: "8px", padding: "0 0 4px" },
   obsHeadLbl: { fontSize: "8px", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" },
-  obsFila: { display: "grid", gridTemplateColumns: "24px 1fr 1fr 1fr 30px", gap: "8px", alignItems: "start", marginBottom: "8px" },
+  obsFila: (m) => m ? { display: "flex", flexDirection: "column", gap: "6px", marginBottom: "14px", padding: "10px", background: "#fafafa", borderRadius: "10px", border: "0.5px solid #e0e0e0" } : { display: "grid", gridTemplateColumns: "24px 1fr 1fr 1fr 30px", gap: "8px", alignItems: "start", marginBottom: "8px" },
   obsNum: { fontSize: "11px", color: "#aaa", fontWeight: 700, paddingTop: "8px", textAlign: "center" },
   obsInp: { fontSize: "11px", color: "#222", padding: "7px 9px", borderRadius: "6px", border: "0.5px solid #ddd", width: "100%", minHeight: "38px", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" },
   obsDel: { background: "#ffebee", color: "#c62828", border: "0.5px solid #ef9a9a", borderRadius: "6px", cursor: "pointer", fontSize: "12px", padding: "7px 0", marginTop: "1px" },
   addBtn: { fontSize: "12px", padding: "8px 14px", borderRadius: "8px", cursor: "pointer", fontWeight: 500, border: "0.5px dashed #ffa726", background: "#fff8e1", color: "#e65100", marginTop: "4px" },
-  btnSaveBig: { background: "#1e7e34", color: "white", border: "none", borderRadius: "8px", padding: "10px 18px", cursor: "pointer", fontSize: "13px", fontWeight: 500 },
-  btnPdfBig: { background: "#c62828", color: "white", border: "none", borderRadius: "8px", padding: "10px 18px", cursor: "pointer", fontSize: "13px", fontWeight: 500 },
+  btnSaveBig: (m) => ({ background: "#1e7e34", color: "white", border: "none", borderRadius: "10px", padding: m ? "14px 20px" : "10px 18px", cursor: "pointer", fontSize: m ? "15px" : "13px", fontWeight: 600, flex: m ? 1 : "auto" }),
+  btnPdfBig: (m) => ({ background: "#c62828", color: "white", border: "none", borderRadius: "10px", padding: m ? "14px 20px" : "10px 18px", cursor: "pointer", fontSize: m ? "15px" : "13px", fontWeight: 600, flex: m ? 1 : "auto" }),
   centro: { textAlign: "center", padding: "3rem", fontSize: "15px", color: "#888", fontFamily: "Inter, Arial, sans-serif" },
 };
