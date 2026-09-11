@@ -35,6 +35,7 @@ export default function VistaEquipo() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sinQR = searchParams.get("noqr") === "1";
+  const esPubDirecto = searchParams.get("pub") === "1"; // viene del escáner QR sin sesión
   const [equipo, setEquipo] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [tamanoQR, setTamanoQR] = useState("2x2");
@@ -67,6 +68,17 @@ export default function VistaEquipo() {
   }, []);
 
   useEffect(() => {
+    // Si viene con ?pub=1 del escáner QR — es acceso público, no hay sesión
+    if (esPubDirecto) {
+      setEsPub(true);
+      setAuthChecked(true);
+      getDoc(doc(db, "equipos", id))
+        .then(snap => { if (snap.exists()) setEquipo({ id: snap.id, ...snap.data() }); })
+        .catch(e => console.error(e))
+        .finally(() => setCargando(false));
+      return;
+    }
+
     // Si venimos de QR+login, sabemos que hay sesión activa — no esperamos a Firebase
     if (vieneDesdLogin) {
       sessionStorage.removeItem("qr_autenticado"); // limpiar el flag
@@ -109,7 +121,7 @@ export default function VistaEquipo() {
     });
 
     return () => { unsub(); if (timer) clearTimeout(timer); };
-  }, [id, vieneDesdLogin]);
+  }, [id, vieneDesdLogin, esPubDirecto]);
 
   // Si es acceso público y hay protocolo, abrir PDF automáticamente
   useEffect(() => {

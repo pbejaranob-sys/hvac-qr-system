@@ -71,10 +71,14 @@ export default function Login() {
     setScannerOpen(false);
     try {
       const url = new URL(texto);
-      navigate(url.pathname + url.search);
+      // Agregar pub=1 para que VistaEquipo sepa que viene de escáner sin sesión
+      const sep = url.search ? '&' : '?';
+      navigate(url.pathname + url.search + sep + 'pub=1');
     } catch {
-      if (texto.startsWith("/")) navigate(texto);
-      else setError("QR no reconocido.");
+      if (texto.startsWith("/")) {
+        const sep = texto.includes('?') ? '&' : '?';
+        navigate(texto + sep + 'pub=1');
+      } else setError("QR no reconocido.");
     }
   };
 
