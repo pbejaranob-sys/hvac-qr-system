@@ -1821,7 +1821,7 @@ function PanelClienteMobile({
               )}
               <div style={{ display: "flex", gap: 8 }}>
                 <button style={m.btnInfo} onClick={() => setEquipoInfo(equipo)}>Info</button>
-                <button style={m.btnProtocolo} onClick={() => navigate(`/protocolo?equipo=${equipo.id}&origen=cliente${sedeActual ? `&sede=${encodeURIComponent(sedeActual.id)}` : ""}`)}>Protocolo</button>
+                <button style={m.btnProtocolo} onClick={() => navigate(`/protocolo?equipo=${equipo.id}&pdf=1&origen=cliente${sedeActual ? `&sede=${encodeURIComponent(sedeActual.id)}` : ""}`)}>Protocolo</button>
                 {obsArr.length > 0 && (
                   <button style={m.btnObs} onClick={() => setObsAbierto(abierto ? null : equipo.id)}>Obs {obsArr.length}</button>
                 )}

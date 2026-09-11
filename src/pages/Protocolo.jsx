@@ -219,27 +219,14 @@ const VENTILACION_ITEMS_DER = [
   "Pintura de estructura(s)",
 ];
 
-
-// ---- Hook responsivo ----
-const useIsMobile = () => {
-  const isMobileDevice = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.navigator.standalone === true;
-  const [isMobile, setIsMobile] = React.useState(isMobileDevice);
-  React.useEffect(() => {
-    const h = () => setIsMobile(isMobileDevice());
-    window.addEventListener('orientationchange', h);
-    return () => window.removeEventListener('orientationchange', h);
-  }, []);
-  return isMobile;
-};
-
 export default function Protocolo() {
-  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const equipoId = searchParams.get("equipo");
   const esAccesoTecnico = searchParams.get("tecnico") === "1";
   const origen = searchParams.get("origen");
   const origenSede = searchParams.get("sede");
+  const abrirPdfDirecto = searchParams.get("pdf") === "1";
 
   const handleVolver = () => {
     if (origen === "cliente") {
@@ -301,12 +288,12 @@ export default function Protocolo() {
 
   // Si es acceso pÃºblico, generar y abrir el PDF automÃ¡ticamente
   useEffect(() => {
-    if (authChecked && esPub && equipo && form && !cargando && !pdfGenerado) {
+    if (authChecked && (esPub || abrirPdfDirecto) && equipo && form && !cargando && !pdfGenerado) {
       setPdfGenerado(true);
       exportarPDF("ver");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authChecked, esPub, equipo, form, cargando, pdfGenerado]);
+  }, [authChecked, esPub, abrirPdfDirecto, equipo, form, cargando, pdfGenerado]);
 
   const cargarEquipo = async (esLectura = false) => {
     const ref = doc(db, "equipos", equipoId);
@@ -1630,7 +1617,7 @@ export default function Protocolo() {
   if (!equipo) return <div style={s.centro}>Equipo no encontrado.</div>;
 
   // Acceso pÃºblico (QR escaneado): preparar y abrir el PDF automÃ¡ticamente
-  if (esPub) {
+  if (esPub || abrirPdfDirecto) {
     if (!form && protocolos.length === 0) {
       return (
         <div style={s.centro}>
@@ -1660,7 +1647,7 @@ export default function Protocolo() {
   if (grupoPendiente) {
     return (
       <div style={s.page}>
-        <div style={{ ...s.navbar(isMobile), background: "#607d8b" }}>
+        <div style={{ ...s.navbar, background: "#607d8b" }}>
           <div>
             <div style={s.navTitle}>ðŸ”§ Protocolo â€” {equipo.tipoEquipo}</div>
             <div style={s.navSub}>{equipo.cliente} Â· {equipo.sede || "Sin sede"} Â· Piso {equipo.piso} Â· {equipo.ambiente}</div>
@@ -1683,7 +1670,7 @@ export default function Protocolo() {
   if (soloLectura && !form) {
     return (
       <div style={s.page}>
-        <div style={{ ...s.navbar(isMobile), background: "#1a5fa8" }}>
+        <div style={{ ...s.navbar, background: "#1a5fa8" }}>
           <div>
             <div style={s.navTitle}>ðŸ“‹ Protocolos de mantenimiento</div>
             <div style={s.navSub}>{equipo.cliente} Â· {equipo.sede || "Sin sede"} Â· {equipo.ambiente} Â· {equipo.marca} {equipo.modelo}</div>
@@ -1692,7 +1679,7 @@ export default function Protocolo() {
             <button style={s.btnBack} onClick={handleVolver}>â† Volver</button>
           </div>
         </div>
-        <div style={s.content(isMobile)}>
+        <div style={s.content}>
           <div style={{ background: "white", border: "0.5px solid #e0e0e0", borderRadius: "12px", padding: "48px", textAlign: "center" }}>
             <div style={{ fontSize: "40px", marginBottom: "12px" }}>ðŸ“‹</div>
             <div style={{ fontSize: "15px", color: "#555", fontWeight: 500 }}>AÃºn no hay protocolos de mantenimiento</div>
@@ -1711,7 +1698,7 @@ export default function Protocolo() {
   return (
     <div style={s.page}>
       {/* Navbar */}
-      <div style={{ ...s.navbar(isMobile), background: grupoInfo.color }}>
+      <div style={{ ...s.navbar, background: grupoInfo.color }}>
         <div>
           <div style={s.navTitle}>ðŸ“‹ Protocolo de mantenimiento â€” {grupoInfo.label}</div>
           <div style={s.navSub}>{equipo.cliente} Â· {equipo.sede || "Sin sede"} Â· Piso {equipo.piso} Â· {equipo.ambiente} Â· {equipo.marca} {equipo.modelo}</div>
@@ -1723,9 +1710,9 @@ export default function Protocolo() {
         </div>
       </div>
 
-      <div style={s.content(isMobile)}>
+      <div style={s.content}>
         {/* Historial */}
-        <div style={s.histBar(isMobile)}>
+        <div style={s.histBar}>
           <span style={s.histLabel}>{soloLectura ? "Mantenimientos:" : "Registros:"}</span>
           {!soloLectura && <button style={s.chipNew} onClick={nuevoProtocolo}>+ Nuevo</button>}
           {protocolos.map((p, i) => (
@@ -1741,8 +1728,8 @@ export default function Protocolo() {
         {/* Datos del equipo (solo lectura) */}
         <div style={s.sec}>
           <div style={s.secT}>ðŸ“‹ Datos del equipo <span style={s.tag}>copiado de Info</span></div>
-          <div style={s.secB(isMobile)}>
-            <div style={s.g4(isMobile)}>
+          <div style={s.secB}>
+            <div style={s.g4}>
               <Campo label="Cliente" auto val={equipo.cliente} />
               <Campo label="Sede" auto val={equipo.sede} />
               <Campo label="Piso" auto val={equipo.piso} />
@@ -1752,7 +1739,7 @@ export default function Protocolo() {
               <Campo label="NÂ° Serie" auto val={equipo.serie} />
               <Campo label="Capacidad" auto val={equipo.capacidad ? equipo.capacidad + (form.grupo === "ventilacion" ? " CFM" : " BTU") : ""} />
             </div>
-            <div style={{ ...s.g4(isMobile), marginTop: "10px" }}>
+            <div style={{ ...s.g4, marginTop: "10px" }}>
               {form.grupo !== "ventilacion" && <Campo label="Tipo refrigerante" auto val={equipo.tipoRefrigerante} />}
               <Campo label="Voltaje de placa" auto val={equipo.voltaje ? equipo.voltaje + "V" : ""} />
               <Campo label="Amperaje nominal" auto val={equipo.amperaje ? equipo.amperaje + "A" : ""} />
@@ -1764,7 +1751,7 @@ export default function Protocolo() {
             </div>
             {/* Campos especÃ­ficos Fan Coil / UMA - solo si existen en la ficha */}
             {(equipo.fancoilNum || equipo.contrato || equipo.modeloFaja || equipo.marcaMotor) && (
-              <div style={{ ...s.g4(isMobile), marginTop: "10px" }}>
+              <div style={{ ...s.g4, marginTop: "10px" }}>
                 {equipo.fancoilNum && <Campo label="UMA / Fan Coil NÂ°" auto val={equipo.fancoilNum} />}
                 {equipo.contrato && <Campo label="Contrato" auto val={equipo.contrato} />}
                 {equipo.modeloFaja && <Campo label="Modelo de faja" auto val={equipo.modeloFaja} />}
@@ -1781,8 +1768,8 @@ export default function Protocolo() {
         <fieldset disabled={soloLectura} style={{ border: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
         <div style={s.sec}>
           <div style={s.secT}>ðŸ“ Datos del servicio</div>
-          <div style={s.secB(isMobile)}>
-            <div style={s.g4(isMobile)}>
+          <div style={s.secB}>
+            <div style={s.g4}>
               <CampoInput label="Fecha" type="date" val={form.fecha} onChange={v => set("fecha", v)} />
               <CampoInput label="TÃ©cnico" val={form.tecnico} onChange={v => set("tecnico", v)} placeholder="Nombre" />
               <CampoSelect label="Tipo servicio" val={form.tipoServicio} onChange={v => set("tipoServicio", v)} opciones={["Preventivo", "Correctivo"]} />
@@ -1794,47 +1781,47 @@ export default function Protocolo() {
         {/* ParÃ¡metros elÃ©ctricos (comunes - solo ventilacion) */}
         {form.grupo !== "fancoil" && form.grupo !== "expansion" && <div style={s.sec}>
           <div style={s.secT}>âš¡ ParÃ¡metros elÃ©ctricos</div>
-          <div style={s.secB(isMobile)}>
-            <div style={s.g3(isMobile)}>
+          <div style={s.secB}>
+            <div style={s.g3}>
               {/* Voltaje en marcha */}
               <div>
                 <label style={s.lblRow}>Voltaje en marcha (V)</label>
-                <div style={s.row3(isMobile)}>
-                  <input style={s.mini(isMobile)} placeholder="L1-L2" value={form.vL1L2} onChange={e => set("vL1L2", e.target.value)} />
-                  {equipo?.fases !== "MonofÃ¡sico" && <input style={s.mini(isMobile)} placeholder="L2-L3" value={form.vL2L3} onChange={e => set("vL2L3", e.target.value)} />}
-                  {equipo?.fases !== "MonofÃ¡sico" && <input style={s.mini(isMobile)} placeholder="L3-L1" value={form.vL3L1} onChange={e => set("vL3L1", e.target.value)} />}
+                <div style={s.row3}>
+                  <input style={s.mini} placeholder="L1-L2" value={form.vL1L2} onChange={e => set("vL1L2", e.target.value)} />
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={s.mini} placeholder="L2-L3" value={form.vL2L3} onChange={e => set("vL2L3", e.target.value)} />}
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={s.mini} placeholder="L3-L1" value={form.vL3L1} onChange={e => set("vL3L1", e.target.value)} />}
                 </div>
               </div>
               {/* Voltaje en placa */}
               <div>
                 <label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label>
-                <div style={s.row3(isMobile)}>
-                  <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1-L2" value={equipo?.voltaje || ""} readOnly />
-                  {equipo?.fases !== "MonofÃ¡sico" && <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2-L3" value={equipo?.voltaje || ""} readOnly />}
-                  {equipo?.fases !== "MonofÃ¡sico" && <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3-L1" value={equipo?.voltaje || ""} readOnly />}
+                <div style={s.row3}>
+                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1-L2" value={equipo?.voltaje || ""} readOnly />
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2-L3" value={equipo?.voltaje || ""} readOnly />}
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3-L1" value={equipo?.voltaje || ""} readOnly />}
                 </div>
               </div>
               {/* Amperaje en marcha */}
               <div>
                 <label style={s.lblRow}>Amperaje en marcha (A)</label>
-                <div style={s.row3(isMobile)}>
-                  <input style={s.mini(isMobile)} placeholder="L1" value={form.aL1} onChange={e => set("aL1", e.target.value)} />
-                  <input style={s.mini(isMobile)} placeholder="L2" value={form.aL2} onChange={e => set("aL2", e.target.value)} />
-                  {equipo?.fases !== "MonofÃ¡sico" && <input style={s.mini(isMobile)} placeholder="L3" value={form.aL3} onChange={e => set("aL3", e.target.value)} />}
+                <div style={s.row3}>
+                  <input style={s.mini} placeholder="L1" value={form.aL1} onChange={e => set("aL1", e.target.value)} />
+                  <input style={s.mini} placeholder="L2" value={form.aL2} onChange={e => set("aL2", e.target.value)} />
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={s.mini} placeholder="L3" value={form.aL3} onChange={e => set("aL3", e.target.value)} />}
                 </div>
               </div>
               {/* Amperaje en placa */}
               <div>
                 <label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label>
-                <div style={s.row3(isMobile)}>
-                  <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1" value={equipo?.amperaje || ""} readOnly />
-                  <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2" value={equipo?.amperaje || ""} readOnly />
-                  {equipo?.fases !== "MonofÃ¡sico" && <input style={{...s.mini(isMobile), background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3" value={equipo?.amperaje || ""} readOnly />}
+                <div style={s.row3}>
+                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L1" value={equipo?.amperaje || ""} readOnly />
+                  <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L2" value={equipo?.amperaje || ""} readOnly />
+                  {equipo?.fases !== "MonofÃ¡sico" && <input style={{...s.mini, background:"#f0f4f8", color:"#555", cursor:"not-allowed"}} placeholder="L3" value={equipo?.amperaje || ""} readOnly />}
                 </div>
               </div>
               <div>
                 <label style={s.lblRow}>Desbalance (auto)</label>
-                <div style={s.row2(isMobile)}>
+                <div style={s.row2}>
                   <div style={s.calc}>V: {calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1) || "â€”"}%</div>
                   <div style={s.calc}>A: {calcDesbalance(form.aL1, form.aL2, form.aL3) || "â€”"}%</div>
                 </div>
@@ -1842,10 +1829,10 @@ export default function Protocolo() {
             </div>
             <div style={{ marginTop: "10px" }}>
               <label style={s.lblRow}>Megado â€” resistencia de aislamiento (MÎ©)</label>
-              <div style={s.row3(isMobile)}>
-                <input style={s.mini(isMobile)} placeholder="L1-T" value={form.megL1T} onChange={e => set("megL1T", e.target.value)} />
-                <input style={s.mini(isMobile)} placeholder="L2-T" value={form.megL2T} onChange={e => set("megL2T", e.target.value)} />
-                <input style={s.mini(isMobile)} placeholder="L3-T" value={form.megL3T} onChange={e => set("megL3T", e.target.value)} />
+              <div style={s.row3}>
+                <input style={s.mini} placeholder="L1-T" value={form.megL1T} onChange={e => set("megL1T", e.target.value)} />
+                <input style={s.mini} placeholder="L2-T" value={form.megL2T} onChange={e => set("megL2T", e.target.value)} />
+                <input style={s.mini} placeholder="L3-T" value={form.megL3T} onChange={e => set("megL3T", e.target.value)} />
               </div>
             </div>
           </div>
@@ -1855,31 +1842,31 @@ export default function Protocolo() {
         {form.grupo === "expansion" && (
           <div style={s.sec}>
             <div style={s.secT}>â„ï¸ ParÃ¡metros de ExpansiÃ³n Directa</div>
-            <div style={s.secB(isMobile)}>
+            <div style={s.secB}>
               <div style={{fontSize:"12px",fontWeight:500,color:"#0c447c",background:"#e6f1fb",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>Evaporador</div>
-              <div style={s.g4(isMobile)}>
-                <div><label style={s.lblRow}>Voltaje en marcha (V)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1-L2" value={form.vL1L2} onChange={e=>set("vL1L2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L2-L3" value={form.vL2L3} onChange={e=>set("vL2L3",e.target.value)}/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L3-L1" value={form.vL3L1} onChange={e=>set("vL3L1",e.target.value)}/>}</div></div>
-                <div><label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3(isMobile)}><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}</div></div>
-                <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1" value={form.aL1} onChange={e=>set("aL1",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2" value={form.aL2} onChange={e=>set("aL2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L3" value={form.aL3} onChange={e=>set("aL3",e.target.value)}/>}</div></div>
-                <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3(isMobile)}><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>}</div></div>
+              <div style={s.g4}>
+                <div><label style={s.lblRow}>Voltaje en marcha (V)</label><div style={s.row3}><input style={s.mini} placeholder="L1-L2" value={form.vL1L2} onChange={e=>set("vL1L2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini} placeholder="L2-L3" value={form.vL2L3} onChange={e=>set("vL2L3",e.target.value)}/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini} placeholder="L3-L1" value={form.vL3L1} onChange={e=>set("vL3L1",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.voltaje||""} readOnly/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3}><input style={s.mini} placeholder="L1" value={form.aL1} onChange={e=>set("aL1",e.target.value)}/><input style={s.mini} placeholder="L2" value={form.aL2} onChange={e=>set("aL2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini} placeholder="L3" value={form.aL3} onChange={e=>set("aL3",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.amperaje||""} readOnly/>}</div></div>
                 <div><label style={s.lblRow}>Desbalance de voltaje (auto)</label><div style={s.calc}>{calcDesbalance(form.vL1L2, form.vL2L3, form.vL3L1) || "â€”"}%</div></div>
                 <div><label style={s.lblRow}>Desbalance de amperaje (auto)</label><div style={s.calc}>{calcDesbalance(form.aL1, form.aL2, form.aL3) || "â€”"}%</div></div>
               </div>
-              <div style={{marginTop:"8px"}}><label style={s.lblRow}>Megado evaporador (Î©)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1-T" value={form.megL1T} onChange={e=>set("megL1T",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2-T" value={form.megL2T} onChange={e=>set("megL2T",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L3-T" value={form.megL3T} onChange={e=>set("megL3T",e.target.value)}/></div><div style={{...s.row3(isMobile),marginTop:"4px"}}><input style={s.mini(isMobile)} placeholder="L1-L2" value={form.megL1L2} onChange={e=>set("megL1L2",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2-L3" value={form.megL2L3} onChange={e=>set("megL2L3",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L3-L1" value={form.megL3L1} onChange={e=>set("megL3L1",e.target.value)}/></div></div>
+              <div style={{marginTop:"8px"}}><label style={s.lblRow}>Megado evaporador (Î©)</label><div style={s.row3}><input style={s.mini} placeholder="L1-T" value={form.megL1T} onChange={e=>set("megL1T",e.target.value)}/><input style={s.mini} placeholder="L2-T" value={form.megL2T} onChange={e=>set("megL2T",e.target.value)}/><input style={s.mini} placeholder="L3-T" value={form.megL3T} onChange={e=>set("megL3T",e.target.value)}/></div><div style={{...s.row3,marginTop:"4px"}}><input style={s.mini} placeholder="L1-L2" value={form.megL1L2} onChange={e=>set("megL1L2",e.target.value)}/><input style={s.mini} placeholder="L2-L3" value={form.megL2L3} onChange={e=>set("megL2L3",e.target.value)}/><input style={s.mini} placeholder="L3-L1" value={form.megL3L1} onChange={e=>set("megL3L1",e.target.value)}/></div></div>
               <div style={{height:"0.5px",background:"#e0e0e0",margin:"12px 0"}}></div>
               <div style={{fontSize:"12px",fontWeight:500,color:"#085041",background:"#e1f5ee",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>Condensador</div>
-              <div style={s.g4(isMobile)}>
-                <div><label style={s.lblRow}>Voltaje en marcha (V)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1-L2" value={form.condVL1L2} onChange={e=>set("condVL1L2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L2-L3" value={form.condVL2L3} onChange={e=>set("condVL2L3",e.target.value)}/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L3-L1" value={form.condVL3L1} onChange={e=>set("condVL3L1",e.target.value)}/>}</div></div>
-                <div><label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3(isMobile)}><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>}</div></div>
-                <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1" value={form.condAL1} onChange={e=>set("condAL1",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2" value={form.condAL2} onChange={e=>set("condAL2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini(isMobile)} placeholder="L3" value={form.condAL3} onChange={e=>set("condAL3",e.target.value)}/>}</div></div>
-                <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3(isMobile)}><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/><input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini(isMobile),background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/>}</div></div>
+              <div style={s.g4}>
+                <div><label style={s.lblRow}>Voltaje en marcha (V)</label><div style={s.row3}><input style={s.mini} placeholder="L1-L2" value={form.condVL1L2} onChange={e=>set("condVL1L2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini} placeholder="L2-L3" value={form.condVL2L3} onChange={e=>set("condVL2L3",e.target.value)}/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini} placeholder="L3-L1" value={form.condVL3L1} onChange={e=>set("condVL3L1",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Voltaje en placa (V) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>}{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condVoltaje||equipo?.voltaje||""} readOnly/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en marcha (A)</label><div style={s.row3}><input style={s.mini} placeholder="L1" value={form.condAL1} onChange={e=>set("condAL1",e.target.value)}/><input style={s.mini} placeholder="L2" value={form.condAL2} onChange={e=>set("condAL2",e.target.value)}/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={s.mini} placeholder="L3" value={form.condAL3} onChange={e=>set("condAL3",e.target.value)}/>}</div></div>
+                <div><label style={s.lblRow}>Amperaje en placa (A) <span style={{fontSize:"9px",color:"#888",fontWeight:"normal"}}>(ficha equipo)</span></label><div style={s.row3}><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/><input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/>{equipo?.fases!=="MonofÃ¡sico"&&<input style={{...s.mini,background:"#f0f4f8",color:"#555",cursor:"not-allowed"}} value={equipo?.condAmperaje||equipo?.amperaje||""} readOnly/>}</div></div>
                 <div><label style={s.lblRow}>Desbalance de voltaje (auto)</label><div style={s.calc}>{calcDesbalance(form.condVL1L2, form.condVL2L3, form.condVL3L1) || "â€”"}%</div></div>
                 <div><label style={s.lblRow}>Desbalance de amperaje (auto)</label><div style={s.calc}>{calcDesbalance(form.condAL1, form.condAL2, form.condAL3) || "â€”"}%</div></div>
               </div>
-              <div style={{marginTop:"8px"}}><label style={s.lblRow}>Megado condensador (Î©)</label><div style={s.row3(isMobile)}><input style={s.mini(isMobile)} placeholder="L1-T" value={form.condMegL1T} onChange={e=>set("condMegL1T",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2-T" value={form.condMegL2T} onChange={e=>set("condMegL2T",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L3-T" value={form.condMegL3T} onChange={e=>set("condMegL3T",e.target.value)}/></div><div style={{...s.row3(isMobile),marginTop:"4px"}}><input style={s.mini(isMobile)} placeholder="L1-L2" value={form.condMegL1L2} onChange={e=>set("condMegL1L2",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L2-L3" value={form.condMegL2L3} onChange={e=>set("condMegL2L3",e.target.value)}/><input style={s.mini(isMobile)} placeholder="L3-L1" value={form.condMegL3L1} onChange={e=>set("condMegL3L1",e.target.value)}/></div></div>
+              <div style={{marginTop:"8px"}}><label style={s.lblRow}>Megado condensador (Î©)</label><div style={s.row3}><input style={s.mini} placeholder="L1-T" value={form.condMegL1T} onChange={e=>set("condMegL1T",e.target.value)}/><input style={s.mini} placeholder="L2-T" value={form.condMegL2T} onChange={e=>set("condMegL2T",e.target.value)}/><input style={s.mini} placeholder="L3-T" value={form.condMegL3T} onChange={e=>set("condMegL3T",e.target.value)}/></div><div style={{...s.row3,marginTop:"4px"}}><input style={s.mini} placeholder="L1-L2" value={form.condMegL1L2} onChange={e=>set("condMegL1L2",e.target.value)}/><input style={s.mini} placeholder="L2-L3" value={form.condMegL2L3} onChange={e=>set("condMegL2L3",e.target.value)}/><input style={s.mini} placeholder="L3-L1" value={form.condMegL3L1} onChange={e=>set("condMegL3L1",e.target.value)}/></div></div>
               <div style={{height:"0.5px",background:"#e0e0e0",margin:"12px 0"}}></div>
               <div style={{fontSize:"12px",fontWeight:500,color:"#791f1f",background:"#fcebeb",padding:"6px 10px",borderRadius:"6px",marginBottom:"10px"}}>RefrigeraciÃ³n</div>
-              <div style={s.g4(isMobile)}>
+              <div style={s.g4}>
                 <CampoInput label="PresiÃ³n succiÃ³n (PSI)" val={form.presSuccion} onChange={v=>set("presSuccion",v)}/>
                 <CampoInput label="PresiÃ³n lÃ­quido (PSI)" val={form.presLiquido} onChange={v=>set("presLiquido",v)}/>
                 <CampoInput label="TÂ° sat. succiÃ³n medida (Â°C)" val={form.tSatMedida} onChange={v=>set("tSatMedida",v)}/>
@@ -1907,12 +1894,12 @@ export default function Protocolo() {
         {form.grupo === "ventilacion" && (
           <div style={s.sec}>
             <div style={s.secT}>ðŸŒ€ ParÃ¡metros de operaciÃ³n</div>
-            <div style={s.secB(isMobile)}>
-              <div style={s.g4(isMobile)}>
+            <div style={s.secB}>
+              <div style={s.g4}>
                 <CampoInput label="Temp. trabajo motor (Â°C)" val={form.tTrabajoMotor} onChange={v => set("tTrabajoMotor", v)} />
                 <CampoInput label="Caudal de aire (CFM)" val={form.caudalAire} onChange={v => set("caudalAire", v)} />
               </div>
-              <div style={{ ...s.g4(isMobile), marginTop: "10px" }}>
+              <div style={{ ...s.g4, marginTop: "10px" }}>
                 <div style={{ fontSize: "11px", fontWeight: 600, color: "#0f6e56", gridColumn: "1/-1", paddingBottom: "4px", borderBottom: "0.5px solid #eee" }}>Estatus de actividades</div>
                 {VENTILACION_ITEMS_DER.map(item => (
                   <div key={item} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px", padding: "3px 0", borderBottom: "0.5px solid #f0f0f0", gridColumn: "1/-1" }}>
@@ -1934,7 +1921,7 @@ export default function Protocolo() {
         {form.grupo === "fancoil" && (
           <div style={s.sec}>
             <div style={s.secT}>ðŸ’§ ParÃ¡metros â€” Fan Coil / UMA (formato Carrier)</div>
-            <div style={s.secB(isMobile)}>
+            <div style={s.secB}>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
 
@@ -2027,13 +2014,13 @@ export default function Protocolo() {
         {form.grupo !== "fancoil" && form.grupo !== "expansion" && form.grupo !== "ventilacion" && (
         <div style={s.sec}>
           <div style={s.secT}>âœ… Actividades realizadas</div>
-          <div style={s.secB(isMobile)}>
-            <div style={s.gActividades(isMobile)}>
+          <div style={s.secB}>
+            <div style={s.gActividades}>
               {Object.entries(checklist).map(([cat, items]) => (
                 <div key={cat}>
-                  <div style={s.colH(isMobile)}>{cat}</div>
+                  <div style={s.colH}>{cat}</div>
                   {items.map(item => (
-                    <label key={item} style={s.ckRow(isMobile)}>
+                    <label key={item} style={s.ckRow}>
                       <input type="checkbox" checked={!!form.actividades[item]} onChange={e => setActividad(item, e.target.checked)} />
                       {item}
                     </label>
@@ -2048,12 +2035,12 @@ export default function Protocolo() {
         {/* Observaciones dinÃ¡micas */}
         <div style={s.sec}>
           <div style={s.secT}>ðŸ“‹ ObservaciÃ³n Â· Causa Â· RecomendaciÃ³n <span style={s.tag}>{form.observaciones.length} registro{form.observaciones.length !== 1 ? "s" : ""}</span></div>
-          <div style={s.secB(isMobile)}>
-            <div style={s.obsHead(isMobile)}>
+          <div style={s.secB}>
+            <div style={s.obsHead}>
               <span></span><span style={s.obsHeadLbl}>ObservaciÃ³n</span><span style={s.obsHeadLbl}>Causa</span><span style={s.obsHeadLbl}>RecomendaciÃ³n</span><span></span>
             </div>
             {form.observaciones.map((o, i) => (
-              <div key={i} style={s.obsFila(isMobile)}>
+              <div key={i} style={s.obsFila}>
                 <div style={s.obsNum}>{i + 1}</div>
                 <textarea style={{ ...s.obsInp, background: "#fff8e1", borderColor: "#ffe082" }} placeholder="ObservaciÃ³n..." value={o.obs} onChange={e => updateObs(i, "obs", e.target.value)} />
                 <textarea style={{ ...s.obsInp, background: "#fef0f0", borderColor: "#f5c4c4" }} placeholder="Causa..." value={o.causa} onChange={e => updateObs(i, "causa", e.target.value)} />
@@ -2068,8 +2055,8 @@ export default function Protocolo() {
         {/* Estado final */}
         <div style={s.sec}>
           <div style={s.secT}>ðŸ Resultado del servicio</div>
-          <div style={s.secB(isMobile)}>
-            <div style={s.g2(isMobile)}>
+          <div style={s.secB}>
+            <div style={s.g2}>
               <CampoSelect label="Estado final del equipo" val={form.estadoFinal} onChange={v => set("estadoFinal", v)} opciones={["Operativo", "Operativo con observaciones", "Fuera de servicio"]} />
               <Campo label="TÃ©cnico responsable" auto val={form.tecnico} />
             </div>
@@ -2077,9 +2064,9 @@ export default function Protocolo() {
         </div>
         </fieldset>
 
-        <div style={{ display: "flex", gap: "10px", justifyContent: isMobile ? "stretch" : "flex-end", flexDirection: isMobile ? "column" : "row", marginTop: "8px" }}>
-          {!soloLectura && <button style={s.btnSaveBig(isMobile)} onClick={guardar} disabled={guardando}>{guardando ? "Guardando..." : "ðŸ’¾ Guardar protocolo"}</button>}
-          <button style={s.btnPdfBig(isMobile)} onClick={exportarPDF}>ðŸ“„ Descargar PDF</button>
+        <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "8px" }}>
+          {!soloLectura && <button style={s.btnSaveBig} onClick={guardar} disabled={guardando}>{guardando ? "Guardando..." : "ðŸ’¾ Guardar protocolo"}</button>}
+          <button style={s.btnPdfBig} onClick={exportarPDF}>ðŸ“„ Descargar PDF</button>
         </div>
       </div>
     </div>
@@ -2087,47 +2074,38 @@ export default function Protocolo() {
 }
 
 // ============ COMPONENTES AUXILIARES ============
-const Campo = ({ label, val, auto, calc }) => {
-  const isMobile = useIsMobile();
-  return (
-    <div style={s.f}>
-      <label style={s.fLabel(isMobile)}>{label}</label>
-      <div style={auto ? s.fAuto : calc ? s.fCalc : s.fPh}>{val || "—"}</div>
-    </div>
-  );
-};
-const CampoInput = ({ label, val, onChange, placeholder, type, readOnly }) => {
-  const isMobile = useIsMobile();
-  return (
-    <div style={s.f}>
-      <label style={s.fLabel(isMobile)}>{label}</label>
-      <input style={{...s.fInp(isMobile), ...(readOnly ? {background:"#f0f4f8", color:"#555", cursor:"not-allowed"} : {})}} type={type || "text"} value={val} placeholder={placeholder || ""} readOnly={readOnly} onChange={readOnly ? undefined : e => onChange(e.target.value)} />
-    </div>
-  );
-};
-const CampoSelect = ({ label, val, onChange, opciones }) => {
-  const isMobile = useIsMobile();
-  return (
-    <div style={s.f}>
-      <label style={s.fLabel(isMobile)}>{label}</label>
-      <select style={s.fInp(isMobile)} value={val} onChange={e => onChange(e.target.value)}>
-        {opciones.map(o => <option key={o}>{o}</option>)}
-      </select>
-    </div>
-  );
-};
+const Campo = ({ label, val, auto, calc }) => (
+  <div style={s.f}>
+    <label style={s.fLabel}>{label}</label>
+    <div style={auto ? s.fAuto : calc ? s.fCalc : s.fPh}>{val || "â€”"}</div>
+  </div>
+);
+const CampoInput = ({ label, val, onChange, placeholder, type, readOnly }) => (
+  <div style={s.f}>
+    <label style={s.fLabel}>{label}</label>
+    <input style={{...s.fInp, ...(readOnly ? {background:"#f0f4f8", color:"#555", cursor:"not-allowed"} : {})}} type={type || "text"} value={val} placeholder={placeholder || ""} readOnly={readOnly} onChange={readOnly ? undefined : e => onChange(e.target.value)} />
+  </div>
+);
+const CampoSelect = ({ label, val, onChange, opciones }) => (
+  <div style={s.f}>
+    <label style={s.fLabel}>{label}</label>
+    <select style={s.fInp} value={val} onChange={e => onChange(e.target.value)}>
+      {opciones.map(o => <option key={o}>{o}</option>)}
+    </select>
+  </div>
+);
 
 const s = {
   page: { minHeight: "100vh", background: "#f0f4f8", fontFamily: "Inter, Arial, sans-serif" },
-  navbar: (m) => ({ padding: m ? "10px 14px" : "12px 20px", display: "flex", alignItems: m ? "flex-start" : "center", flexDirection: m ? "column" : "row", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, gap: m ? "8px" : 0 }),
+  navbar: { padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
   navTitle: { color: "white", fontSize: "14px", fontWeight: 500 },
   navSub: { color: "rgba(255,255,255,0.75)", fontSize: "11px", marginTop: "2px" },
-  navBtns: { display: "flex", gap: "8px", flexWrap: "wrap" },
+  navBtns: { display: "flex", gap: "8px" },
   btnBack: { background: "rgba(255,255,255,0.2)", color: "white", border: "none", borderRadius: "8px", padding: "7px 12px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
   btnSave: { background: "#1e7e34", color: "white", border: "none", borderRadius: "8px", padding: "7px 12px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
   btnPdf: { background: "#c62828", color: "white", border: "none", borderRadius: "8px", padding: "7px 12px", cursor: "pointer", fontSize: "12px", fontWeight: 500 },
-  content: (m) => ({ maxWidth: "1100px", margin: "0 auto", padding: m ? "10px 12px" : "16px 20px", display: "flex", flexDirection: "column", gap: "12px" }),
-  histBar: (m) => ({ display: "flex", gap: "6px", alignItems: "center", padding: m ? "8px 10px" : "10px 14px", background: "white", borderRadius: "10px", border: "0.5px solid #e0e0e0", flexWrap: "wrap" }),
+  content: { maxWidth: "1100px", margin: "0 auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "12px" },
+  histBar: { display: "flex", gap: "6px", alignItems: "center", padding: "10px 14px", background: "white", borderRadius: "10px", border: "0.5px solid #e0e0e0", flexWrap: "wrap" },
   histLabel: { fontSize: "11px", color: "#888", fontWeight: 500 },
   histCount: { marginLeft: "auto", fontSize: "10px", color: "#aaa" },
   chip: { fontSize: "11px", padding: "4px 10px", borderRadius: "20px", background: "#e8f0fe", color: "#1a5fa8", border: "0.5px solid #c5d5e8", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px" },
@@ -2136,33 +2114,33 @@ const s = {
   chipDel: { fontSize: "10px", opacity: 0.8 },
   sec: { background: "white", border: "0.5px solid #e0e0e0", borderRadius: "10px", overflow: "hidden" },
   secT: { fontSize: "10px", color: "#888", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500, padding: "9px 14px", background: "#f8f9fa", borderBottom: "0.5px solid #e0e0e0", display: "flex", alignItems: "center", gap: "8px" },
-  secB: (m) => ({ padding: m ? "14px 12px" : "12px 14px" }),
+  secB: { padding: "12px 14px" },
   tag: { fontSize: "8px", padding: "1px 7px", borderRadius: "20px", background: "#e8f0fe", color: "#1a5fa8", border: "0.5px solid #c5d5e8" },
-  g4: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr 1fr" : "repeat(4,1fr)", gap: m ? "10px" : "8px" }),
-  g3: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr" : "repeat(3,1fr)", gap: m ? "10px" : "8px" }),
-  g2: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr" : "1fr 1fr", gap: m ? "10px" : "8px" }),
-  gActividades: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr" : "repeat(3,1fr)", gap: "12px" }),
+  g4: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "8px" },
+  g3: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "8px" },
+  g2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" },
+  gActividades: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px" },
   f: { display: "flex", flexDirection: "column", gap: "3px" },
-  fLabel: (m) => ({ fontSize: m ? "10px" : "9px", color: "#888", textTransform: "uppercase", letterSpacing: "0.03em" }),
+  fLabel: { fontSize: "9px", color: "#888", textTransform: "uppercase", letterSpacing: "0.03em" },
   fPh: { fontSize: "11px", color: "#aaa", background: "#fafafa", padding: "7px 9px", borderRadius: "6px", border: "0.5px solid #ddd" },
   fAuto: { fontSize: "11px", fontWeight: 500, color: "#222", background: "#f0f4f8", padding: "7px 9px", borderRadius: "6px" },
   fCalc: { fontSize: "11px", fontWeight: 500, color: "#185fa5", background: "#e6f1fb", padding: "7px 9px", borderRadius: "6px", border: "0.5px solid #b5d4f4" },
-  fInp: (m) => ({ fontSize: m ? "14px" : "11px", padding: m ? "10px 12px" : "7px 9px", borderRadius: "8px", border: "0.5px solid #ddd", background: "#fafafa", color: "#222", width: "100%", boxSizing: "border-box" }),
+  fInp: { fontSize: "11px", padding: "7px 9px", borderRadius: "6px", border: "0.5px solid #ddd", background: "#fafafa", color: "#222", width: "100%", boxSizing: "border-box" },
   lblRow: { fontSize: "9px", color: "#888", textTransform: "uppercase", marginBottom: "4px", display: "block" },
-  row3: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr" : "1fr 1fr 1fr", gap: "5px" }),
-  row2: (m) => ({ display: "grid", gridTemplateColumns: m ? "1fr" : "1fr 1fr", gap: "5px" }),
-  mini: (m) => ({ fontSize: m ? "13px" : "10px", padding: m ? "9px" : "6px 6px", borderRadius: "5px", border: "0.5px solid #ddd", background: "#fafafa", color: "#222", width: "100%", boxSizing: "border-box", textAlign: "center" }),
+  row3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "5px" },
+  row2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px" },
+  mini: { fontSize: "10px", padding: "6px 6px", borderRadius: "5px", border: "0.5px solid #ddd", background: "#fafafa", color: "#222", width: "100%", boxSizing: "border-box", textAlign: "center" },
   calc: { fontSize: "10px", padding: "6px", borderRadius: "5px", background: "#e6f1fb", color: "#185fa5", border: "0.5px solid #b5d4f4", textAlign: "center", fontWeight: 500 },
-  colH: (m) => ({ fontSize: m ? "11px" : "9px", color: "#888", textTransform: "uppercase", fontWeight: 500, marginBottom: "6px" }),
-  ckRow: (m) => ({ display: "flex", alignItems: "center", gap: m ? "10px" : "6px", fontSize: m ? "14px" : "11px", color: "#222", padding: m ? "6px 0" : "3px 0", cursor: "pointer" }),
-  obsHead: (m) => m ? { display: "none" } : { display: "grid", gridTemplateColumns: "24px 1fr 1fr 1fr 30px", gap: "8px", padding: "0 0 4px" },
+  colH: { fontSize: "9px", color: "#888", textTransform: "uppercase", fontWeight: 500, marginBottom: "6px" },
+  ckRow: { display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#222", padding: "3px 0", cursor: "pointer" },
+  obsHead: { display: "grid", gridTemplateColumns: "24px 1fr 1fr 1fr 30px", gap: "8px", padding: "0 0 4px" },
   obsHeadLbl: { fontSize: "8px", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" },
-  obsFila: (m) => m ? { display: "flex", flexDirection: "column", gap: "6px", marginBottom: "14px", padding: "10px", background: "#fafafa", borderRadius: "10px", border: "0.5px solid #e0e0e0" } : { display: "grid", gridTemplateColumns: "24px 1fr 1fr 1fr 30px", gap: "8px", alignItems: "start", marginBottom: "8px" },
+  obsFila: { display: "grid", gridTemplateColumns: "24px 1fr 1fr 1fr 30px", gap: "8px", alignItems: "start", marginBottom: "8px" },
   obsNum: { fontSize: "11px", color: "#aaa", fontWeight: 700, paddingTop: "8px", textAlign: "center" },
   obsInp: { fontSize: "11px", color: "#222", padding: "7px 9px", borderRadius: "6px", border: "0.5px solid #ddd", width: "100%", minHeight: "38px", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" },
   obsDel: { background: "#ffebee", color: "#c62828", border: "0.5px solid #ef9a9a", borderRadius: "6px", cursor: "pointer", fontSize: "12px", padding: "7px 0", marginTop: "1px" },
   addBtn: { fontSize: "12px", padding: "8px 14px", borderRadius: "8px", cursor: "pointer", fontWeight: 500, border: "0.5px dashed #ffa726", background: "#fff8e1", color: "#e65100", marginTop: "4px" },
-  btnSaveBig: (m) => ({ background: "#1e7e34", color: "white", border: "none", borderRadius: "10px", padding: m ? "14px 20px" : "10px 18px", cursor: "pointer", fontSize: m ? "15px" : "13px", fontWeight: 600, flex: m ? 1 : "auto" }),
-  btnPdfBig: (m) => ({ background: "#c62828", color: "white", border: "none", borderRadius: "10px", padding: m ? "14px 20px" : "10px 18px", cursor: "pointer", fontSize: m ? "15px" : "13px", fontWeight: 600, flex: m ? 1 : "auto" }),
+  btnSaveBig: { background: "#1e7e34", color: "white", border: "none", borderRadius: "8px", padding: "10px 18px", cursor: "pointer", fontSize: "13px", fontWeight: 500 },
+  btnPdfBig: { background: "#c62828", color: "white", border: "none", borderRadius: "8px", padding: "10px 18px", cursor: "pointer", fontSize: "13px", fontWeight: 500 },
   centro: { textAlign: "center", padding: "3rem", fontSize: "15px", color: "#888", fontFamily: "Inter, Arial, sans-serif" },
 };
