@@ -2087,26 +2087,35 @@ export default function Protocolo() {
 }
 
 // ============ COMPONENTES AUXILIARES ============
-const Campo = ({ label, val, auto, calc }) => (
-  <div style={s.f}>
-    <label style={s.fLabel(isMobile)}>{label}</label>
-    <div style={auto ? s.fAuto : calc ? s.fCalc : s.fPh}>{val || "â€”"}</div>
-  </div>
-);
-const CampoInput = ({ label, val, onChange, placeholder, type, readOnly }) => (
-  <div style={s.f}>
-    <label style={s.fLabel(isMobile)}>{label}</label>
-    <input style={{...s.fInp(isMobile), ...(readOnly ? {background:"#f0f4f8", color:"#555", cursor:"not-allowed"} : {})}} type={type || "text"} value={val} placeholder={placeholder || ""} readOnly={readOnly} onChange={readOnly ? undefined : e => onChange(e.target.value)} />
-  </div>
-);
-const CampoSelect = ({ label, val, onChange, opciones }) => (
-  <div style={s.f}>
-    <label style={s.fLabel(isMobile)}>{label}</label>
-    <select style={s.fInp(isMobile)} value={val} onChange={e => onChange(e.target.value)}>
-      {opciones.map(o => <option key={o}>{o}</option>)}
-    </select>
-  </div>
-);
+const Campo = ({ label, val, auto, calc }) => {
+  const isMobile = useIsMobile();
+  return (
+    <div style={s.f}>
+      <label style={s.fLabel(isMobile)}>{label}</label>
+      <div style={auto ? s.fAuto : calc ? s.fCalc : s.fPh}>{val || "—"}</div>
+    </div>
+  );
+};
+const CampoInput = ({ label, val, onChange, placeholder, type, readOnly }) => {
+  const isMobile = useIsMobile();
+  return (
+    <div style={s.f}>
+      <label style={s.fLabel(isMobile)}>{label}</label>
+      <input style={{...s.fInp(isMobile), ...(readOnly ? {background:"#f0f4f8", color:"#555", cursor:"not-allowed"} : {})}} type={type || "text"} value={val} placeholder={placeholder || ""} readOnly={readOnly} onChange={readOnly ? undefined : e => onChange(e.target.value)} />
+    </div>
+  );
+};
+const CampoSelect = ({ label, val, onChange, opciones }) => {
+  const isMobile = useIsMobile();
+  return (
+    <div style={s.f}>
+      <label style={s.fLabel(isMobile)}>{label}</label>
+      <select style={s.fInp(isMobile)} value={val} onChange={e => onChange(e.target.value)}>
+        {opciones.map(o => <option key={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+};
 
 const s = {
   page: { minHeight: "100vh", background: "#f0f4f8", fontFamily: "Inter, Arial, sans-serif" },
