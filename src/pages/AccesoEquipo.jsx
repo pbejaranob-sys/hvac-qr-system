@@ -232,7 +232,7 @@ const EstatusRow = ({ item, value, onChange }) => {
 };
 
 // ---- PDF por grupo ----
-const generarPDF = (equipo, prot) => {
+const generarPDF = async (equipo, prot, db) => {
   const pdf = new jsPDF("p", "mm", "a4");
   const M = 14, PW = 210, CW = PW - M * 2;
   let y = 14;
@@ -342,38 +342,43 @@ const generarPDF = (equipo, prot) => {
   campo4([["Estado final", prot.estadoFinal], ["Técnico", prot.tecnico], ["", ""], ["", ""]]);
 
   // ---- Registro fotográfico ----
-  const fotos = prot.fotos || [];
+  // Fotos pueden venir directo (prot.fotos) o desde Firestore (prot.fotosIds)
+  let fotos = prot.fotos || [];
+  if (fotos.length === 0 && prot.fotosIds && prot.fotosIds.length > 0 && db) {
+    try {
+      const { getDocs: _getDocs, collection: _col, query: _q, where: _w } = await import("firebase/firestore");
+      const snaps = await Promise.all(prot.fotosIds.map(id => import("firebase/firestore").then(m => m.getDoc(m.doc(db, "fotosMant", id)))));
+      fotos = snaps.filter(s => s.exists()).sort((a, b) => (a.data().indice || 0) - (b.data().indice || 0)).map(s => s.data().base64);
+    } catch (_) {}
+  }
+
   if (fotos.length > 0) {
     pdf.addPage();
     let yFoto = M;
     pdf.setFillColor(26, 79, 192);
     pdf.rect(0, 0, 210, 14, "F");
     pdf.setFont("helvetica", "bold"); pdf.setFontSize(10); pdf.setTextColor(255, 255, 255);
-    pdf.text("REGISTRO FOTOGRÁFICO", M, 9);
+    pdf.text("REGISTRO FOTOGRAFICO", M, 9);
     pdf.setFont("helvetica", "normal"); pdf.setFontSize(8);
     pdf.text(`${equipo.cliente || ""} · ${equipo.ambiente || ""} · ${prot.fecha}`, 210 - M, 9, { align: "right" });
     yFoto = 22;
 
     const fotoPorFila = 3;
     const anchoFoto = (210 - M * 2 - 6) / fotoPorFila;
-    const altoFoto = anchoFoto; // cuadradas
+    const altoFoto = anchoFoto;
 
     for (let i = 0; i < fotos.length; i++) {
       const col = i % fotoPorFila;
       const fila = Math.floor(i / fotoPorFila);
       const x = M + col * (anchoFoto + 3);
-      const y = yFoto + fila * (altoFoto + 8);
-
-      // Añadir imagen base64
+      const yF = yFoto + fila * (altoFoto + 8);
       try {
         const imgData = fotos[i];
         const format = imgData.startsWith("data:image/png") ? "PNG" : "JPEG";
-        pdf.addImage(imgData, format, x, y, anchoFoto, altoFoto);
+        pdf.addImage(imgData, format, x, yF, anchoFoto, altoFoto);
       } catch (_) {}
-
-      // Número de foto
       pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(100, 100, 100);
-      pdf.text(`Foto ${i + 1}`, x + 1, y + altoFoto + 4);
+      pdf.text(`Foto ${i + 1}`, x + 1, yF + altoFoto + 4);
     }
   }
 
@@ -386,19 +391,19 @@ const generarPDF = (equipo, prot) => {
 // COMPONENTE PRINCIPAL
 // ========================================
 
-// ---- Comprimir imagen a base64 (max 900px, calidad 0.75) ----
+// ---- Comprimir imagen a base64 (max 600px, calidad 0.60) ----
 const comprimirFoto = (file) => new Promise((resolve, reject) => {
   const img = new Image();
   const url = URL.createObjectURL(file);
   img.onload = () => {
-    const MAX = 900;
+    const MAX = 600;
     const scale = Math.min(1, MAX / Math.max(img.width, img.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(img.width * scale);
     canvas.height = Math.round(img.height * scale);
     canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
     URL.revokeObjectURL(url);
-    resolve(canvas.toDataURL("image/jpeg", 0.75));
+    resolve(canvas.toDataURL("image/jpeg", 0.60));
   };
   img.onerror = reject;
   img.src = url;
@@ -470,8 +475,27 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
   const guardarProtocolo = async () => {
     setGuardandoProt(true); setErrorProt("");
     try {
+      const fotos = prot.fotos || [];
+
+      // Guardar fotos en colección separada si hay (evita límite 1MB de Firestore)
+      let fotosIds = [];
+      if (fotos.length > 0) {
+        const fotosRef = await Promise.all(fotos.map((base64, idx) =>
+          addDoc(collection(db, "fotosMant"), {
+            equipoId: equipo.id,
+            fecha: prot.fecha,
+            indice: idx,
+            base64,
+            creadoEn: serverTimestamp(),
+          })
+        ));
+        fotosIds = fotosRef.map(r => r.id);
+      }
+
+      // Guardar protocolo sin las fotos (solo los IDs de referencia)
+      const protSinFotos = { ...prot, fotos: [], fotosIds };
       const historial = equipo.protocolos || [];
-      const nuevos = [prot, ...historial].slice(0, 10);
+      const nuevos = [protSinFotos, ...historial].slice(0, 10);
       const obsSync = (prot.observaciones || []).filter(o => o.observacion?.trim()).map(o => ({ texto: o.observacion, causa: o.causa || "", rec: o.recomendacion || "", fecha: prot.fecha, tecnico: prot.tecnico }));
       const recSync = (prot.observaciones || []).filter(o => o.recomendacion?.trim()).map(o => o.recomendacion);
       await updateDoc(doc(db, "equipos", equipo.id), {
@@ -486,7 +510,7 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
         ultimoTecnico: prot.tecnico,
       });
       setProtGuardado(true);
-    } catch (e) { setErrorProt("No se pudo guardar. Intenta de nuevo."); }
+    } catch (e) { console.error(e); setErrorProt("No se pudo guardar. Intenta de nuevo."); }
     setGuardandoProt(false);
   };
 
@@ -903,7 +927,7 @@ export default function AccesoEquipo({ equipo, onVerInforme }) {
               style={{ ...st.btnGuardar, flex: 1, background: "#1c9a53", boxShadow: "0 8px 20px rgba(28,154,83,0.28)", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               <IconGuardar />{guardandoProt ? "Guardando..." : "Guardar protocolo"}
             </button>
-            <button onClick={() => prot && generarPDF(equipo, prot)}
+            <button onClick={() => prot && generarPDF(equipo, prot, db)}
               style={{ ...st.btnGuardar, flex: 1, background: "#c23b3b", boxShadow: "0 8px 20px rgba(194,59,59,0.28)", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               <IconPDF />Descargar PDF
             </button>
